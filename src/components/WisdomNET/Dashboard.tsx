@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { useWisdomNET } from '@/contexts/WisdomNETContext';
 import { Brain, Activity, Database, GitBranch, MessageSquare } from 'lucide-react';
 import { ProjectTree } from './ProjectTree';
+import { NodeGraph } from './NodeGraph';
 import { AgentPanel } from './AgentPanel';
 import { ChatInterface } from './ChatInterface';
 import { MemoryViewer } from './MemoryViewer';
@@ -112,13 +113,13 @@ export function WisdomNETDashboard() {
 
         {/* Center - Main Work Area */}
         <div className="col-span-6 space-y-6 overflow-hidden">
-          {/* System Metrics */}
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4">
-            <SystemMetrics />
+          {/* Node Graph Visualization */}
+          <Card className="bg-card/70 backdrop-blur-sm border-border p-0 h-2/3">
+            <NodeGraph />
           </Card>
           
           {/* Chat Interface */}
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 flex-1">
+          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/3">
             <div className="flex items-center mb-4">
               <MessageSquare className="w-5 h-5 text-accent mr-2" />
               <h3 className="font-semibold">Neural Interface</h3>
