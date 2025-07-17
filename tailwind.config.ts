@@ -61,7 +61,33 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				// WisdomNET Neural Colors
+				neural: 'hsl(var(--wisdom-neural))',
+				'data-flow': 'hsl(var(--wisdom-data-flow))',
+				'agent-active': 'hsl(var(--wisdom-agent-active))',
+				'wisdom-memory': 'hsl(var(--wisdom-memory))',
+				'wisdom-success': 'hsl(var(--wisdom-success))',
+				'wisdom-warning': 'hsl(var(--wisdom-warning))'
+			},
+			backgroundImage: {
+				'gradient-neural': 'var(--gradient-neural)',
+				'gradient-data-flow': 'var(--gradient-data-flow)',
+				'gradient-mind': 'var(--gradient-mind)',
+				'gradient-electric': 'var(--gradient-electric)'
+			},
+			boxShadow: {
+				'neural': 'var(--shadow-neural)',
+				'glow': 'var(--shadow-glow)',
+				'data': 'var(--shadow-data)'
+			},
+			fontFamily: {
+				'neural': 'var(--font-neural)',
+				'interface': 'var(--font-interface)'
+			},
+			transitionTimingFunction: {
+				'neural': 'cubic-bezier(0.4, 0, 0.2, 1)',
+				'data-flow': 'cubic-bezier(0.25, 0.46, 0.45, 0.94)'
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,11 +110,69 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				// Neural Network Animations
+				'neural-pulse': {
+					'0%, 100%': {
+						opacity: '0.5',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						opacity: '1',
+						transform: 'scale(1.05)'
+					}
+				},
+				'data-flow': {
+					'0%': {
+						transform: 'translateX(-100%)',
+						opacity: '0'
+					},
+					'50%': {
+						opacity: '1'
+					},
+					'100%': {
+						transform: 'translateX(100%)',
+						opacity: '0'
+					}
+				},
+				'neural-glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 5px hsl(var(--primary))'
+					},
+					'50%': {
+						boxShadow: '0 0 20px hsl(var(--primary)), 0 0 30px hsl(var(--primary))'
+					}
+				},
+				'mind-expand': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
+				'agent-think': {
+					'0%, 100%': {
+						transform: 'rotate(0deg) scale(1)'
+					},
+					'25%': {
+						transform: 'rotate(5deg) scale(1.02)'
+					},
+					'75%': {
+						transform: 'rotate(-5deg) scale(1.02)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'neural-pulse': 'neural-pulse 2s ease-in-out infinite',
+				'data-flow': 'data-flow 3s ease-in-out infinite',
+				'neural-glow': 'neural-glow 2s ease-in-out infinite',
+				'mind-expand': 'mind-expand 0.5s ease-out',
+				'agent-think': 'agent-think 1s ease-in-out infinite'
 			}
 		}
 	},
