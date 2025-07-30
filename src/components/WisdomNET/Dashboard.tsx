@@ -12,6 +12,7 @@ import { AgentPanel } from './AgentPanel';
 import { ChatInterface } from './ChatInterface';
 import { MemoryViewer } from './MemoryViewer';
 import { SystemMetrics } from './SystemMetrics';
+import { APIMonitor } from './APIMonitor';
 
 export function WisdomNETDashboard() {
   const { 
@@ -128,14 +129,24 @@ export function WisdomNETDashboard() {
           </Card>
         </div>
 
-        {/* Right Sidebar - Agents & Tasks */}
+        {/* Right Sidebar - Agents & APIs */}
         <div className="col-span-3 space-y-6 overflow-hidden">
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-full">
+          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
             <div className="flex items-center mb-4">
               <Brain className="w-5 h-5 text-agent-active mr-2" />
               <h3 className="font-semibold">Agent Network</h3>
             </div>
             <AgentPanel />
+          </Card>
+          
+          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
+            <div className="flex items-center mb-4">
+              <Activity className="w-5 h-5 text-primary mr-2" />
+              <h3 className="font-semibold">API Monitor</h3>
+            </div>
+            <div className="h-full overflow-auto">
+              <APIMonitor />
+            </div>
           </Card>
         </div>
       </div>

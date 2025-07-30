@@ -9,11 +9,14 @@ const corsHeaders = {
 
 interface AgentTask {
   id: string;
-  type: 'research' | 'audit' | 'memory' | 'web_navigation' | 'analysis';
+  type: 'research' | 'audit' | 'memory' | 'web_navigation' | 'analysis' | 'api_integration' | 'news_analysis' | 'weather_monitoring' | 'code_analysis';
   priority: number;
   description: string;
   context: any;
   status: 'pending' | 'running' | 'completed' | 'failed';
+  apiCategory?: string;
+  apiAction?: string;
+  parameters?: Record<string, any>;
 }
 
 class AutonomousAgent {
@@ -147,6 +150,130 @@ class AutonomousAgent {
     };
   }
 
+  async executeAPIIntegrationTask(task: AgentTask): Promise<any> {
+    console.log(`Executing API integration task: ${task.description}`);
+    
+    // Mock API integration - would use actual API router in production
+    const integrationPrompt = `Plan API integration for: ${task.description}
+    Category: ${task.apiCategory}
+    Action: ${task.apiAction}
+    Parameters: ${JSON.stringify(task.parameters)}
+    
+    Provide integration strategy, error handling, and optimization recommendations.`;
+
+    const integrationPlan = await this.callOpenAI(integrationPrompt);
+    
+    // Simulate API call results
+    const mockResults = {
+      status: 'success',
+      data: `Mock data for ${task.apiCategory}:${task.apiAction}`,
+      responseTime: Math.floor(Math.random() * 500) + 100,
+      apiUsed: task.apiCategory || 'unknown'
+    };
+
+    await this.storeInMemory({
+      type: 'api_integration',
+      query: task.description,
+      results: { plan: integrationPlan, execution: mockResults },
+      metadata: { 
+        task_id: task.id, 
+        timestamp: new Date().toISOString(),
+        api_category: task.apiCategory,
+        api_action: task.apiAction
+      }
+    });
+
+    return { plan: integrationPlan, execution: mockResults };
+  }
+
+  async executeNewsAnalysisTask(task: AgentTask): Promise<any> {
+    console.log(`Executing news analysis task: ${task.description}`);
+    
+    // Mock news analysis
+    const analysisPrompt = `Analyze current news trends for: ${task.description}
+    Context: ${JSON.stringify(task.context)}
+    Provide sentiment analysis, trend identification, and impact assessment.`;
+
+    const analysis = await this.callGoogleAI(analysisPrompt);
+    
+    const mockNewsData = {
+      articles: [
+        { title: 'AI Breakthrough in 2025', sentiment: 'positive', impact: 'high' },
+        { title: 'Tech Market Updates', sentiment: 'neutral', impact: 'medium' }
+      ],
+      trends: ['artificial intelligence', 'automation', 'innovation'],
+      sentiment_score: 0.7
+    };
+
+    await this.storeInMemory({
+      type: 'news_analysis',
+      query: task.description,
+      results: { analysis, data: mockNewsData },
+      metadata: { task_id: task.id, timestamp: new Date().toISOString() }
+    });
+
+    return { analysis, data: mockNewsData };
+  }
+
+  async executeWeatherMonitoringTask(task: AgentTask): Promise<any> {
+    console.log(`Executing weather monitoring task: ${task.description}`);
+    
+    const monitoringPrompt = `Analyze weather patterns for: ${task.description}
+    Context: ${JSON.stringify(task.context)}
+    Provide weather insights, pattern analysis, and recommendations.`;
+
+    const analysis = await this.callCerebras(monitoringPrompt);
+    
+    const mockWeatherData = {
+      current: { temp: 22, condition: 'clear', humidity: 65 },
+      forecast: [
+        { day: 'today', high: 25, low: 18, condition: 'sunny' },
+        { day: 'tomorrow', high: 23, low: 16, condition: 'cloudy' }
+      ],
+      alerts: []
+    };
+
+    await this.storeInMemory({
+      type: 'weather_monitoring',
+      query: task.description,
+      results: { analysis, data: mockWeatherData },
+      metadata: { task_id: task.id, timestamp: new Date().toISOString() }
+    });
+
+    return { analysis, data: mockWeatherData };
+  }
+
+  async executeCodeAnalysisTask(task: AgentTask): Promise<any> {
+    console.log(`Executing code analysis task: ${task.description}`);
+    
+    const analysisPrompt = `Perform comprehensive code analysis for: ${task.description}
+    Context: ${JSON.stringify(task.context)}
+    Focus on code quality, security vulnerabilities, performance optimizations, and best practices.`;
+
+    const analysis = await this.callOpenAI(analysisPrompt);
+    
+    const mockCodeMetrics = {
+      quality_score: 8.5,
+      security_issues: 2,
+      performance_issues: 1,
+      maintainability: 'high',
+      recommendations: [
+        'Implement input validation',
+        'Add error handling',
+        'Optimize database queries'
+      ]
+    };
+
+    await this.storeInMemory({
+      type: 'code_analysis',
+      query: task.description,
+      results: { analysis, metrics: mockCodeMetrics },
+      metadata: { task_id: task.id, timestamp: new Date().toISOString() }
+    });
+
+    return { analysis, metrics: mockCodeMetrics };
+  }
+
   async storeInMemory(data: any) {
     try {
       await this.supabase.from('ai_memory').insert({
@@ -239,6 +366,18 @@ serve(async (req) => {
             break;
           case 'memory':
             result = await agent.executeMemoryTask(task);
+            break;
+          case 'api_integration':
+            result = await agent.executeAPIIntegrationTask(task);
+            break;
+          case 'news_analysis':
+            result = await agent.executeNewsAnalysisTask(task);
+            break;
+          case 'weather_monitoring':
+            result = await agent.executeWeatherMonitoringTask(task);
+            break;
+          case 'code_analysis':
+            result = await agent.executeCodeAnalysisTask(task);
             break;
           default:
             throw new Error(`Unknown task type: ${task.type}`);
