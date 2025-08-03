@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useWisdomNET } from '@/contexts/WisdomNETContext';
-import { Brain, Activity, Database, GitBranch, MessageSquare } from 'lucide-react';
+import { Brain, Activity, Database, GitBranch, MessageSquare, Network } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ProjectTree } from './ProjectTree';
 import { NodeGraph } from './NodeGraph';
 import { AgentPanel } from './AgentPanel';
@@ -13,6 +14,7 @@ import { ChatInterface } from './ChatInterface';
 import { MemoryViewer } from './MemoryViewer';
 import { SystemMetrics } from './SystemMetrics';
 import { APIMonitor } from './APIMonitor';
+import EnterpriseOrchestrator from './EnterpriseOrchestrator';
 
 export function WisdomNETDashboard() {
   const { 
@@ -91,64 +93,119 @@ export function WisdomNETDashboard() {
         </div>
       </header>
 
-      {/* Main Dashboard Grid */}
-      <div className="p-6 grid grid-cols-12 gap-6 h-[calc(100vh-80px)]">
-        {/* Left Sidebar - Project Tree & Memory */}
-        <div className="col-span-3 space-y-6 overflow-hidden">
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
-            <div className="flex items-center mb-4">
-              <GitBranch className="w-5 h-5 text-primary mr-2" />
-              <h3 className="font-semibold">Project Structure</h3>
-            </div>
-            <ProjectTree />
-          </Card>
-          
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
-            <div className="flex items-center mb-4">
-              <Database className="w-5 h-5 text-wisdom-memory mr-2" />
-              <h3 className="font-semibold">Memory Index</h3>
-            </div>
-            <MemoryViewer />
-          </Card>
-        </div>
+      {/* Main Dashboard */}
+      <div className="p-6 h-[calc(100vh-80px)]">
+        <Tabs defaultValue="dashboard" className="h-full">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsTrigger value="dashboard">Neural Dashboard</TabsTrigger>
+            <TabsTrigger value="orchestrator">Enterprise Orchestrator</TabsTrigger>
+            <TabsTrigger value="memory">Memory Systems</TabsTrigger>
+            <TabsTrigger value="agents">Agent Networks</TabsTrigger>
+          </TabsList>
 
-        {/* Center - Main Work Area */}
-        <div className="col-span-6 space-y-6 overflow-hidden">
-          {/* Node Graph Visualization */}
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-0 h-2/3">
-            <NodeGraph />
-          </Card>
-          
-          {/* Chat Interface */}
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/3">
-            <div className="flex items-center mb-4">
-              <MessageSquare className="w-5 h-5 text-accent mr-2" />
-              <h3 className="font-semibold">Neural Interface</h3>
-            </div>
-            <ChatInterface />
-          </Card>
-        </div>
+          <TabsContent value="dashboard" className="h-full">
+            <div className="grid grid-cols-12 gap-6 h-full">
+              {/* Left Sidebar - Project Tree & Memory */}
+              <div className="col-span-3 space-y-6 overflow-hidden">
+                <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
+                  <div className="flex items-center mb-4">
+                    <GitBranch className="w-5 h-5 text-primary mr-2" />
+                    <h3 className="font-semibold">Project Structure</h3>
+                  </div>
+                  <ProjectTree />
+                </Card>
+                
+                <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
+                  <div className="flex items-center mb-4">
+                    <Database className="w-5 h-5 text-wisdom-memory mr-2" />
+                    <h3 className="font-semibold">Memory Index</h3>
+                  </div>
+                  <MemoryViewer />
+                </Card>
+              </div>
 
-        {/* Right Sidebar - Agents & APIs */}
-        <div className="col-span-3 space-y-6 overflow-hidden">
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
-            <div className="flex items-center mb-4">
-              <Brain className="w-5 h-5 text-agent-active mr-2" />
-              <h3 className="font-semibold">Agent Network</h3>
+              {/* Center - Main Work Area */}
+              <div className="col-span-6 space-y-6 overflow-hidden">
+                {/* Node Graph Visualization */}
+                <Card className="bg-card/70 backdrop-blur-sm border-border p-0 h-2/3">
+                  <NodeGraph />
+                </Card>
+                
+                {/* Chat Interface */}
+                <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/3">
+                  <div className="flex items-center mb-4">
+                    <MessageSquare className="w-5 h-5 text-accent mr-2" />
+                    <h3 className="font-semibold">Neural Interface</h3>
+                  </div>
+                  <ChatInterface />
+                </Card>
+              </div>
+
+              {/* Right Sidebar - Agents & APIs */}
+              <div className="col-span-3 space-y-6 overflow-hidden">
+                <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
+                  <div className="flex items-center mb-4">
+                    <Brain className="w-5 h-5 text-agent-active mr-2" />
+                    <h3 className="font-semibold">Agent Network</h3>
+                  </div>
+                  <AgentPanel />
+                </Card>
+                
+                <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
+                  <div className="flex items-center mb-4">
+                    <Activity className="w-5 h-5 text-primary mr-2" />
+                    <h3 className="font-semibold">API Monitor</h3>
+                  </div>
+                  <div className="h-full overflow-auto">
+                    <APIMonitor />
+                  </div>
+                </Card>
+              </div>
             </div>
-            <AgentPanel />
-          </Card>
-          
-          <Card className="bg-card/70 backdrop-blur-sm border-border p-4 h-1/2">
-            <div className="flex items-center mb-4">
-              <Activity className="w-5 h-5 text-primary mr-2" />
-              <h3 className="font-semibold">API Monitor</h3>
+          </TabsContent>
+
+          <TabsContent value="orchestrator" className="h-full">
+            <EnterpriseOrchestrator />
+          </TabsContent>
+
+          <TabsContent value="memory" className="h-full">
+            <div className="grid grid-cols-2 gap-6 h-full">
+              <Card className="bg-card/70 backdrop-blur-sm border-border p-4">
+                <div className="flex items-center mb-4">
+                  <Database className="w-5 h-5 text-wisdom-memory mr-2" />
+                  <h3 className="font-semibold">Memory Systems</h3>
+                </div>
+                <MemoryViewer />
+              </Card>
+              <Card className="bg-card/70 backdrop-blur-sm border-border p-4">
+                <div className="flex items-center mb-4">
+                  <Activity className="w-5 h-5 text-primary mr-2" />
+                  <h3 className="font-semibold">System Metrics</h3>
+                </div>
+                <SystemMetrics />
+              </Card>
             </div>
-            <div className="h-full overflow-auto">
-              <APIMonitor />
+          </TabsContent>
+
+          <TabsContent value="agents" className="h-full">
+            <div className="grid grid-cols-2 gap-6 h-full">
+              <Card className="bg-card/70 backdrop-blur-sm border-border p-4">
+                <div className="flex items-center mb-4">
+                  <Brain className="w-5 h-5 text-agent-active mr-2" />
+                  <h3 className="font-semibold">Agent Panel</h3>
+                </div>
+                <AgentPanel />
+              </Card>
+              <Card className="bg-card/70 backdrop-blur-sm border-border p-4">
+                <div className="flex items-center mb-4">
+                  <Network className="w-5 h-5 text-primary mr-2" />
+                  <h3 className="font-semibold">Node Graph</h3>
+                </div>
+                <NodeGraph />
+              </Card>
             </div>
-          </Card>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Neural Background Effects */}
