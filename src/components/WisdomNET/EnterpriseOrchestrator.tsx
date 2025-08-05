@@ -250,7 +250,8 @@ const EnterpriseOrchestrator: React.FC = () => {
     const newNodes = new Map<string, EnterpriseNode>();
     const newConnections = new Map<string, EnterpriseConnection>();
 
-    // Create nodes
+    // Create nodes and store them in order
+    const nodeArray: EnterpriseNode[] = [];
     config.nodes.forEach((nodeConfig, index) => {
       const nodeType = nodeConfig.type;
       const nodeConfigData = getNodeConfig(nodeType);
@@ -268,12 +269,18 @@ const EnterpriseOrchestrator: React.FC = () => {
         metadata: {}
       };
       newNodes.set(node.id, node);
+      nodeArray.push(node);
     });
 
     // Create connections
     config.connections.forEach((connConfig, index) => {
-      const sourceNode = Array.from(newNodes.values())[connConfig.source];
-      const targetNode = Array.from(newNodes.values())[connConfig.target];
+      const sourceNode = nodeArray[connConfig.source];
+      const targetNode = nodeArray[connConfig.target];
+      
+      if (!sourceNode || !targetNode) {
+        console.error(`Invalid connection indices: source=${connConfig.source}, target=${connConfig.target}`);
+        return;
+      }
       
       const connection: EnterpriseConnection = {
         id: `connection-${index}`,
