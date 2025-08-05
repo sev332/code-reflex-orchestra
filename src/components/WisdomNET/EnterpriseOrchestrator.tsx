@@ -241,7 +241,12 @@ const EnterpriseOrchestrator: React.FC = () => {
         ]
       }
     };
-    return templates[template];
+    return templates[template] || {
+      name: 'Custom Template',
+      description: 'Custom orchestration template',
+      nodes: [],
+      connections: []
+    };
   };
 
   // Load template
