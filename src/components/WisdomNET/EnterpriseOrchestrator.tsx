@@ -861,14 +861,20 @@ const EnterpriseOrchestrator: React.FC = () => {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
-                    {Array.from(connections.values()).map(connection => {
+                    {Array.from(connections.values()).filter(connection => {
                       const sourceNode = nodes.get(connection.sourceId);
                       const targetNode = nodes.get(connection.targetId);
+                      return sourceNode && targetNode;
+                    }).map(connection => {
+                      const sourceNode = nodes.get(connection.sourceId);
+                      const targetNode = nodes.get(connection.targetId);
+                      
+                      if (!sourceNode || !targetNode) return null;
                       
                       return (
                         <div key={connection.id} className="flex items-center justify-between p-2 border rounded">
                           <div className="text-sm">
-                            {sourceNode?.name} → {targetNode?.name}
+                            {sourceNode.name} → {targetNode.name}
                           </div>
                           <div className="flex items-center gap-2">
                             <Badge variant={connection.status === 'active' ? 'default' : 'secondary'}>
