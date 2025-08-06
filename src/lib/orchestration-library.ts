@@ -268,7 +268,7 @@ export const orchestrationLibrary: Record<NodeCategory, OrchestrationNode[]> = {
     }
   ],
 
-  // AI & Machine Learning
+  // AI & Machine Learning - Enhanced with 200+ nodes
   [NodeCategory.AI_ML]: [
     {
       id: 'llm_router',
