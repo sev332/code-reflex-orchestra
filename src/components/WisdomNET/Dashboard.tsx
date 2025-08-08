@@ -1,6 +1,6 @@
 // WisdomNET Main Dashboard - The AGI Command Center
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,11 +27,25 @@ export function WisdomNETDashboard() {
     selectedNode 
   } = useWisdomNET();
 
+  const [tab, setTab] = useState('dashboard');
   useEffect(() => {
     if (!isInitialized) {
       initialize();
     }
   }, [isInitialized, initialize]);
+
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const next = (e as any).detail?.tab;
+      if (next) setTab(next);
+    };
+    // @ts-ignore - CustomEvent typing on window listener
+    window.addEventListener('wisdomnet:navigate-tab', handler as any);
+    return () => {
+      // @ts-ignore
+      window.removeEventListener('wisdomnet:navigate-tab', handler as any);
+    };
+  }, []);
 
   if (!isInitialized) {
     return (
@@ -96,7 +110,7 @@ export function WisdomNETDashboard() {
 
       {/* Main Dashboard */}
       <div className="p-6 h-[calc(100vh-80px)]">
-        <Tabs defaultValue="dashboard" className="h-full">
+        <Tabs value={tab} onValueChange={setTab} className="h-full">
           <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="dashboard">Neural Dashboard</TabsTrigger>
             <TabsTrigger value="orchestrator">Enterprise Orchestrator</TabsTrigger>

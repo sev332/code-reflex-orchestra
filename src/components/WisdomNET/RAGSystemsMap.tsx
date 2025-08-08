@@ -11,6 +11,7 @@ import {
   Connection,
   Edge,
   Node,
+  ReactFlowInstance,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -66,6 +67,30 @@ export default function RAGSystemsMap() {
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<Node | null>(null);
+
+  const [rfInstance, setRfInstance] = useState<ReactFlowInstance | null>(null);
+
+  const focusNode = useCallback((nodeId: string) => {
+    const n = nodes.find((n) => n.id === nodeId);
+    if (n && rfInstance) {
+      const x = n.position.x + (((n as any).width) || 0) / 2;
+      const y = n.position.y + (((n as any).height) || 0) / 2;
+      rfInstance.setCenter(x, y, { zoom: 1.2, duration: 400 });
+    }
+  }, [nodes, rfInstance]);
+
+  const tracePath = useCallback((edgeIds: string[]) => {
+    setEdges((eds) =>
+      eds.map((e) =>
+        edgeIds.includes(e.id)
+          ? { ...e, animated: true, style: { ...(e.style || {}), strokeWidth: 2.5, opacity: 1 } }
+          : { ...e, style: { ...(e.style || {}), opacity: 0.35 } }
+      )
+    );
+    setTimeout(() => {
+      setEdges((eds) => eds.map((e) => ({ ...e, style: undefined })));
+    }, 1800);
+  }, [setEdges]);
 
   const onConnect = useCallback((connection: Connection) => setEdges((eds) => addEdge({ ...connection, animated: true }, eds)), [setEdges]);
 
@@ -124,6 +149,7 @@ export default function RAGSystemsMap() {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onNodeClick={handleNodeClick}
+              onInit={setRfInstance}
               fitView
               attributionPosition="top-right"
               style={{ backgroundColor: "transparent" }}
@@ -135,6 +161,25 @@ export default function RAGSystemsMap() {
           </div>
 
           <div className="w-80 shrink-0 space-y-3">
+            <Card className="p-3">
+              <div className="flex items-center gap-2 mb-2"><Network className="h-4 w-4 text-primary" /><span className="font-medium">Navigate & Trace</span></div>
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="outline" size="sm" onClick={() => focusNode('user')}>User</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('chaining')}>Chain</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('agents')}>Agents</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('deepthink')}>Deep</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('dtp')}>DTP</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('memory')}>Memory</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('tools')}>Tools</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('logging')}>Trace</Button>
+                <Button variant="outline" size="sm" onClick={() => focusNode('llm')}>LLM</Button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Button size="sm" variant="secondary" onClick={() => tracePath(['e-user-chain','e-chain-agents','e-agents-deep','e-deep-dtp','e-dtp-llm'])}>User → LLM</Button>
+                <Button size="sm" variant="secondary" onClick={() => tracePath(['e-agents-deep','e-deep-memory','e-memory-llm'])}>Agents ↔ Memory</Button>
+                <Button size="sm" variant="secondary" onClick={() => tracePath(['e-agents-tools','e-tools-llm'])}>Tools Augment</Button>
+              </div>
+            </Card>
             <Card className="p-3">
               <div className="flex items-center gap-2 mb-2"><Activity className="h-4 w-4 text-primary" /><span className="font-medium">Live Throughput</span></div>
               <ChartContainer config={chartConfig} className="h-32 w-full">
@@ -195,9 +240,9 @@ export default function RAGSystemsMap() {
             <div>
               <h4 className="text-sm font-medium mb-1">Key links</h4>
               <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                <li><a className="underline underline-offset-2" href="#" aria-label="Open orchestration library">Orchestration Library</a></li>
-                <li><a className="underline underline-offset-2" href="#" aria-label="Open templates">Enterprise Templates</a></li>
-                <li><a className="underline underline-offset-2" href="#" aria-label="Open patterns">Architectural Patterns</a></li>
+                <li><a className="underline underline-offset-2" href="#" aria-label="Open orchestration library" onClick={() => { window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'orchestrator' } })); setOpen(false); }}>Orchestration Library</a></li>
+                <li><a className="underline underline-offset-2" href="#" aria-label="Open templates" onClick={() => { window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'orchestrator' } })); setOpen(false); }}>Enterprise Templates</a></li>
+                <li><a className="underline underline-offset-2" href="#" aria-label="Open patterns" onClick={() => { window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'rag-map' } })); }}>Architectural Patterns</a></li>
               </ul>
             </div>
 
