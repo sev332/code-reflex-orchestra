@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import {
   ReactFlow,
@@ -107,6 +107,34 @@ export default function RAGSystemsMap() {
     })),
   [systemMetrics]);
 
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const detail: any = (e as any).detail || {};
+      if (detail?.nodeId) {
+        focusNode(detail.nodeId);
+      }
+      if (Array.isArray(detail?.trace)) {
+        tracePath(detail.trace);
+      }
+    };
+    // @ts-ignore - Custom event typing
+    window.addEventListener('wisdomnet:focus-node', handler as any);
+    return () => {
+      // @ts-ignore
+      window.removeEventListener('wisdomnet:focus-node', handler as any);
+    };
+  }, [focusNode, tracePath]);
+
+  const onEdgeClick = useCallback((_: React.MouseEvent, edge: Edge) => {
+    tracePath([edge.id]);
+    const target = nodes.find((n) => n.id === edge.target);
+    if (target) {
+      setSelected(target);
+      setOpen(true);
+      focusNode(target.id);
+    }
+  }, [nodes, tracePath, focusNode]);
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -130,12 +158,12 @@ export default function RAGSystemsMap() {
           <div className="flex items-center gap-2">
             <Network className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">RAG Systems Map</h2>
-            <Badge variant="outline" className="ml-2">{systemMetrics?.activeAgents ?? 0} agents</Badge>
-            <Badge variant="outline">{systemMetrics?.memoryUsage ?? 0} memory entries</Badge>
+            <Badge variant="outline" className="ml-2 cursor-pointer" title="View agents" onClick={() => focusNode('agents')}>{systemMetrics?.activeAgents ?? 0} agents</Badge>
+            <Badge variant="outline" className="cursor-pointer" title="View memory" onClick={() => focusNode('memory')}>{systemMetrics?.memoryUsage ?? 0} memory entries</Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" size="sm"><GitBranch className="h-4 w-4 mr-1" /> Snapshot</Button>
-            <Button variant="outline" size="sm"><Layers className="h-4 w-4 mr-1" /> Templates</Button>
+            <Button variant="secondary" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'orchestrator' } })); }}><GitBranch className="h-4 w-4 mr-1" /> Snapshot</Button>
+            <Button variant="outline" size="sm" onClick={() => { window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'orchestrator' } })); }}><Layers className="h-4 w-4 mr-1" /> Templates</Button>
           </div>
         </div>
         <Separator className="mb-3" />
@@ -149,6 +177,7 @@ export default function RAGSystemsMap() {
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onNodeClick={handleNodeClick}
+              onEdgeClick={onEdgeClick}
               onInit={setRfInstance}
               fitView
               attributionPosition="top-right"

@@ -92,15 +92,23 @@ export function WisdomNETDashboard() {
           </div>
           
           <div className="flex items-center space-x-4">
-            <Badge variant="outline" className="bg-gradient-neural">
+            <Badge variant="outline" className="bg-gradient-neural cursor-pointer" role="button" onClick={() => {
+              window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'agents' } }));
+            }}>
               <Activity className="w-3 h-3 mr-1" />
               {systemMetrics.activeAgents} Active Agents
             </Badge>
-            <Badge variant="outline" className="bg-gradient-data-flow">
+            <Badge variant="outline" className="bg-gradient-data-flow cursor-pointer" role="button" onClick={() => {
+              window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'memory' } }));
+              setTimeout(() => window.dispatchEvent(new CustomEvent('wisdomnet:focus-node', { detail: { nodeId: 'memory' } })), 50);
+            }}>
               <Database className="w-3 h-3 mr-1" />
               {systemMetrics.memoryUsage} Memory Entries
             </Badge>
-            <Badge variant="outline" className="bg-gradient-electric">
+            <Badge variant="outline" className="bg-gradient-electric cursor-pointer" role="button" onClick={() => {
+              window.dispatchEvent(new CustomEvent('wisdomnet:navigate-tab', { detail: { tab: 'rag-map' } }));
+              setTimeout(() => window.dispatchEvent(new CustomEvent('wisdomnet:focus-node', { detail: { nodeId: 'chaining', trace: ['e-chain-logging'] } })), 100);
+            }}>
               <GitBranch className="w-3 h-3 mr-1" />
               {tasks.length} Tasks
             </Badge>
