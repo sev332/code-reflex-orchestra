@@ -15,6 +15,7 @@ import { MemoryViewer } from './MemoryViewer';
 import { SystemMetrics } from './SystemMetrics';
 import { APIMonitor } from './APIMonitor';
 import EnterpriseOrchestrator from './EnterpriseOrchestrator';
+import RAGSystemsMap from './RAGSystemsMap';
 
 export function WisdomNETDashboard() {
   const { 
@@ -96,11 +97,12 @@ export function WisdomNETDashboard() {
       {/* Main Dashboard */}
       <div className="p-6 h-[calc(100vh-80px)]">
         <Tabs defaultValue="dashboard" className="h-full">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
+          <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="dashboard">Neural Dashboard</TabsTrigger>
             <TabsTrigger value="orchestrator">Enterprise Orchestrator</TabsTrigger>
             <TabsTrigger value="memory">Memory Systems</TabsTrigger>
             <TabsTrigger value="agents">Agent Networks</TabsTrigger>
+            <TabsTrigger value="rag-map">RAG Systems Map</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="h-full">
@@ -204,6 +206,10 @@ export function WisdomNETDashboard() {
                 <NodeGraph />
               </Card>
             </div>
+          </TabsContent>
+
+          <TabsContent value="rag-map" className="h-full">
+            <RAGSystemsMap />
           </TabsContent>
         </Tabs>
       </div>
