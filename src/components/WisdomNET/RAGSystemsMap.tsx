@@ -223,7 +223,9 @@ export default function RAGSystemsMap() {
                   </AreaChart>
                 </ResponsiveContainer>
               </ChartContainer>
-              <ChartLegend content={<ChartLegendContent />} className="mt-2" />
+              <ChartContainer config={chartConfig}>
+                <ChartLegend content={<ChartLegendContent />} className="mt-2" />
+              </ChartContainer>
             </Card>
 
             <Card className="p-3">
