@@ -18,6 +18,7 @@ import {
   Cpu
 } from 'lucide-react';
 import type { ChatMessage } from '@/contexts/WisdomNETContext';
+import { useWisdomLinking } from '@/hooks/useWisdomLinking';
 
 export function ChatInterface() {
   const { chatHistory, sendChatMessage, agents } = useWisdomNET();
@@ -32,6 +33,8 @@ export function ChatInterface() {
   useEffect(() => {
     scrollToBottom();
   }, [chatHistory]);
+
+  const { gotoRag, gotoAgents, gotoMemory } = useWisdomLinking();
 
   const handleSend = () => {
     if (!input.trim()) return;
@@ -207,6 +210,13 @@ export function ChatInterface() {
             </Button>
           ))}
         </div>
+      </div>
+
+      {/* Deep Links */}
+      <div className="flex items-center gap-2 justify-end pb-2">
+        <Button variant="secondary" size="sm" className="h-6 px-2 text-xs" onClick={() => gotoRag('chat_hub', ['e-chat','e-memory-link'])}>RAG Map</Button>
+        <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={() => gotoAgents('chat_orchestrator')}>Agent Graph</Button>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => gotoMemory('chat_context')}>Memory</Button>
       </div>
 
       {/* Input Area */}

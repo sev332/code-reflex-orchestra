@@ -4,6 +4,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { useWisdomNET } from '@/contexts/WisdomNETContext';
 import { 
   Activity, 
@@ -15,10 +16,12 @@ import {
   TrendingUp,
   TrendingDown,
   Minus
-} from 'lucide-react';
+ } from 'lucide-react';
+import { useWisdomLinking } from '@/hooks/useWisdomLinking';
 
 export function SystemMetrics() {
   const { systemMetrics, agents, tasks, activities } = useWisdomNET();
+  const { gotoRag, gotoAgents, gotoMemory } = useWisdomLinking();
 
   const formatUptime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -101,6 +104,13 @@ export function SystemMetrics() {
         </Badge>
       </div>
 
+      {/* Deep Links */}
+      <div className="flex items-center gap-2 justify-end">
+        <Button variant="secondary" size="sm" className="h-6 px-2 text-xs" onClick={() => gotoAgents()}>Agents</Button>
+        <Button variant="outline" size="sm" className="h-6 px-2 text-xs" onClick={() => gotoRag('metrics_hub')}>RAG Map</Button>
+        <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => gotoMemory()}>Memory</Button>
+      </div>
+
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {metrics.map((metric) => (
@@ -176,7 +186,7 @@ export function SystemMetrics() {
           {recentActivities.map((activity) => (
             <div 
               key={activity.id} 
-              className="flex items-center space-x-3 p-2 bg-muted/20 rounded-lg"
+              className="flex items-center space-x-3 p-2 bg-muted/20 rounded-lg cursor-pointer hover-scale" onClick={() => { if ((activity.target || "").toLowerCase().includes("memory")) { gotoMemory(activity.target); } else { gotoAgents(activity.agent); } }} role="button"
             >
               <Badge 
                 variant="outline" 
