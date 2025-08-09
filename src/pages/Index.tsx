@@ -4,6 +4,7 @@ import React from 'react';
 import { WisdomNETProvider } from '@/contexts/WisdomNETContext';
 import { WisdomNETDashboard } from '@/components/WisdomNET/Dashboard';
 
+
 const Index = () => {
   return (
     <WisdomNETProvider>

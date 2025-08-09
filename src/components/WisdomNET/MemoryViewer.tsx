@@ -18,6 +18,7 @@ import {
   Filter,
   Download
 } from 'lucide-react';
+import { useWisdomLinking } from '@/hooks/useWisdomLinking';
 
 interface MemoryEntry {
   id: string;
@@ -79,6 +80,7 @@ export function MemoryViewer() {
   const [selectedType, setSelectedType] = useState<string>('all');
   const [memories] = useState<MemoryEntry[]>(mockMemoryEntries);
   const [isSearching, setIsSearching] = useState(false);
+  const { gotoRag, gotoAgents } = useWisdomLinking();
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
@@ -256,6 +258,26 @@ export function MemoryViewer() {
                 value={memory.score * 100} 
                 className="h-1 bg-muted/30"
               />
+            </div>
+
+            {/* Cross-links */}
+            <div className="mt-2 flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => gotoRag('memory', ['e-deep-memory','e-memory-llm'])}
+              >
+                RAG Path
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => gotoAgents('memory_hub')}
+              >
+                Agent Graph
+              </Button>
             </div>
           </Card>
         ))}

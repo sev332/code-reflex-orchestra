@@ -195,6 +195,22 @@ export function NodeGraph() {
   const [collapsedBranches, setCollapsedBranches] = useState<Set<string>>(new Set());
   const svgRef = useRef<SVGSVGElement>(null);
 
+  // Cross-panel deep linking: highlight a node when a global focus event is dispatched
+  useEffect(() => {
+    const handler = (e: any) => {
+      const detail = (e as any).detail || {};
+      if (detail?.nodeId) {
+        setSelectedNode(detail.nodeId);
+      }
+    };
+    // @ts-ignore - CustomEvent typing on window
+    window.addEventListener('wisdomnet:focus-node', handler as any);
+    return () => {
+      // @ts-ignore
+      window.removeEventListener('wisdomnet:focus-node', handler as any);
+    };
+  }, []);
+
   const toggleBranch = useCallback((nodeId: string) => {
     setCollapsedBranches(prev => {
       const newSet = new Set(prev);

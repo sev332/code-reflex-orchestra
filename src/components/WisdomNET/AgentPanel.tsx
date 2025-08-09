@@ -19,6 +19,7 @@ import {
   Pause,
   MoreVertical
 } from 'lucide-react';
+import { useWisdomLinking } from '@/hooks/useWisdomLinking';
 
 const agentIcons = {
   'orchestrator': Brain,
@@ -33,6 +34,7 @@ const agentIcons = {
 
 export function AgentPanel() {
   const { agents, updateAgentStatus, tasks } = useWisdomNET();
+  const { gotoRag, gotoAgents } = useWisdomLinking();
 
   const getAgentIcon = (role: string) => {
     const IconComponent = agentIcons[role as keyof typeof agentIcons] || Brain;
@@ -64,6 +66,21 @@ export function AgentPanel() {
       completed: completedTasks.length,
       percentage: agentTasks.length > 0 ? (completedTasks.length / agentTasks.length) * 100 : 0
     };
+  };
+
+  const roleToGraphNode = (role: string) => {
+    switch (role) {
+      case 'orchestrator':
+        return 'orchestrator';
+      case 'planner':
+        return 'planner';
+      case 'engineer':
+        return 'engineer';
+      case 'memory-keeper':
+        return 'memory_hub';
+      default:
+        return 'multi_agent';
+    }
   };
 
   const handleAgentAction = (agentId: string, action: 'pause' | 'resume' | 'configure') => {
@@ -194,6 +211,31 @@ export function AgentPanel() {
               >
                 P{agent.priority}
               </Badge>
+            </div>
+
+            <div className="mt-2 flex items-center gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => {
+                  const targetNode = agent.role.includes('memory') ? 'memory' : 'agents';
+                  const trace = agent.role.includes('memory')
+                    ? ['e-agents-deep','e-deep-memory']
+                    : ['e-chain-agents'];
+                  gotoRag(targetNode, trace);
+                }}
+              >
+                RAG Links
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs"
+                onClick={() => gotoAgents(roleToGraphNode(agent.role))}
+              >
+                Agent Graph
+              </Button>
             </div>
 
             {/* Neural Activity Indicator */}
