@@ -14,7 +14,394 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      agents: {
+        Row: {
+          capabilities: string[]
+          configuration: Json | null
+          created_at: string
+          current_task_id: string | null
+          id: string
+          last_active_at: string | null
+          metadata: Json | null
+          name: string
+          performance_score: number | null
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          capabilities?: string[]
+          configuration?: Json | null
+          created_at?: string
+          current_task_id?: string | null
+          id?: string
+          last_active_at?: string | null
+          metadata?: Json | null
+          name: string
+          performance_score?: number | null
+          role: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          capabilities?: string[]
+          configuration?: Json | null
+          created_at?: string
+          current_task_id?: string | null
+          id?: string
+          last_active_at?: string | null
+          metadata?: Json | null
+          name?: string
+          performance_score?: number | null
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          agent_id: string | null
+          context: Json | null
+          created_at: string
+          human_participant_id: string | null
+          id: string
+          is_active: boolean | null
+          session_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          context?: Json | null
+          created_at?: string
+          human_participant_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          context?: Json | null
+          created_at?: string
+          human_participant_id?: string | null
+          id?: string
+          is_active?: boolean | null
+          session_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hil_interventions: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          human_input: string | null
+          id: string
+          intervention_type: string
+          reason: string
+          resolution: string | null
+          resolved_at: string | null
+          status: string | null
+          task_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          human_input?: string | null
+          id?: string
+          intervention_type: string
+          reason: string
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          task_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          human_input?: string | null
+          id?: string
+          intervention_type?: string
+          reason?: string
+          resolution?: string | null
+          resolved_at?: string | null
+          status?: string | null
+          task_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hil_interventions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hil_interventions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      memory_entries: {
+        Row: {
+          access_count: number | null
+          content: string
+          created_at: string
+          entry_type: string
+          id: string
+          importance_score: number | null
+          last_accessed_at: string | null
+          metadata: Json | null
+          source: string
+          source_id: string | null
+          tags: string[] | null
+        }
+        Insert: {
+          access_count?: number | null
+          content: string
+          created_at?: string
+          entry_type?: string
+          id?: string
+          importance_score?: number | null
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          source: string
+          source_id?: string | null
+          tags?: string[] | null
+        }
+        Update: {
+          access_count?: number | null
+          content?: string
+          created_at?: string
+          entry_type?: string
+          id?: string
+          importance_score?: number | null
+          last_accessed_at?: string | null
+          metadata?: Json | null
+          source?: string
+          source_id?: string | null
+          tags?: string[] | null
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          message_type: string | null
+          metadata: Json | null
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_type?: string | null
+          metadata?: Json | null
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          message_type?: string | null
+          metadata?: Json | null
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prompt_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          name: string
+          performance_metrics: Json | null
+          template: string
+          updated_at: string
+          variables: string[] | null
+          version: number | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          performance_metrics?: Json | null
+          template: string
+          updated_at?: string
+          variables?: string[] | null
+          version?: number | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          performance_metrics?: Json | null
+          template?: string
+          updated_at?: string
+          variables?: string[] | null
+          version?: number | null
+        }
+        Relationships: []
+      }
+      system_events: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          data: Json | null
+          description: string | null
+          event_type: string
+          id: string
+          severity: string | null
+          task_id: string | null
+          title: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          data?: Json | null
+          description?: string | null
+          event_type: string
+          id?: string
+          severity?: string | null
+          task_id?: string | null
+          title: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          data?: Json | null
+          description?: string | null
+          event_type?: string
+          id?: string
+          severity?: string | null
+          task_id?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_events_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "system_events_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tasks: {
+        Row: {
+          actual_duration_ms: number | null
+          assigned_agent_id: string | null
+          completed_at: string | null
+          created_at: string
+          dependencies: string[] | null
+          description: string | null
+          estimated_duration_ms: number | null
+          id: string
+          inputs: Json | null
+          outputs: Json | null
+          parent_task_id: string | null
+          priority: number | null
+          progress: number | null
+          started_at: string | null
+          status: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          actual_duration_ms?: number | null
+          assigned_agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          estimated_duration_ms?: number | null
+          id?: string
+          inputs?: Json | null
+          outputs?: Json | null
+          parent_task_id?: string | null
+          priority?: number | null
+          progress?: number | null
+          started_at?: string | null
+          status?: string
+          title: string
+          type: string
+          updated_at?: string
+        }
+        Update: {
+          actual_duration_ms?: number | null
+          assigned_agent_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          dependencies?: string[] | null
+          description?: string | null
+          estimated_duration_ms?: number | null
+          id?: string
+          inputs?: Json | null
+          outputs?: Json | null
+          parent_task_id?: string | null
+          priority?: number | null
+          progress?: number | null
+          started_at?: string | null
+          status?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tasks_assigned_agent_id_fkey"
+            columns: ["assigned_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
