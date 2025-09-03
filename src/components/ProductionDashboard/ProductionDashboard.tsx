@@ -18,6 +18,11 @@ import { useProductionWisdomNET } from '@/hooks/useProductionWisdomNET';
 import { HILControlCenter } from './HILControlCenter';
 import { AdvancedMemoryViewer } from './AdvancedMemoryViewer';
 import { ProductionSystemMap } from './ProductionSystemMap';
+import { VectorMemorySystem } from './VectorMemorySystem';
+import { AIModelOrchestrator } from './AIModelOrchestrator';
+import { RealtimeMonitor } from './RealtimeMonitor';
+import { AdvancedAnalytics } from './AdvancedAnalytics';
+import { IntegrationTesting } from './IntegrationTesting';
 import InfiniTree from '@/components/InfiniTree';
 import { toast } from 'sonner';
 
@@ -150,29 +155,41 @@ export function ProductionDashboard() {
 
       <div className="container mx-auto px-6 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-white/5 border border-white/10">
+          <TabsList className="grid w-full grid-cols-9 bg-white/5 border border-white/10">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white/10">
-              <Activity className="w-4 h-4 mr-2" />
+              <Activity className="w-3 h-3 mr-1" />
               Overview
             </TabsTrigger>
             <TabsTrigger value="hil" className="data-[state=active]:bg-white/10">
-              <Eye className="w-4 h-4 mr-2" />
-              HIL Control
+              <Eye className="w-3 h-3 mr-1" />
+              HIL
             </TabsTrigger>
-            <TabsTrigger value="agents" className="data-[state=active]:bg-white/10">
-              <Users className="w-4 h-4 mr-2" />
-              Agents
+            <TabsTrigger value="ai-models" className="data-[state=active]:bg-white/10">
+              <Brain className="w-3 h-3 mr-1" />
+              AI Models
             </TabsTrigger>
-            <TabsTrigger value="memory" className="data-[state=active]:bg-white/10">
-              <Database className="w-4 h-4 mr-2" />
-              Memory
+            <TabsTrigger value="vector-memory" className="data-[state=active]:bg-white/10">
+              <Database className="w-3 h-3 mr-1" />
+              Vector Memory
+            </TabsTrigger>
+            <TabsTrigger value="realtime" className="data-[state=active]:bg-white/10">
+              <Zap className="w-3 h-3 mr-1" />
+              Live Monitor
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="testing" className="data-[state=active]:bg-white/10">
+              <Settings className="w-3 h-3 mr-1" />
+              Testing
             </TabsTrigger>
             <TabsTrigger value="system-map" className="data-[state=active]:bg-white/10">
-              <TrendingUp className="w-4 h-4 mr-2" />
+              <Users className="w-3 h-3 mr-1" />
               System Map
             </TabsTrigger>
             <TabsTrigger value="3d-view" className="data-[state=active]:bg-white/10">
-              <Zap className="w-4 h-4 mr-2" />
+              <Activity className="w-3 h-3 mr-1" />
               3D View
             </TabsTrigger>
           </TabsList>
@@ -342,16 +359,24 @@ export function ProductionDashboard() {
             />
           </TabsContent>
 
-          <TabsContent value="agents">
-            <ProductionSystemMap
-              agents={agents}
-              tasks={tasks}
-              metrics={metrics}
-            />
+          <TabsContent value="ai-models">
+            <AIModelOrchestrator />
           </TabsContent>
 
-          <TabsContent value="memory">
-            <AdvancedMemoryViewer />
+          <TabsContent value="vector-memory">
+            <VectorMemorySystem />
+          </TabsContent>
+
+          <TabsContent value="realtime">
+            <RealtimeMonitor />
+          </TabsContent>
+
+          <TabsContent value="analytics">
+            <AdvancedAnalytics />
+          </TabsContent>
+
+          <TabsContent value="testing">
+            <IntegrationTesting />
           </TabsContent>
 
           <TabsContent value="system-map">
