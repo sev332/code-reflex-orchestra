@@ -23,6 +23,11 @@ import { AIModelOrchestrator } from './AIModelOrchestrator';
 import { RealtimeMonitor } from './RealtimeMonitor';
 import { AdvancedAnalytics } from './AdvancedAnalytics';
 import { IntegrationTesting } from './IntegrationTesting';
+import { AutonomousAgentSwarm } from './AutonomousAgentSwarm';
+import { MultiModalProcessor } from './MultiModalProcessor';
+import { AdvancedReasoningEngine } from './AdvancedReasoningEngine';
+import { DistributedOrchestrator } from './DistributedOrchestrator';
+import { SelfLearningSystem } from './SelfLearningSystem';
 import InfiniTree from '@/components/InfiniTree';
 import { toast } from 'sonner';
 
