@@ -28,6 +28,9 @@ import { MultiModalProcessor } from './MultiModalProcessor';
 import { AdvancedReasoningEngine } from './AdvancedReasoningEngine';
 import { DistributedOrchestrator } from './DistributedOrchestrator';
 import { SelfLearningSystem } from './SelfLearningSystem';
+import { ConsciousnessEmergence } from '@/components/AGI/ConsciousnessEmergence';
+import { QuantumCoherenceEngine } from '@/components/AGI/QuantumCoherenceEngine';
+import { UniversalProblemSolver } from '@/components/AGI/UniversalProblemSolver';
 import InfiniTree from '@/components/InfiniTree';
 import { toast } from 'sonner';
 
@@ -160,7 +163,7 @@ export function ProductionDashboard() {
 
       <div className="container mx-auto px-6 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9 bg-white/5 border border-white/10">
+          <TabsList className="grid w-full grid-cols-12 bg-white/5 border border-white/10">
             <TabsTrigger value="overview" className="data-[state=active]:bg-white/10">
               <Activity className="w-3 h-3 mr-1" />
               Overview
@@ -196,6 +199,18 @@ export function ProductionDashboard() {
             <TabsTrigger value="3d-view" className="data-[state=active]:bg-white/10">
               <Activity className="w-3 h-3 mr-1" />
               3D View
+            </TabsTrigger>
+            <TabsTrigger value="consciousness" className="data-[state=active]:bg-white/10">
+              <Brain className="w-3 h-3 mr-1" />
+              Consciousness
+            </TabsTrigger>
+            <TabsTrigger value="quantum" className="data-[state=active]:bg-white/10">
+              <Zap className="w-3 h-3 mr-1" />
+              Quantum
+            </TabsTrigger>
+            <TabsTrigger value="universal-solver" className="data-[state=active]:bg-white/10">
+              <Settings className="w-3 h-3 mr-1" />
+              Universal
             </TabsTrigger>
           </TabsList>
 
@@ -404,6 +419,18 @@ export function ProductionDashboard() {
                 <InfiniTree />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="consciousness">
+            <ConsciousnessEmergence />
+          </TabsContent>
+
+          <TabsContent value="quantum">
+            <QuantumCoherenceEngine />
+          </TabsContent>
+
+          <TabsContent value="universal-solver">
+            <UniversalProblemSolver />
           </TabsContent>
         </Tabs>
       </div>

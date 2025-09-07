@@ -5,6 +5,8 @@ import { WisdomNETDashboard } from "@/components/WisdomNET/Dashboard";
 import { ProductionDashboard } from "@/components/ProductionDashboard/ProductionDashboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LeftToolbar } from "@/components/ui/left-toolbar";
+import { RightToolbar } from "@/components/ui/right-toolbar";
 import { Zap, Brain, Settings } from "lucide-react";
 
 const Index = () => {
@@ -45,11 +47,20 @@ const Index = () => {
           </Button>
         </div>
 
-        {dashboardMode === 'production' ? (
-          <ProductionDashboard />
-        ) : (
-          <WisdomNETDashboard />
-        )}
+        {/* Left Toolbar */}
+        <LeftToolbar />
+        
+        {/* Right Toolbar */}
+        <RightToolbar />
+
+        {/* Main Content with padding for toolbars */}
+        <div className="pl-16 pr-16">
+          {dashboardMode === 'production' ? (
+            <ProductionDashboard />
+          ) : (
+            <WisdomNETDashboard />
+          )}
+        </div>
       </div>
     </WisdomNETProvider>
   );
