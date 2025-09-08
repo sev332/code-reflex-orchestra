@@ -59,6 +59,125 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_context_memory: {
+        Row: {
+          access_frequency: number
+          content: Json
+          context_type: string
+          created_at: string
+          id: string
+          importance: number
+          last_accessed: string
+          related_memories: string[] | null
+          updated_at: string
+          validation_status: string
+        }
+        Insert: {
+          access_frequency?: number
+          content: Json
+          context_type: string
+          created_at?: string
+          id?: string
+          importance?: number
+          last_accessed?: string
+          related_memories?: string[] | null
+          updated_at?: string
+          validation_status?: string
+        }
+        Update: {
+          access_frequency?: number
+          content?: Json
+          context_type?: string
+          created_at?: string
+          id?: string
+          importance?: number
+          last_accessed?: string
+          related_memories?: string[] | null
+          updated_at?: string
+          validation_status?: string
+        }
+        Relationships: []
+      }
+      ai_self_audits: {
+        Row: {
+          context_efficiency: number
+          created_at: string
+          id: string
+          improvement_suggestions: string[] | null
+          metrics: Json | null
+          theory_success_rate: number
+          validation_accuracy: number
+        }
+        Insert: {
+          context_efficiency: number
+          created_at?: string
+          id?: string
+          improvement_suggestions?: string[] | null
+          metrics?: Json | null
+          theory_success_rate: number
+          validation_accuracy: number
+        }
+        Update: {
+          context_efficiency?: number
+          created_at?: string
+          id?: string
+          improvement_suggestions?: string[] | null
+          metrics?: Json | null
+          theory_success_rate?: number
+          validation_accuracy?: number
+        }
+        Relationships: []
+      }
+      background_agents: {
+        Row: {
+          accuracy_rate: number | null
+          avg_processing_time: number | null
+          capabilities: string[]
+          created_at: string
+          current_task_id: string | null
+          id: string
+          name: string
+          purpose: string
+          status: string
+          theories_validated: number | null
+          updated_at: string
+        }
+        Insert: {
+          accuracy_rate?: number | null
+          avg_processing_time?: number | null
+          capabilities?: string[]
+          created_at?: string
+          current_task_id?: string | null
+          id?: string
+          name: string
+          purpose: string
+          status?: string
+          theories_validated?: number | null
+          updated_at?: string
+        }
+        Update: {
+          accuracy_rate?: number | null
+          avg_processing_time?: number | null
+          capabilities?: string[]
+          created_at?: string
+          current_task_id?: string | null
+          id?: string
+          name?: string
+          purpose?: string
+          status?: string
+          theories_validated?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "background_agents_current_task_id_fkey"
+            columns: ["current_task_id"]
+            isOneToOne: false
+            referencedRelation: "theory_validations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conversations: {
         Row: {
           agent_id: string | null
@@ -401,6 +520,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      theory_validations: {
+        Row: {
+          claims: string[]
+          completed_at: string | null
+          confidence_score: number | null
+          created_at: string
+          evidence: Json | null
+          id: string
+          mathematical_expressions: string[] | null
+          priority: number
+          required_sources: string[] | null
+          sources: string[] | null
+          status: string
+          theory: string
+          updated_at: string
+          validation_methods: string[]
+          validation_results: Json | null
+        }
+        Insert: {
+          claims?: string[]
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          evidence?: Json | null
+          id?: string
+          mathematical_expressions?: string[] | null
+          priority?: number
+          required_sources?: string[] | null
+          sources?: string[] | null
+          status?: string
+          theory: string
+          updated_at?: string
+          validation_methods?: string[]
+          validation_results?: Json | null
+        }
+        Update: {
+          claims?: string[]
+          completed_at?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          evidence?: Json | null
+          id?: string
+          mathematical_expressions?: string[] | null
+          priority?: number
+          required_sources?: string[] | null
+          sources?: string[] | null
+          status?: string
+          theory?: string
+          updated_at?: string
+          validation_methods?: string[]
+          validation_results?: Json | null
+        }
+        Relationships: []
       }
     }
     Views: {

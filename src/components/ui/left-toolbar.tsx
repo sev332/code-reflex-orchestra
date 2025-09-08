@@ -20,6 +20,7 @@ import {
   GitBranch,
   Search
 } from 'lucide-react';
+import { AISelfManagementDashboard } from '@/components/AISelfManagement/AISelfManagementDashboard';
 import { cn } from '@/lib/utils';
 
 interface ToolbarItem {
@@ -38,6 +39,13 @@ export function LeftToolbar({ className }: LeftToolbarProps) {
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
 
   const toolbarItems: ToolbarItem[] = [
+    {
+      id: 'ai-self-mgmt',
+      icon: Zap,
+      label: 'AI Self-Mgmt',
+      badge: 'AI',
+      content: <AISelfManagementDashboard />
+    },
     {
       id: 'agents',
       icon: Users,
