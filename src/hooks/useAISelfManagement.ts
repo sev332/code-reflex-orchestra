@@ -282,6 +282,14 @@ export function useAISelfManagement() {
     return () => clearInterval(interval);
   }, [isInitialized, loadSystemState]);
 
+  const updateMemory = useCallback(async (memory: string, context: any, importance: number = 5) => {
+    return await updateContext('conversation', { memory, ...context }, importance);
+  }, [updateContext]);
+
+  const performAudit = useCallback(async () => {
+    return await performSelfAudit();
+  }, [performSelfAudit]);
+
   return {
     // State
     ...state,
@@ -292,7 +300,9 @@ export function useAISelfManagement() {
     registerTheory,
     validateTheoryManually,
     updateContext,
+    updateMemory,
     performSelfAudit,
+    performAudit,
     loadSystemState,
     
     // Computed values

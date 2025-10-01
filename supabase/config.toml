@@ -1,1 +1,7 @@
 project_id = "cnzgnsodowyccuyzaayx"
+
+[functions.real-multi-llm]
+verify_jwt = false
+
+[functions.wisdomnet-chat]
+verify_jwt = false

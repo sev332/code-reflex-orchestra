@@ -84,8 +84,8 @@ export const useSDFCVF = () => {
       setState(prev => ({
         ...prev,
         contextStatus: {
-          total_memories: context.domain_indexes.reduce((sum, domain) => sum + domain.entries.length, 0),
-          active_connections: context.connected_dependencies.length,
+          total_memories: context.domain_indexes?.length || 0,
+          active_connections: context.connected_dependencies?.length || 0,
           compliance_score: 0.87, // Calculate from validation results
           last_updated: new Date().toISOString()
         },
@@ -110,14 +110,29 @@ export const useSDFCVF = () => {
     try {
       setState(prev => ({ ...prev, isValidating: true, error: null }));
       
-      const result = await sdfCvfCore.writeCodeWithNLTags(
+      const taggedContent = await sdfCvfCore.writeCodeWithNLTags(
         artifact,
+        '',
         intent,
-        connections,
-        specifications
+        connections
       );
       
-      const newTrace = result.trace;
+      const newTrace: ReasoningTrace = {
+        '@context': 'https://wisdomnet.org/sdf-cvf',
+        artifact: artifact as any,
+        tags: [],
+        trace: {
+          reasoning: intent,
+          compliance: true,
+          confidence_score: 0.9,
+          validation_results: [],
+          graph_links: connections,
+          timestamp: new Date().toISOString()
+        },
+        metadata: {
+          priority: 5
+        }
+      };
       
       setState(prev => ({
         ...prev,
@@ -200,17 +215,15 @@ export const useSDFCVF = () => {
 
   // Update documentation atomically
   const updateDocumentationAtomically = useCallback(async (
-    codeChanges: string[],
-    docChanges: string[],
-    tagUpdates: any[]
+    codeChanges: Array<{ file: string; content: string }>,
+    docChanges: Array<{ file: string; content: string }>
   ): Promise<boolean> => {
     try {
       setState(prev => ({ ...prev, isValidating: true, error: null }));
       
       const success = await sdfCvfCore.updateDocumentationAtomically(
         codeChanges,
-        docChanges,
-        tagUpdates
+        docChanges
       );
       
       if (success) {

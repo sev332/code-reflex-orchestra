@@ -201,10 +201,10 @@ export const AdvancedPersistentChat: React.FC = () => {
     try {
       // Generate comprehensive reasoning trace
       const reasoningTrace = await sdfCvfCore.writeCodeWithNLTags(
+        'user_query',
         userInput,
         'Process user query with full context awareness',
-        ['persistent_memory', 'background_agents', 'knowledge_synthesis'],
-        ['maintain_conversation_continuity', 'update_context_dynamically']
+        ['persistent_memory', 'background_agents', 'knowledge_synthesis']
       );
 
       // Trigger background agents for complex queries

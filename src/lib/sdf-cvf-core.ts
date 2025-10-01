@@ -30,14 +30,16 @@ export interface ValidationResult {
   status: 'pass' | 'fail' | 'warning';
   message: string;
   auto_fixable: boolean;
+  severity: 'low' | 'medium' | 'high' | 'critical';
 }
 
 export interface CMCContext {
   master_index: string;
-  domain_indexes: string[];
+  domain_indexes: any[];
   adrs: string[];
   component_specs: string[];
   current_blueprint: any;
+  connected_dependencies?: any[];
 }
 
 export class SDFCVFCore {
@@ -98,7 +100,8 @@ export class SDFCVFCore {
           rule: 'connection-integrity',
           status: connectionValid ? 'pass' : 'fail',
           message: connectionValid ? 'Connection validated' : `Invalid connection: ${tag.content}`,
-          auto_fixable: true
+          auto_fixable: true,
+          severity: 'medium'
         });
       }
     }
@@ -110,7 +113,8 @@ export class SDFCVFCore {
         rule: 'missing-connection',
         status: 'warning',
         message: `Missing connection: ${missing}`,
-        auto_fixable: true
+        auto_fixable: true,
+        severity: 'low'
       });
     }
     
@@ -367,7 +371,8 @@ export class SDFCVFCore {
       rule: 'nl-tag-presence',
       status: (hasConnect && hasIntent && hasSpec) ? 'pass' : 'fail',
       message: 'All required NL tags must be present',
-      auto_fixable: true
+      auto_fixable: true,
+      severity: 'medium'
     };
   }
 
@@ -377,7 +382,8 @@ export class SDFCVFCore {
       rule: 'connection-integrity',
       status: 'pass',
       message: 'Connection integrity validated',
-      auto_fixable: false
+      auto_fixable: false,
+      severity: 'low'
     };
   }
 
@@ -387,7 +393,8 @@ export class SDFCVFCore {
       rule: 'intent-clarity',
       status: 'pass', 
       message: 'Intent clarity validated',
-      auto_fixable: false
+      auto_fixable: false,
+      severity: 'low'
     };
   }
 
@@ -397,7 +404,8 @@ export class SDFCVFCore {
       rule: 'spec-compliance',
       status: 'pass',
       message: 'Spec compliance validated',
-      auto_fixable: false
+      auto_fixable: false,
+      severity: 'low'
     };
   }
 
