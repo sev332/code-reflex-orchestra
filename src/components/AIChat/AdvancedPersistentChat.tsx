@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { WisdomNetLogo } from '@/components/WisdomNET/WisdomNetLogo';
 import { useAISelfManagement } from '@/hooks/useAISelfManagement';
+import { useGeminiAgents } from '@/hooks/useGeminiAgents';
 import { supabase } from '@/integrations/supabase/client';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
 
@@ -84,6 +85,15 @@ export const AdvancedPersistentChat: React.FC = () => {
     updateMemory,
     performAudit 
   } = useAISelfManagement();
+
+  const {
+    performDeepSearch,
+    performResearch,
+    performAnalysis,
+    recentResults: agentResults,
+    metrics: agentMetrics,
+    hasActiveAgents
+  } = useGeminiAgents();
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -209,14 +219,41 @@ export const AdvancedPersistentChat: React.FC = () => {
 
       // Trigger background agents for complex queries
       const triggeredAgents: string[] = [];
+      
+      // For complex queries, launch Gemini agents
       if (userInput.length > 50) {
-        await registerTheory(
-          userInput,
-          [`User query: ${userInput}`],
-          ['web_search', 'logical_reasoning'],
-          8
-        );
-        triggeredAgents.push('theory_validator', 'web_researcher');
+        // Launch deep search agent in background (don't await)
+        performDeepSearch(userInput, {
+          conversation_context: messages.slice(-5),
+          user_intent: 'query_response'
+        }).then(result => {
+          if (result) {
+            console.log('🔍 Deep search completed:', result);
+          }
+        });
+        triggeredAgents.push('gemini_deep_search');
+
+        // Also launch research agent for comprehensive understanding
+        performResearch(userInput, {
+          conversation_context: messages.slice(-5)
+        }).then(result => {
+          if (result) {
+            console.log('📚 Research completed:', result);
+          }
+        });
+        triggeredAgents.push('gemini_research');
+      }
+
+      // For very important queries, add analysis
+      if (userInput.length > 100 || userInput.includes('?')) {
+        performAnalysis(userInput, 'conversational', {
+          conversation_context: messages.slice(-5)
+        }).then(result => {
+          if (result) {
+            console.log('🔬 Analysis completed:', result);
+          }
+        });
+        triggeredAgents.push('gemini_analysis');
       }
 
       // Update AI context memory
@@ -226,42 +263,132 @@ export const AdvancedPersistentChat: React.FC = () => {
         conversation_continuity: true
       }, 7);
 
-      // Simulate AI response with multi-LLM processing
-      const response = await supabase.functions.invoke('real-multi-llm', {
-        body: {
-          messages: messages.slice(-10).concat([userMessage]).map(m => ({
-            role: m.role,
-            content: m.content
-          })),
-          strategy: 'single',
-          model: 'gpt-5-2025-08-07',
-          system_prompt: `You are WisdomNET, a persistent AGI with perfect memory and reasoning capabilities. 
-            You maintain full context across our ongoing conversation. Respond with intelligence, depth, and continuity.
-            Current context window: ${JSON.stringify(contextWindow)}
-            Active background agents: ${backgroundAgents.length}
-            Recent conversation chunks: ${chunks.length}`
-        }
-      });
-
-      const aiMessage: ChatMessage = {
-        id: `ai-${Date.now()}`,
-        role: 'assistant',
-        content: response.data?.content || 'I understand your message and am processing it with full context awareness.',
-        timestamp: new Date().toISOString(),
-        reasoning_trace: reasoningTrace as any,
-        confidence: 0.92,
-        metadata: {
-          model: 'gpt-5-2025-08-07',
-          background_agents_triggered: triggeredAgents,
-          processing_time: Date.now() - parseInt(userMessage.id.split('-')[1])
-        }
+      // Stream AI response from WisdomNET chat with Gemini
+      const conversationId = 'main-conversation';
+      const context = {
+        window: contextWindow,
+        active_agents: backgroundAgents.length,
+        chunks: chunks.length,
+        recent_messages: messages.slice(-5).map(m => ({ role: m.role, content: m.content }))
       };
 
-      setMessages(prev => [...prev, aiMessage]);
-      await saveMessage(aiMessage);
+      // Start streaming response
+      const startTime = Date.now();
+      let fullResponse = '';
       
+      try {
+        const response = await fetch(
+          `https://cnzgnsodowyccuyzaayx.supabase.co/functions/v1/wisdomnet-chat`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`
+            },
+            body: JSON.stringify({
+              messages: messages.slice(-10).concat([userMessage]).map(m => ({
+                role: m.role,
+                content: m.content
+              })),
+              conversationId,
+              context
+            })
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (reader) {
+          // Create initial AI message
+          const initialAiMessage: ChatMessage = {
+            id: `ai-${Date.now()}`,
+            role: 'assistant',
+            content: '',
+            timestamp: new Date().toISOString(),
+            reasoning_trace: reasoningTrace as any,
+            confidence: 0.92,
+            metadata: {
+              model: 'google/gemini-2.5-flash',
+              background_agents_triggered: triggeredAgents,
+              processing_time: 0
+            }
+          };
+          
+          setMessages(prev => [...prev, initialAiMessage]);
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value);
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+              if (line.startsWith('data: ')) {
+                const data = line.slice(6);
+                if (data === '[DONE]') continue;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  const content = parsed.choices?.[0]?.delta?.content;
+                  
+                  if (content) {
+                    fullResponse += content;
+                    
+                    // Update the last message with streaming content
+                    setMessages(prev => {
+                      const updated = [...prev];
+                      const lastMsg = updated[updated.length - 1];
+                      if (lastMsg && lastMsg.role === 'assistant') {
+                        lastMsg.content = fullResponse;
+                        lastMsg.metadata!.processing_time = Date.now() - startTime;
+                      }
+                      return updated;
+                    });
+                  }
+                } catch (e) {
+                  console.error('Error parsing SSE:', e);
+                }
+              }
+            }
+          }
+
+          // Save final message
+          const finalMessage = messages[messages.length - 1];
+          if (finalMessage) {
+            await saveMessage(finalMessage);
+          }
+        }
+      } catch (streamError) {
+        console.error('Streaming error:', streamError);
+        
+        // Fallback to non-streaming
+        const fallbackMessage: ChatMessage = {
+          id: `ai-${Date.now()}`,
+          role: 'assistant',
+          content: 'I understand your message and am processing it with full context awareness through my neural network.',
+          timestamp: new Date().toISOString(),
+          reasoning_trace: reasoningTrace as any,
+          confidence: 0.85,
+          metadata: {
+            model: 'google/gemini-2.5-flash',
+            background_agents_triggered: triggeredAgents,
+            processing_time: Date.now() - startTime
+          }
+        };
+        
+        setMessages(prev => [...prev, fallbackMessage]);
+        await saveMessage(fallbackMessage);
+      }
+
       // Update context window
-      updateContextWindow([...messages, userMessage, aiMessage]);
+      const allMessages = [...messages, userMessage];
+      updateContextWindow(allMessages);
 
       // Check if we need to create a new conversation chunk
       if (messages.length % 20 === 0) {

@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.wisdomnet-chat]
 verify_jwt = false
+
+[functions.gemini-agents]
+verify_jwt = false
