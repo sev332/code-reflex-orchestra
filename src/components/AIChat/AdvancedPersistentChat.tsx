@@ -297,7 +297,37 @@ export const AdvancedPersistentChat: React.FC = () => {
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({}));
+          const errorMsg = errorData.error || `HTTP error! status: ${response.status}`;
+          
+          // Handle specific error types
+          if (response.status === 402) {
+            const errorMessage: ChatMessage = {
+              id: `error-${Date.now()}`,
+              role: 'system',
+              content: '⚠️ **AI Credits Required**\n\nPlease add credits to your Lovable workspace to use AI features.\n\nGo to: Settings → Workspace → Usage to top up your credits.',
+              timestamp: new Date().toISOString(),
+              confidence: 1.0
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            await saveMessage(errorMessage);
+            setIsProcessing(false);
+            return;
+          } else if (response.status === 429) {
+            const errorMessage: ChatMessage = {
+              id: `error-${Date.now()}`,
+              role: 'system',
+              content: '⚠️ **Rate Limit Exceeded**\n\nToo many requests. Please wait a moment and try again.',
+              timestamp: new Date().toISOString(),
+              confidence: 1.0
+            };
+            setMessages(prev => [...prev, errorMessage]);
+            await saveMessage(errorMessage);
+            setIsProcessing(false);
+            return;
+          }
+          
+          throw new Error(errorMsg);
         }
 
         const reader = response.body?.getReader();
