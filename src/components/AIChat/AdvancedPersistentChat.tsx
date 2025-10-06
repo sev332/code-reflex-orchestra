@@ -29,8 +29,10 @@ import {
 import { WisdomNetLogo } from '@/components/WisdomNET/WisdomNetLogo';
 import { useAISelfManagement } from '@/hooks/useAISelfManagement';
 import { useGeminiAgents } from '@/hooks/useGeminiAgents';
+import { useGoogleAI } from '@/hooks/useGoogleAI';
 import { supabase } from '@/integrations/supabase/client';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
+import { toast } from 'sonner';
 
 interface ChatMessage {
   id: string;
@@ -46,6 +48,7 @@ interface ChatMessage {
     tokens?: number;
     processing_time?: number;
     background_agents_triggered?: string[];
+    images?: string[];
   };
 }
 
@@ -94,6 +97,14 @@ export const AdvancedPersistentChat: React.FC = () => {
     metrics: agentMetrics,
     hasActiveAgents
   } = useGeminiAgents();
+
+  const { 
+    isProcessing: googleAIProcessing,
+    chat: googleChat,
+    generateImage,
+    analyzeImage,
+    smartRoute
+  } = useGoogleAI();
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -198,7 +209,7 @@ export const AdvancedPersistentChat: React.FC = () => {
 
   const processUserMessage = async (userInput: string) => {
     const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
+      id: crypto.randomUUID(),
       role: 'user',
       content: userInput,
       timestamp: new Date().toISOString()
@@ -272,7 +283,46 @@ export const AdvancedPersistentChat: React.FC = () => {
         recent_messages: messages.slice(-5).map(m => ({ role: m.role, content: m.content }))
       };
 
-      // Start streaming response
+      // Check if this is an image generation request
+      const lowerInput = userInput.toLowerCase();
+      const isImageRequest = 
+        lowerInput.includes('generate image') ||
+        lowerInput.includes('create image') ||
+        lowerInput.includes('draw') ||
+        lowerInput.includes('picture of') ||
+        lowerInput.includes('show me');
+
+      // Use Google AI orchestrator for smart routing
+      if (isImageRequest) {
+        try {
+          const result = await generateImage(userInput);
+          
+          if (result.success && result.images) {
+            const aiMessage: ChatMessage = {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: result.content || 'Here are the images I generated:',
+              timestamp: new Date().toISOString(),
+              confidence: 0.95,
+              metadata: {
+                model: result.model_used,
+                processing_time: result.processing_time,
+                images: result.images
+              }
+            };
+            
+            setMessages(prev => [...prev, aiMessage]);
+            await saveMessage(aiMessage);
+            setIsProcessing(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Image generation failed:', error);
+          toast.error('Failed to generate image. Falling back to chat.');
+        }
+      }
+
+      // Start streaming response from wisdomnet-chat
       const startTime = Date.now();
       let fullResponse = '';
       
@@ -303,7 +353,7 @@ export const AdvancedPersistentChat: React.FC = () => {
           // Handle specific error types
           if (response.status === 402) {
             const errorMessage: ChatMessage = {
-              id: `error-${Date.now()}`,
+              id: crypto.randomUUID(),
               role: 'system',
               content: '⚠️ **AI Credits Required**\n\nPlease add credits to your Lovable workspace to use AI features.\n\nGo to: Settings → Workspace → Usage to top up your credits.',
               timestamp: new Date().toISOString(),
@@ -315,7 +365,7 @@ export const AdvancedPersistentChat: React.FC = () => {
             return;
           } else if (response.status === 429) {
             const errorMessage: ChatMessage = {
-              id: `error-${Date.now()}`,
+              id: crypto.randomUUID(),
               role: 'system',
               content: '⚠️ **Rate Limit Exceeded**\n\nToo many requests. Please wait a moment and try again.',
               timestamp: new Date().toISOString(),
@@ -336,7 +386,7 @@ export const AdvancedPersistentChat: React.FC = () => {
         if (reader) {
           // Create initial AI message
           const initialAiMessage: ChatMessage = {
-            id: `ai-${Date.now()}`,
+            id: crypto.randomUUID(),
             role: 'assistant',
             content: '',
             timestamp: new Date().toISOString(),
@@ -695,6 +745,23 @@ export const AdvancedPersistentChat: React.FC = () => {
                         {message.content}
                       </p>
                       
+                      {/* Display generated images if available */}
+                      {message.metadata?.images && message.metadata.images.length > 0 && (
+                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {message.metadata.images.map((imageUrl, idx) => (
+                            <div key={idx} className="relative group">
+                              <img 
+                                src={imageUrl} 
+                                alt={`Generated image ${idx + 1}`}
+                                className="w-full rounded-lg border border-border/50 neural-glow cursor-pointer hover:scale-105 transition-transform"
+                                onClick={() => window.open(imageUrl, '_blank')}
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors rounded-lg pointer-events-none" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
                       {message.reasoning_trace && (
                         <div className="mt-3 pt-3 border-t border-border/50">
                           <p className="text-xs text-muted-foreground">
@@ -756,7 +823,41 @@ export const AdvancedPersistentChat: React.FC = () => {
           
           {/* Input Area */}
           <div className="border-t border-border/50 bg-card/30 backdrop-neural p-6">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {/* Quick Actions for Google AI Features */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setInput('Generate an image of ')}
+                  className="text-xs neural-glow hover:bg-primary/10"
+                >
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  Generate Image
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setInput('Analyze and explain ')}
+                  className="text-xs neural-glow hover:bg-primary/10"
+                >
+                  <Eye className="w-3 h-3 mr-1" />
+                  Deep Analysis
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setInput('Research the latest information about ')}
+                  className="text-xs neural-glow hover:bg-primary/10"
+                >
+                  <Database className="w-3 h-3 mr-1" />
+                  Research
+                </Button>
+                <Badge variant="outline" className="text-xs">
+                  🚀 Powered by Google Gemini Pro + Imagen
+                </Badge>
+              </div>
+              
               <div className="flex gap-4">
                 <div className="flex-1">
                   <Input

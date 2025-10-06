@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.gemini-agents]
 verify_jwt = false
+
+[functions.google-ai-orchestrator]
+verify_jwt = false
