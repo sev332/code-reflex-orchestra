@@ -278,7 +278,7 @@ export const AdvancedPersistentChat: React.FC = () => {
       
       try {
         const response = await fetch(
-          `https://cnzgnsodowyccuyzaayx.supabase.co/functions/v1/wisdomnet-chat`,
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/wisdomnet-chat`,
           {
             method: 'POST',
             headers: {
