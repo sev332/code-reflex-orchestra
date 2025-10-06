@@ -3,16 +3,18 @@
 // ✅ SPEC: SDF-CVF integrated, persistent conversation, neural aesthetics
 
 import { Helmet } from "react-helmet-async";
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
-import { WisdomNETDashboard } from "@/components/WisdomNET/Dashboard";
-import { ProductionDashboard } from "@/components/ProductionDashboard/ProductionDashboard";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LeftToolbar } from "@/components/ui/left-toolbar";
 import { RightToolbar } from "@/components/ui/right-toolbar";
 import { Zap, Brain, Settings, MessageSquare, Code, Activity } from "lucide-react";
+
+// Lazy load dev dashboards to prevent Three.js from loading in chat mode
+const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
+const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production'>('chat');
@@ -49,13 +51,17 @@ const Index = () => {
       case 'dev-legacy':
         return (
           <div className="pl-16 pr-16">
-            <WisdomNETDashboard />
+            <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading Dashboard...</p></div>}>
+              <WisdomNETDashboard />
+            </Suspense>
           </div>
         );
       case 'dev-production':
         return (
           <div className="pl-16 pr-16">
-            <ProductionDashboard />
+            <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading Dashboard...</p></div>}>
+              <ProductionDashboard />
+            </Suspense>
           </div>
         );
     }
