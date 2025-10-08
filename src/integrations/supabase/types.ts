@@ -222,6 +222,224 @@ export type Database = {
           },
         ]
       }
+      document_analysis: {
+        Row: {
+          complexity_score: number | null
+          created_at: string
+          document_id: string
+          entities: Json | null
+          hierarchy_levels: number
+          id: string
+          key_topics: string[] | null
+          master_summary: string | null
+          readability_score: number | null
+          structure: Json | null
+          total_chunks: number
+          updated_at: string
+        }
+        Insert: {
+          complexity_score?: number | null
+          created_at?: string
+          document_id: string
+          entities?: Json | null
+          hierarchy_levels?: number
+          id?: string
+          key_topics?: string[] | null
+          master_summary?: string | null
+          readability_score?: number | null
+          structure?: Json | null
+          total_chunks?: number
+          updated_at?: string
+        }
+        Update: {
+          complexity_score?: number | null
+          created_at?: string
+          document_id?: string
+          entities?: Json | null
+          hierarchy_levels?: number
+          id?: string
+          key_topics?: string[] | null
+          master_summary?: string | null
+          readability_score?: number | null
+          structure?: Json | null
+          total_chunks?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_analysis_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: true
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_chunks: {
+        Row: {
+          chunk_index: number
+          chunk_type: string
+          content: string
+          created_at: string
+          document_id: string
+          end_position: number | null
+          id: string
+          metadata: Json | null
+          parent_chunk_id: string | null
+          start_position: number | null
+          tags: string[] | null
+        }
+        Insert: {
+          chunk_index: number
+          chunk_type?: string
+          content: string
+          created_at?: string
+          document_id: string
+          end_position?: number | null
+          id?: string
+          metadata?: Json | null
+          parent_chunk_id?: string | null
+          start_position?: number | null
+          tags?: string[] | null
+        }
+        Update: {
+          chunk_index?: number
+          chunk_type?: string
+          content?: string
+          created_at?: string
+          document_id?: string
+          end_position?: number | null
+          id?: string
+          metadata?: Json | null
+          parent_chunk_id?: string | null
+          start_position?: number | null
+          tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunks_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunks_parent_chunk_id_fkey"
+            columns: ["parent_chunk_id"]
+            isOneToOne: false
+            referencedRelation: "document_chunks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_edit_history: {
+        Row: {
+          ai_reasoning: string | null
+          chunk_id: string | null
+          created_at: string
+          document_id: string
+          edit_prompt: string | null
+          edit_type: string
+          end_position: number | null
+          id: string
+          new_content: string
+          original_content: string | null
+          start_position: number | null
+          user_id: string
+        }
+        Insert: {
+          ai_reasoning?: string | null
+          chunk_id?: string | null
+          created_at?: string
+          document_id: string
+          edit_prompt?: string | null
+          edit_type: string
+          end_position?: number | null
+          id?: string
+          new_content: string
+          original_content?: string | null
+          start_position?: number | null
+          user_id: string
+        }
+        Update: {
+          ai_reasoning?: string | null
+          chunk_id?: string | null
+          created_at?: string
+          document_id?: string
+          edit_prompt?: string | null
+          edit_type?: string
+          end_position?: number | null
+          id?: string
+          new_content?: string
+          original_content?: string | null
+          start_position?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_edit_history_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "document_chunks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_edit_history_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          google_cloud_path: string | null
+          id: string
+          mime_type: string
+          processing_error: string | null
+          processing_status: string
+          storage_type: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          google_cloud_path?: string | null
+          id?: string
+          mime_type: string
+          processing_error?: string | null
+          processing_status?: string
+          storage_type?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          google_cloud_path?: string | null
+          id?: string
+          mime_type?: string
+          processing_error?: string | null
+          processing_status?: string
+          storage_type?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       hil_interventions: {
         Row: {
           agent_id: string | null

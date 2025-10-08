@@ -6,18 +6,19 @@ import { Helmet } from "react-helmet-async";
 import { useState, lazy, Suspense } from "react";
 import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
+import { DocumentLibrary } from "@/components/Documents/DocumentLibrary";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LeftToolbar } from "@/components/ui/left-toolbar";
 import { RightToolbar } from "@/components/ui/right-toolbar";
-import { Zap, Brain, Settings, MessageSquare, Code, Activity } from "lucide-react";
+import { Zap, Brain, Settings, MessageSquare, Code, Activity, FileText } from "lucide-react";
 
 // Lazy load dev dashboards to prevent Three.js from loading in chat mode
 const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
 const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
 
 const Index = () => {
-  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production'>('chat');
+  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production' | 'documents'>('chat');
 
   const getViewModeConfig = () => {
     switch (viewMode) {
@@ -26,6 +27,12 @@ const Index = () => {
           label: 'AI Chat Interface',
           icon: MessageSquare,
           description: 'Persistent AI conversation with full context'
+        };
+      case 'documents':
+        return {
+          label: 'Document Library',
+          icon: FileText,
+          description: 'AI-powered document analysis and editing'
         };
       case 'dev-legacy':
         return {
@@ -48,6 +55,12 @@ const Index = () => {
     switch (viewMode) {
       case 'chat':
         return <AdvancedPersistentChat />;
+      case 'documents':
+        return (
+          <div className="pl-16 pr-16">
+            <DocumentLibrary />
+          </div>
+        );
       case 'dev-legacy':
         return (
           <div className="pl-16 pr-16">
@@ -79,7 +92,7 @@ const Index = () => {
         </Helmet>
 
         {/* Mode Selector - Only show when not in chat mode */}
-        {viewMode !== 'chat' && (
+        {viewMode !== 'chat' && viewMode !== 'documents' && (
           <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
             <Badge variant="outline" className="bg-card/50 text-foreground border-border/50 backdrop-neural">
               <config.icon className="w-3 h-3 mr-1" />

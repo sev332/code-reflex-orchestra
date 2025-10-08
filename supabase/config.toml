@@ -11,3 +11,9 @@ verify_jwt = false
 
 [functions.google-ai-orchestrator]
 verify_jwt = false
+
+[functions.document-processor]
+verify_jwt = false
+
+[functions.document-ai-editor]
+verify_jwt = true
