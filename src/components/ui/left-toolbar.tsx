@@ -18,9 +18,13 @@ import {
   MemoryStick,
   Cpu,
   GitBranch,
-  Search
+  Search,
+  FileText,
+  BookOpen
 } from 'lucide-react';
 import { AISelfManagementDashboard } from '@/components/AISelfManagement/AISelfManagementDashboard';
+import { ContextAnalysisPanel } from '@/components/AIChat/ContextAnalysisPanel';
+import { AdvancedDeepSearchPanel } from '@/components/AIChat/AdvancedDeepSearchPanel';
 import { cn } from '@/lib/utils';
 
 interface ToolbarItem {
@@ -39,6 +43,37 @@ export function LeftToolbar({ className }: LeftToolbarProps) {
   const [activeDrawer, setActiveDrawer] = useState<string | null>(null);
 
   const toolbarItems: ToolbarItem[] = [
+    {
+      id: 'context-analysis',
+      icon: Brain,
+      label: 'Context',
+      badge: 'AI-MOS',
+      content: <ContextAnalysisPanel />
+    },
+    {
+      id: 'deep-search',
+      icon: BookOpen,
+      label: 'Deep Search',
+      badge: 'Doc',
+      content: <AdvancedDeepSearchPanel />
+    },
+    {
+      id: 'documents',
+      icon: FileText,
+      label: 'Documents',
+      badge: 'Lib',
+      content: (
+        <div className="p-6">
+          <h3 className="text-xl font-semibold mb-4">Document Library</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Access your uploaded documents and AI-powered document management system.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Click the "Documents" button in the top-right to open the full document library.
+          </p>
+        </div>
+      )
+    },
     {
       id: 'ai-self-mgmt',
       icon: Zap,

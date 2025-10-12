@@ -58,7 +58,7 @@ const Index = () => {
         return <AdvancedPersistentChat onDocumentsClick={() => setViewMode('documents')} />;
       case 'documents':
         return (
-          <div className="pl-16 pr-16">
+          <div className="pl-16">
             <DocumentLibrary />
           </div>
         );
@@ -168,13 +168,9 @@ const Index = () => {
           </div>
         )}
 
-        {/* Toolbars - Only show in dev modes */}
-        {viewMode !== 'chat' && (
-          <>
-            <LeftToolbar />
-            <RightToolbar />
-          </>
-        )}
+        {/* Toolbars - Show in all modes */}
+        <LeftToolbar />
+        {viewMode !== 'chat' && viewMode !== 'documents' && <RightToolbar />}
 
         {/* Main Content */}
         {renderMainContent()}
