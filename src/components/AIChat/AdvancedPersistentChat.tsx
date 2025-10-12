@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { 
+import {
   Send, 
   Brain, 
   Zap, 
@@ -24,7 +24,8 @@ import {
   GitBranch,
   MemoryStick,
   Target,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 import { WisdomNetLogo } from '@/components/WisdomNET/WisdomNetLogo';
 import { useAISelfManagement } from '@/hooks/useAISelfManagement';
@@ -69,7 +70,11 @@ interface ContextWindow {
   knowledge_synthesis: number;
 }
 
-export const AdvancedPersistentChat: React.FC = () => {
+interface AdvancedPersistentChatProps {
+  onDocumentsClick?: () => void;
+}
+
+export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ onDocumentsClick }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -825,7 +830,7 @@ export const AdvancedPersistentChat: React.FC = () => {
           <div className="border-t border-border/50 bg-card/30 backdrop-neural p-6">
             <div className="max-w-4xl mx-auto space-y-4">
               {/* Quick Actions for Google AI Features */}
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 items-center">
                 <Button
                   size="sm"
                   variant="outline"
@@ -853,6 +858,17 @@ export const AdvancedPersistentChat: React.FC = () => {
                   <Database className="w-3 h-3 mr-1" />
                   Research
                 </Button>
+                {onDocumentsClick && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onDocumentsClick}
+                    className="text-xs neural-glow hover:bg-accent/50"
+                  >
+                    <FileText className="w-3 h-3 mr-1" />
+                    Documents
+                  </Button>
+                )}
                 <Badge variant="outline" className="text-xs">
                   🚀 Powered by Google Gemini Pro + Imagen
                 </Badge>

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { LeftToolbar } from "@/components/ui/left-toolbar";
 import { RightToolbar } from "@/components/ui/right-toolbar";
 import { Zap, Brain, Settings, MessageSquare, Code, Activity, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 // Lazy load dev dashboards to prevent Three.js from loading in chat mode
 const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
@@ -54,7 +55,7 @@ const Index = () => {
   const renderMainContent = () => {
     switch (viewMode) {
       case 'chat':
-        return <AdvancedPersistentChat />;
+        return <AdvancedPersistentChat onDocumentsClick={() => setViewMode('documents')} />;
       case 'documents':
         return (
           <div className="pl-16 pr-16">
@@ -130,7 +131,16 @@ const Index = () => {
 
         {/* Chat Mode Toggle - Show in top-right when in chat mode */}
         {viewMode === 'chat' && (
-          <div className="absolute top-4 right-4 z-50">
+          <div className="absolute top-4 right-4 z-50 flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode('documents')}
+              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Documents
+            </Button>
             <Button
               variant="outline"
               size="sm"
@@ -139,6 +149,21 @@ const Index = () => {
             >
               <Code className="w-4 h-4 mr-2" />
               Dev Tools
+            </Button>
+          </div>
+        )}
+
+        {/* Document Mode Toggle - Show back to chat button */}
+        {viewMode === 'documents' && (
+          <div className="absolute top-4 right-4 z-50">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setViewMode('chat')}
+              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
+            >
+              <MessageSquare className="w-4 h-4 mr-2" />
+              Back to Chat
             </Button>
           </div>
         )}
