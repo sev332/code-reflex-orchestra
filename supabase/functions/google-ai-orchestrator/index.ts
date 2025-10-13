@@ -100,6 +100,17 @@ async function generateImage(
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error:', errorText);
+      
+      // Parse error to provide better user feedback
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.message?.includes('API key expired') || errorData.error?.message?.includes('API_KEY_INVALID')) {
+          throw new Error('Google AI API key is invalid or expired. Please update your GOOGLE_AI_API_KEY secret.');
+        }
+      } catch (parseError) {
+        // If parsing fails, use generic error
+      }
+      
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 
@@ -255,6 +266,17 @@ async function generateVideo(
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Gemini API error:', errorText);
+      
+      // Parse error to provide better user feedback
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.error?.message?.includes('API key expired') || errorData.error?.message?.includes('API_KEY_INVALID')) {
+          throw new Error('Google AI API key is invalid or expired. Please update your GOOGLE_AI_API_KEY secret.');
+        }
+      } catch (parseError) {
+        // If parsing fails, use generic error
+      }
+      
       throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
 

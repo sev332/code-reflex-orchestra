@@ -184,7 +184,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
       } else {
         // Initialize with system message
         const systemMessage: ChatMessage = {
-          id: 'system-init',
+          id: crypto.randomUUID(),
           role: 'system',
           content: 'WisdomNET AGI system initialized. I am your persistent AI companion with full memory and reasoning capabilities. Our conversation is continuous and evolving.',
           timestamp: new Date().toISOString(),

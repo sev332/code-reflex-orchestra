@@ -78,8 +78,10 @@ export const useGoogleAI = () => {
       console.log('✅ Image generation result:', data);
       setLastResult(data);
       
-      if (data.images && data.images.length > 0) {
+      if (data.success && data.images && data.images.length > 0) {
         toast.success(`Generated ${data.images.length} image(s)!`);
+      } else if (!data.success && data.error) {
+        toast.error(`Image generation failed: ${data.error}`);
       }
       
       return data;
@@ -152,8 +154,10 @@ export const useGoogleAI = () => {
       console.log('✅ Video generation result:', data);
       setLastResult(data);
       
-      if (data.videos && data.videos.length > 0) {
+      if (data.success && data.videos && data.videos.length > 0) {
         toast.success(`Generated ${data.videos.length} video(s)!`);
+      } else if (!data.success && data.error) {
+        toast.error(`Video generation failed: ${data.error}`);
       }
       
       return data;
