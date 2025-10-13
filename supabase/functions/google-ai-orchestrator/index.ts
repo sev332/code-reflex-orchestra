@@ -26,6 +26,9 @@ serve(async (req) => {
       case 'image_generation':
         return await generateImage(prompt, options, GOOGLE_AI_API_KEY, startTime);
       
+      case 'video_generation':
+        return await generateVideo(prompt, options, GOOGLE_AI_API_KEY, startTime);
+      
       case 'vision_analysis':
         return await analyzeVision(image_data, prompt, options, GOOGLE_AI_API_KEY, startTime);
       
@@ -36,6 +39,8 @@ serve(async (req) => {
         // Automatically route to the best model/action
         if (image_data) {
           return await analyzeVision(image_data, prompt, options, GOOGLE_AI_API_KEY, startTime);
+        } else if (prompt.toLowerCase().includes('generate video') || prompt.toLowerCase().includes('create video')) {
+          return await generateVideo(prompt, options, GOOGLE_AI_API_KEY, startTime);
         } else if (prompt.toLowerCase().includes('generate') || prompt.toLowerCase().includes('create image')) {
           return await generateImage(prompt, options, GOOGLE_AI_API_KEY, startTime);
         } else {
@@ -202,6 +207,85 @@ async function analyzeVision(
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error: any) {
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error.message 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}
+
+async function generateVideo(
+  prompt: string,
+  options: any,
+  apiKey: string,
+  startTime: number
+) {
+  try {
+    console.log('🎬 Generating video with Gemini...');
+    
+    const response = await fetch(
+      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent',
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-goog-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: `Generate a video: ${prompt}. Create an engaging, high-quality video sequence.`
+            }]
+          }],
+          generationConfig: {
+            temperature: options?.temperature || 1.0,
+            maxOutputTokens: options?.max_tokens || 8192,
+            responseModalities: ["video"],
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Gemini API error:', errorText);
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
+    }
+
+    const data = await response.json();
+    console.log('✅ Video generation response received');
+    
+    // Extract video from response
+    const videos: string[] = [];
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        const mimeType = part.inlineData.mimeType || 'video/mp4';
+        videos.push(`data:${mimeType};base64,${part.inlineData.data}`);
+      }
+    }
+
+    const processingTime = Date.now() - startTime;
+    
+    return new Response(
+      JSON.stringify({
+        success: true,
+        videos,
+        content: `Generated ${videos.length} video(s)`,
+        model_used: 'gemini-2.0-flash-exp',
+        processing_time: processingTime
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error: any) {
+    console.error('Video generation error:', error);
     return new Response(
       JSON.stringify({ 
         success: false, 

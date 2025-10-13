@@ -13,6 +13,7 @@ interface GoogleAIResult {
   success: boolean;
   content?: string;
   images?: string[];
+  videos?: string[];
   model_used?: string;
   processing_time?: number;
   error?: string;
@@ -130,6 +131,46 @@ export const useGoogleAI = () => {
     }
   };
 
+  const generateVideo = async (
+    prompt: string,
+    options?: GoogleAIOptions
+  ): Promise<GoogleAIResult> => {
+    setIsProcessing(true);
+    try {
+      console.log('🎬 Generating video:', prompt);
+      
+      const { data, error } = await supabase.functions.invoke('google-ai-orchestrator', {
+        body: {
+          action: 'video_generation',
+          prompt,
+          options
+        }
+      });
+
+      if (error) throw error;
+      
+      console.log('✅ Video generation result:', data);
+      setLastResult(data);
+      
+      if (data.videos && data.videos.length > 0) {
+        toast.success(`Generated ${data.videos.length} video(s)!`);
+      }
+      
+      return data;
+    } catch (error: any) {
+      console.error('Video generation error:', error);
+      const errorResult = {
+        success: false,
+        error: error.message
+      };
+      setLastResult(errorResult);
+      toast.error(`Video generation failed: ${error.message}`);
+      return errorResult;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const smartRoute = async (
     prompt: string,
     imageData?: string,
@@ -169,6 +210,7 @@ export const useGoogleAI = () => {
     lastResult,
     chat,
     generateImage,
+    generateVideo,
     analyzeImage,
     smartRoute
   };

@@ -25,15 +25,22 @@ import {
   MemoryStick,
   Target,
   Clock,
-  FileText
+  FileText,
+  Image,
+  Video,
+  Search,
+  Edit
 } from 'lucide-react';
 import { WisdomNetLogo } from '@/components/WisdomNET/WisdomNetLogo';
 import { useAISelfManagement } from '@/hooks/useAISelfManagement';
 import { useGeminiAgents } from '@/hooks/useGeminiAgents';
 import { useGoogleAI } from '@/hooks/useGoogleAI';
+import { useDocumentManagement } from '@/hooks/useDocumentManagement';
+import { useDocumentEditor } from '@/hooks/useDocumentEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
 import { toast } from 'sonner';
+import { AIActionConfirmation, AIActionType } from './AIActionConfirmation';
 
 interface ChatMessage {
   id: string;
@@ -50,6 +57,10 @@ interface ChatMessage {
     processing_time?: number;
     background_agents_triggered?: string[];
     images?: string[];
+    videos?: string[];
+    documentId?: string;
+    searchResults?: any;
+    editSuggestion?: any;
   };
 }
 
@@ -86,6 +97,16 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     knowledge_synthesis: 0
   });
   
+  // AI Action Control System
+  const [pendingAction, setPendingAction] = useState<{
+    type: AIActionType;
+    description: string;
+    prompt?: string;
+    documentTitle?: string;
+    metadata?: Record<string, any>;
+  } | null>(null);
+  const [showActionConfirmation, setShowActionConfirmation] = useState(false);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { 
     backgroundAgents, 
@@ -107,9 +128,21 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     isProcessing: googleAIProcessing,
     chat: googleChat,
     generateImage,
+    generateVideo,
     analyzeImage,
     smartRoute
   } = useGoogleAI();
+
+  const {
+    uploadDocument,
+    getDocuments,
+    deleteDocument
+  } = useDocumentManagement();
+
+  const {
+    suggestEdit,
+    deepResearch
+  } = useDocumentEditor();
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -574,6 +607,145 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     }
   };
 
+  // AI Action Handlers with User Confirmation
+  const requestAction = (
+    type: AIActionType,
+    description: string,
+    prompt?: string,
+    documentTitle?: string,
+    metadata?: Record<string, any>
+  ) => {
+    setPendingAction({ type, description, prompt, documentTitle, metadata });
+    setShowActionConfirmation(true);
+  };
+
+  const executeAction = async () => {
+    if (!pendingAction) return;
+    
+    setShowActionConfirmation(false);
+    const action = pendingAction;
+    setPendingAction(null);
+
+    try {
+      switch (action.type) {
+        case 'image':
+          if (action.prompt) {
+            const result = await generateImage(action.prompt);
+            if (result.success && result.images) {
+              const aiMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Generated ${result.images.length} image(s) as requested.`,
+                timestamp: new Date().toISOString(),
+                metadata: { images: result.images }
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              await saveMessage(aiMessage);
+              toast.success('Images generated successfully!');
+            }
+          }
+          break;
+
+        case 'video':
+          if (action.prompt) {
+            const result = await generateVideo(action.prompt);
+            if (result.success && result.videos) {
+              const aiMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Generated ${result.videos.length} video(s) as requested.`,
+                timestamp: new Date().toISOString(),
+                metadata: { videos: result.videos }
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              await saveMessage(aiMessage);
+              toast.success('Videos generated successfully!');
+            }
+          }
+          break;
+
+        case 'document':
+          if (action.documentTitle && action.metadata?.content) {
+            const file = new File(
+              [action.metadata.content],
+              `${action.documentTitle}.txt`,
+              { type: 'text/plain' }
+            );
+            const docId = await uploadDocument(file);
+            if (docId) {
+              toast.success(`Document "${action.documentTitle}" created successfully!`);
+              const aiMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Created document: **${action.documentTitle}**`,
+                timestamp: new Date().toISOString(),
+                metadata: { documentId: docId }
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              await saveMessage(aiMessage);
+            }
+          }
+          break;
+
+        case 'deep_search':
+          if (action.prompt) {
+            toast.info('Initiating deep search...');
+            const result = await performDeepSearch(action.prompt, {
+              searchDepth: 5,
+              context: messages.slice(-10)
+            });
+            if (result?.success) {
+              const aiMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Deep search completed. Found comprehensive information on: ${action.prompt}`,
+                timestamp: new Date().toISOString(),
+                metadata: { searchResults: result.results }
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              await saveMessage(aiMessage);
+              toast.success('Deep search completed!');
+            }
+          }
+          break;
+
+        case 'edit_document':
+          if (action.documentTitle && action.metadata?.documentId && action.prompt) {
+            const result = await suggestEdit(
+              action.metadata.documentId,
+              null,
+              action.metadata.selectedText || '',
+              0,
+              100,
+              action.prompt
+            );
+            if (result) {
+              toast.success('Document edit suggestion generated!');
+              const aiMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `Suggested edit for "${action.documentTitle}":\n\n${result.edited_text}\n\n**Reasoning:** ${result.reasoning}`,
+                timestamp: new Date().toISOString(),
+                metadata: { editSuggestion: result }
+              };
+              setMessages(prev => [...prev, aiMessage]);
+              await saveMessage(aiMessage);
+            }
+          }
+          break;
+      }
+    } catch (error: any) {
+      console.error('Action execution error:', error);
+      toast.error(`Failed to execute action: ${error.message}`);
+    }
+  };
+
+  const cancelAction = () => {
+    setShowActionConfirmation(false);
+    setPendingAction(null);
+    toast.info('Action cancelled');
+  };
+
   const getMessageIcon = (role: string) => {
     switch (role) {
       case 'user': return <MessageSquare className="w-4 h-4" />;
@@ -834,11 +1006,56 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setInput('Generate an image of ')}
+                  onClick={() => requestAction(
+                    'image',
+                    'Generate an AI image based on a text prompt',
+                    input || 'a beautiful landscape'
+                  )}
                   className="text-xs neural-glow hover:bg-primary/10"
                 >
-                  <Sparkles className="w-3 h-3 mr-1" />
+                  <Image className="w-3 h-3 mr-1" />
                   Generate Image
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => requestAction(
+                    'video',
+                    'Generate an AI video based on a text prompt',
+                    input || 'a cinematic scene'
+                  )}
+                  className="text-xs neural-glow hover:bg-primary/10"
+                >
+                  <Video className="w-3 h-3 mr-1" />
+                  Generate Video
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => requestAction(
+                    'deep_search',
+                    'Perform comprehensive deep search with AI agents',
+                    input || 'latest AI developments'
+                  )}
+                  className="text-xs neural-glow hover:bg-primary/10"
+                >
+                  <Search className="w-3 h-3 mr-1" />
+                  Deep Search
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => requestAction(
+                    'document',
+                    'Create a new document with AI assistance',
+                    undefined,
+                    'AI Generated Document',
+                    { content: 'Document content will be generated by AI' }
+                  )}
+                  className="text-xs neural-glow hover:bg-primary/10"
+                >
+                  <FileText className="w-3 h-3 mr-1" />
+                  Create Doc
                 </Button>
                 <Button
                   size="sm"
@@ -848,15 +1065,6 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                 >
                   <Eye className="w-3 h-3 mr-1" />
                   Deep Analysis
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setInput('Research the latest information about ')}
-                  className="text-xs neural-glow hover:bg-primary/10"
-                >
-                  <Database className="w-3 h-3 mr-1" />
-                  Research
                 </Button>
                 {onDocumentsClick && (
                   <Button
@@ -870,7 +1078,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                   </Button>
                 )}
                 <Badge variant="outline" className="text-xs">
-                  🚀 Powered by Google Gemini Pro + Imagen
+                  🤖 Full AI Control with User Approval
                 </Badge>
               </div>
               
@@ -907,6 +1115,14 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           </div>
         </div>
       </div>
+
+      {/* AI Action Confirmation Dialog */}
+      <AIActionConfirmation
+        action={pendingAction}
+        open={showActionConfirmation}
+        onConfirm={executeAction}
+        onCancel={cancelAction}
+      />
     </div>
   );
 };
