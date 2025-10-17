@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AIMOSThoughtsPanel } from './AIMOSThoughtsPanel';
+import { generateMockOrchestration } from '@/lib/aimos-orchestration';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import {
@@ -61,6 +63,7 @@ interface ChatMessage {
     documentId?: string;
     searchResults?: any;
     editSuggestion?: any;
+    orchestration?: any; // AIMOS orchestration data
   };
 }
 
@@ -436,7 +439,8 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             metadata: {
               model: 'google/gemini-2.5-flash',
               background_agents_triggered: triggeredAgents,
-              processing_time: 0
+              processing_time: 0,
+              orchestration: generateMockOrchestration(userMessage.content) // Add AIMOS orchestration
             }
           };
           
@@ -894,12 +898,20 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           <ScrollArea className="flex-1 p-6">
             <div className="max-w-4xl mx-auto space-y-6">
               {Array.isArray(messages) && messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex gap-4 ${
-                    message.role === 'user' ? 'justify-end' : 'justify-start'
-                  }`}
-                >
+                <div key={message.id}>
+                  {/* AIMOS Thoughts Panel for AI responses */}
+                  {message.role === 'assistant' && message.metadata?.orchestration && (
+                    <AIMOSThoughtsPanel 
+                      orchestration={message.metadata.orchestration}
+                      messageId={message.id}
+                    />
+                  )}
+                  
+                  <div
+                    className={`flex gap-4 ${
+                      message.role === 'user' ? 'justify-end' : 'justify-start'
+                    }`}
+                  >
                   {message.role !== 'user' && (
                     <Avatar className="neural-glow">
                       <AvatarFallback className="bg-primary/20 text-primary">
@@ -988,6 +1000,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                     </Avatar>
                   )}
                 </div>
+              </div>
               ))}
               
               {isProcessing && (
