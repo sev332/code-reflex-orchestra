@@ -97,6 +97,9 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     knowledge_synthesis: 0
   });
   
+  // SSE buffer for handling partial JSON
+  const sseBufferRef = useRef<string>('');
+  
   // AI Action Control System
   const [pendingAction, setPendingAction] = useState<{
     type: AIActionType;
@@ -437,18 +440,26 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             }
           };
           
-          setMessages(prev => [...prev, initialAiMessage]);
+          setMessages(prev => [...(prev || []), initialAiMessage]);
+          sseBufferRef.current = ''; // Reset buffer
 
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const chunk = decoder.decode(value);
-            const lines = chunk.split('\n');
+            const chunk = decoder.decode(value, { stream: true });
+            sseBufferRef.current += chunk;
+            
+            // Process complete lines
+            const lines = sseBufferRef.current.split('\n');
+            sseBufferRef.current = lines.pop() || ''; // Keep incomplete line in buffer
 
             for (const line of lines) {
-              if (line.startsWith('data: ')) {
-                const data = line.slice(6);
+              const trimmedLine = line.trim();
+              if (!trimmedLine || trimmedLine.startsWith(':')) continue;
+              
+              if (trimmedLine.startsWith('data: ')) {
+                const data = trimmedLine.slice(6).trim();
                 if (data === '[DONE]') continue;
 
                 try {
@@ -460,21 +471,27 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                     
                     // Update the last message with streaming content
                     setMessages(prev => {
+                      if (!Array.isArray(prev) || prev.length === 0) return prev || [];
                       const updated = [...prev];
                       const lastMsg = updated[updated.length - 1];
                       if (lastMsg && lastMsg.role === 'assistant') {
                         lastMsg.content = fullResponse;
-                        lastMsg.metadata!.processing_time = Date.now() - startTime;
+                        if (lastMsg.metadata) {
+                          lastMsg.metadata.processing_time = Date.now() - startTime;
+                        }
                       }
                       return updated;
                     });
                   }
                 } catch (e) {
-                  console.error('Error parsing SSE:', e);
+                  // Ignore incomplete JSON - will be completed in next chunk
                 }
               }
             }
           }
+          
+          // Clear buffer after stream completes
+          sseBufferRef.current = '';
 
           // Save final message
           const finalMessage = messages[messages.length - 1];
@@ -872,11 +889,11 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           </ScrollArea>
         </div>
 
-        {/* Chat Messages */}
+          {/* Chat Messages */}
         <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1 p-6">
             <div className="max-w-4xl mx-auto space-y-6">
-              {messages.map((message) => (
+              {Array.isArray(messages) && messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex gap-4 ${
@@ -923,7 +940,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                       </p>
                       
                       {/* Display generated images if available */}
-                      {message.metadata?.images && message.metadata.images.length > 0 && (
+                      {message.metadata?.images && Array.isArray(message.metadata.images) && message.metadata.images.length > 0 && (
                         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
                           {message.metadata.images.map((imageUrl, idx) => (
                             <div key={idx} className="relative group">
@@ -1105,7 +1122,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               
               <div className="flex items-center justify-between mt-3 text-xs text-muted-foreground">
                 <span>
-                  Persistent conversation • {messages.length} total messages
+                  Persistent conversation • {Array.isArray(messages) ? messages.length : 0} total messages
                 </span>
                 <span>
                   {backgroundAgents.filter(a => a.status === 'active').length} active agents
