@@ -284,7 +284,7 @@ export const ContextAnalysisPanel: React.FC<ContextAnalysisPanelProps> = ({ clas
                   <p className="text-sm mb-2 line-clamp-3">{memory.content}</p>
                   
                   <div className="flex flex-wrap gap-1">
-                    {memory.contextTags.map((tag, idx) => (
+                    {Array.isArray(memory.contextTags) && memory.contextTags.map((tag, idx) => (
                       <Badge key={idx} variant="secondary" className="text-xs">
                         {tag}
                       </Badge>
@@ -356,10 +356,10 @@ export const ContextAnalysisPanel: React.FC<ContextAnalysisPanelProps> = ({ clas
 
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Reasoning Chain ({reasoningResult.reasoning.length} steps):
+                      Reasoning Chain ({Array.isArray(reasoningResult.reasoning) ? reasoningResult.reasoning.length : 0} steps):
                     </p>
                     <div className="space-y-2">
-                      {reasoningResult.reasoning.map((step: any, idx: number) => (
+                      {Array.isArray(reasoningResult.reasoning) && reasoningResult.reasoning.map((step: any, idx: number) => (
                         <Card key={idx} className="p-3 bg-background/50">
                           <div className="flex items-center gap-2 mb-1">
                             <Badge variant="outline" className="text-xs">Step {step.step}</Badge>
@@ -376,7 +376,7 @@ export const ContextAnalysisPanel: React.FC<ContextAnalysisPanelProps> = ({ clas
 
                   <div>
                     <p className="text-xs text-muted-foreground mb-2">
-                      Memories Used: {reasoningResult.memoriesUsed.length}
+                      Memories Used: {Array.isArray(reasoningResult.memoriesUsed) ? reasoningResult.memoriesUsed.length : 0}
                     </p>
                   </div>
                 </div>
@@ -393,10 +393,10 @@ export const ContextAnalysisPanel: React.FC<ContextAnalysisPanelProps> = ({ clas
                   <Card key={level} className="p-4">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
                       <Activity className="w-4 h-4 text-primary" />
-                      Level {level} - {mems.length} memories
+                      Level {level} - {Array.isArray(mems) ? mems.length : 0} memories
                     </h3>
                     <div className="space-y-2">
-                      {mems.slice(0, 5).map((mem: AIMOSMemory) => (
+                      {Array.isArray(mems) && mems.slice(0, 5).map((mem: AIMOSMemory) => (
                         <div key={mem.id} className="p-2 bg-background rounded text-xs">
                           <Badge className={cn("mb-1", getMemoryTypeColor(mem.memoryType))}>
                             {mem.memoryType}
