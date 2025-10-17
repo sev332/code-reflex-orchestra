@@ -292,9 +292,9 @@ export const ContextAnalysisPanel: React.FC<ContextAnalysisPanelProps> = ({ clas
                   </div>
                   
                   <div className="flex items-center gap-3 mt-3 text-xs text-muted-foreground">
-                    <span>Access: {memory.accessPattern.accessCount}x</span>
-                    <span>Level: {memory.spatiotemporalContext.hierarchyLevel}</span>
-                    <span>{memory.validationStatus}</span>
+                    <span>Access: {memory.accessPattern?.accessCount || 0}x</span>
+                    <span>Level: {memory.spatiotemporalContext?.hierarchyLevel || 'N/A'}</span>
+                    <span>{memory.validationStatus || 'pending'}</span>
                   </div>
                 </Card>
               ))}
@@ -433,9 +433,11 @@ export const ContextAnalysisPanel: React.FC<ContextAnalysisPanelProps> = ({ clas
                   <div key={mem.id} className="p-3 bg-background rounded-lg">
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-xs">
-                        {new Date(mem.spatiotemporalContext.timestamp).toLocaleString()}
+                        {mem.spatiotemporalContext?.timestamp 
+                          ? new Date(mem.spatiotemporalContext.timestamp).toLocaleString()
+                          : 'Unknown time'}
                       </Badge>
-                      <Badge className="text-xs">Importance: {mem.importance}</Badge>
+                      <Badge className="text-xs">Importance: {mem.importance || 0}</Badge>
                     </div>
                     <p className="text-xs line-clamp-3">{mem.content}</p>
                   </div>
