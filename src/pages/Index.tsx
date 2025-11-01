@@ -7,6 +7,7 @@ import { useState, lazy, Suspense } from "react";
 import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
 import { DocumentLibrary } from "@/components/Documents/DocumentLibrary";
+import { RealMemoryDashboard } from "@/components/AIChat/RealMemoryDashboard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LeftToolbar } from "@/components/ui/left-toolbar";
@@ -19,7 +20,7 @@ const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard")
 const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
 
 const Index = () => {
-  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production' | 'documents'>('chat');
+  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production' | 'documents' | 'memory'>('chat');
 
   const getViewModeConfig = () => {
     switch (viewMode) {
@@ -56,6 +57,12 @@ const Index = () => {
     switch (viewMode) {
       case 'chat':
         return <AdvancedPersistentChat onDocumentsClick={() => setViewMode('documents')} />;
+      case 'memory':
+        return (
+          <div className="pl-16 pr-16 pt-20">
+            <RealMemoryDashboard />
+          </div>
+        );
       case 'documents':
         return (
           <div className="pl-16">
@@ -135,6 +142,15 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setViewMode('memory')}
+              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
+            >
+              <Brain className="w-4 h-4 mr-2" />
+              Memory
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setViewMode('documents')}
               className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
             >
@@ -153,8 +169,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Document Mode Toggle - Show back to chat button */}
-        {viewMode === 'documents' && (
+        {/* Document/Memory Mode Toggle - Show back to chat button */}
+        {(viewMode === 'documents' || viewMode === 'memory') && (
           <div className="absolute top-4 right-4 z-50">
             <Button
               variant="outline"

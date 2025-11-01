@@ -178,6 +178,231 @@ export type Database = {
           },
         ]
       }
+      cmc_evidence_graph: {
+        Row: {
+          author: string | null
+          citation_count: number | null
+          content: string
+          content_id: string
+          content_type: string
+          created_at: string | null
+          created_date: string | null
+          id: string
+          last_cited_at: string | null
+          source: string
+          tags: string[] | null
+        }
+        Insert: {
+          author?: string | null
+          citation_count?: number | null
+          content: string
+          content_id: string
+          content_type: string
+          created_at?: string | null
+          created_date?: string | null
+          id?: string
+          last_cited_at?: string | null
+          source: string
+          tags?: string[] | null
+        }
+        Update: {
+          author?: string | null
+          citation_count?: number | null
+          content?: string
+          content_id?: string
+          content_type?: string
+          created_at?: string | null
+          created_date?: string | null
+          id?: string
+          last_cited_at?: string | null
+          source?: string
+          tags?: string[] | null
+        }
+        Relationships: []
+      }
+      cmc_memories: {
+        Row: {
+          access_count: number | null
+          compression_ratio: number | null
+          content: string
+          content_hash: string
+          created_at: string | null
+          dependency_delta: number | null
+          head_span: number | null
+          id: string
+          importance: number | null
+          index_depth_score: number | null
+          is_compressed: boolean | null
+          last_accessed_at: string | null
+          original_token_count: number | null
+          parent_tags: string[] | null
+          quality_score: number | null
+          retrieval_score: number | null
+          semantic_embedding: string | null
+          session_id: string | null
+          source: string | null
+          tags: string[] | null
+          tail_span: number | null
+          tier: string
+          token_count: number
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_count?: number | null
+          compression_ratio?: number | null
+          content: string
+          content_hash: string
+          created_at?: string | null
+          dependency_delta?: number | null
+          head_span?: number | null
+          id?: string
+          importance?: number | null
+          index_depth_score?: number | null
+          is_compressed?: boolean | null
+          last_accessed_at?: string | null
+          original_token_count?: number | null
+          parent_tags?: string[] | null
+          quality_score?: number | null
+          retrieval_score?: number | null
+          semantic_embedding?: string | null
+          session_id?: string | null
+          source?: string | null
+          tags?: string[] | null
+          tail_span?: number | null
+          tier: string
+          token_count: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_count?: number | null
+          compression_ratio?: number | null
+          content?: string
+          content_hash?: string
+          created_at?: string | null
+          dependency_delta?: number | null
+          head_span?: number | null
+          id?: string
+          importance?: number | null
+          index_depth_score?: number | null
+          is_compressed?: boolean | null
+          last_accessed_at?: string | null
+          original_token_count?: number | null
+          parent_tags?: string[] | null
+          quality_score?: number | null
+          retrieval_score?: number | null
+          semantic_embedding?: string | null
+          session_id?: string | null
+          source?: string | null
+          tags?: string[] | null
+          tail_span?: number | null
+          tier?: string
+          token_count?: number
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      cmc_reasoning_chains: {
+        Row: {
+          agents: Json
+          assumptions: string[] | null
+          confidence: number | null
+          created_at: string | null
+          duration_ms: number | null
+          final_answer: string
+          healing_events: Json | null
+          id: string
+          logit_variance: number | null
+          provenance_coverage: number | null
+          semantic_entropy: number | null
+          session_id: string | null
+          steps: Json
+          support: Json
+          token_budget: number
+          tokens_used: number
+          trace_id: string
+          user_id: string | null
+          user_query: string
+        }
+        Insert: {
+          agents: Json
+          assumptions?: string[] | null
+          confidence?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          final_answer: string
+          healing_events?: Json | null
+          id?: string
+          logit_variance?: number | null
+          provenance_coverage?: number | null
+          semantic_entropy?: number | null
+          session_id?: string | null
+          steps: Json
+          support: Json
+          token_budget: number
+          tokens_used: number
+          trace_id: string
+          user_id?: string | null
+          user_query: string
+        }
+        Update: {
+          agents?: Json
+          assumptions?: string[] | null
+          confidence?: number | null
+          created_at?: string | null
+          duration_ms?: number | null
+          final_answer?: string
+          healing_events?: Json | null
+          id?: string
+          logit_variance?: number | null
+          provenance_coverage?: number | null
+          semantic_entropy?: number | null
+          session_id?: string | null
+          steps?: Json
+          support?: Json
+          token_budget?: number
+          tokens_used?: number
+          trace_id?: string
+          user_id?: string | null
+          user_query?: string
+        }
+        Relationships: []
+      }
+      cmc_tag_graph: {
+        Row: {
+          access_count: number | null
+          created_at: string | null
+          decay_tau: number | null
+          id: string
+          last_accessed_at: string | null
+          parent_tag: string | null
+          priority: number | null
+          tag: string
+        }
+        Insert: {
+          access_count?: number | null
+          created_at?: string | null
+          decay_tau?: number | null
+          id?: string
+          last_accessed_at?: string | null
+          parent_tag?: string | null
+          priority?: number | null
+          tag: string
+        }
+        Update: {
+          access_count?: number | null
+          created_at?: string | null
+          decay_tau?: number | null
+          id?: string
+          last_accessed_at?: string | null
+          parent_tag?: string | null
+          priority?: number | null
+          tag?: string
+        }
+        Relationships: []
+      }
       conversations: {
         Row: {
           agent_id: string | null
