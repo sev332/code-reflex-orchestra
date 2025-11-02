@@ -40,6 +40,8 @@ import { useGoogleAI } from '@/hooks/useGoogleAI';
 import { useDocumentManagement } from '@/hooks/useDocumentManagement';
 import { useDocumentEditor } from '@/hooks/useDocumentEditor';
 import { supabase } from '@/integrations/supabase/client';
+import { useReasoningChat } from '@/hooks/useReasoningChat';
+import { ReasoningTrace } from './ReasoningTrace';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
 import { toast } from 'sonner';
 import { AIActionConfirmation, AIActionType } from './AIActionConfirmation';
@@ -114,6 +116,10 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const [showActionConfirmation, setShowActionConfirmation] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const sessionIdRef = useRef(crypto.randomUUID());
+  const { sendMessage: sendCMCMessage, isProcessing: cmcProcessing, currentReasoning } = useReasoningChat();
+  const [useCMCMode, setUseCMCMode] = useState(true);
+  
   const { 
     backgroundAgents, 
     registerTheory, 
@@ -264,6 +270,37 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     setIsProcessing(true);
 
     try {
+      // CMC Mode: Use full reasoning pipeline
+      if (useCMCMode) {
+        const response = await sendCMCMessage(userInput, sessionIdRef.current);
+        
+        if (response) {
+          const aiMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: response.answer,
+            timestamp: new Date().toISOString(),
+            reasoning_trace: response.reasoning,
+            confidence: response.verification.confidence,
+            metadata: {
+              model: 'CMC+APOE+VIF',
+              processing_time: 0,
+              orchestration: {
+                trace_id: response.trace_id,
+                provenance_coverage: response.verification.provenance_coverage,
+                semantic_entropy: response.verification.semantic_entropy
+              }
+            }
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          await saveMessage(aiMessage);
+          setIsProcessing(false);
+          return;
+        }
+      }
+      
+      // Fallback to original mode if CMC fails or is disabled
       // Generate comprehensive reasoning trace
       const reasoningTrace = await sdfCvfCore.writeCodeWithNLTags(
         'user_query',
@@ -804,6 +841,20 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             
             {/* Context Window Status */}
             <div className="flex items-center gap-6">
+              {/* CMC Mode Toggle */}
+              <Button
+                variant={useCMCMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setUseCMCMode(!useCMCMode);
+                  toast.info(useCMCMode ? "Switched to legacy mode" : "Switched to CMC reasoning mode");
+                }}
+                className="neural-glow"
+              >
+                <Zap className="w-4 h-4 mr-2" />
+                {useCMCMode ? "CMC Active" : "Legacy Mode"}
+              </Button>
+              
               <div className="flex items-center gap-4 text-sm">
                 <div className="flex items-center gap-2">
                   <MemoryStick className="w-4 h-4 text-primary" />
@@ -970,11 +1021,18 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                       
                       {message.reasoning_trace && (
                         <div className="mt-3 pt-3 border-t border-border/50">
-                          <p className="text-xs text-muted-foreground">
-                            Reasoning trace available - confidence: {
-                              (message.reasoning_trace.confidence_score * 100).toFixed(0)
-                            }%
-                          </p>
+                          {message.reasoning_trace.steps ? (
+                            <ReasoningTrace
+                              steps={message.reasoning_trace}
+                              verification={message.metadata?.orchestration}
+                            />
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Reasoning trace available - confidence: {
+                                (message.reasoning_trace.confidence_score * 100).toFixed(0)
+                              }%
+                            </p>
+                          )}
                         </div>
                       )}
                       

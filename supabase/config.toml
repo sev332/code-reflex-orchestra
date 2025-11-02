@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.document-ai-editor]
 verify_jwt = true
+
+[functions.cmc-chat]
+verify_jwt = false
