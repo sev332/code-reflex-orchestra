@@ -30,6 +30,12 @@ const Index = () => {
           icon: MessageSquare,
           description: 'Persistent AI conversation with full context'
         };
+      case 'memory':
+        return {
+          label: 'Memory Dashboard',
+          icon: Brain,
+          description: 'CMC hierarchical memory visualization'
+        };
       case 'documents':
         return {
           label: 'Document Library',
