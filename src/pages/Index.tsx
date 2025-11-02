@@ -8,6 +8,7 @@ import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
 import { DocumentLibrary } from "@/components/Documents/DocumentLibrary";
 import { RealMemoryDashboard } from "@/components/AIChat/RealMemoryDashboard";
+import { OrchestrationStudio } from "@/components/Orchestration/OrchestrationStudio";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LeftToolbar } from "@/components/ui/left-toolbar";
@@ -20,7 +21,7 @@ const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard")
 const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
 
 const Index = () => {
-  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production' | 'documents' | 'memory'>('chat');
+  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production' | 'documents' | 'memory' | 'orchestration'>('chat');
 
   const getViewModeConfig = () => {
     switch (viewMode) {
@@ -54,6 +55,12 @@ const Index = () => {
           icon: Activity,
           description: 'Advanced production AGI development system'
         };
+      case 'orchestration':
+        return {
+          label: 'Orchestration Studio',
+          icon: Zap,
+          description: 'Visual prompt chain designer and code generation'
+        };
     }
   };
 
@@ -73,6 +80,14 @@ const Index = () => {
         return (
           <div className="pl-16">
             <DocumentLibrary />
+          </div>
+        );
+      case 'orchestration':
+        return (
+          <div className="pl-16">
+            <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading Studio...</p></div>}>
+              <OrchestrationStudio />
+            </Suspense>
           </div>
         );
       case 'dev-legacy':
@@ -166,6 +181,15 @@ const Index = () => {
             <Button
               variant="outline"
               size="sm"
+              onClick={() => setViewMode('orchestration')}
+              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
+            >
+              <Zap className="w-4 h-4 mr-2" />
+              Orchestration
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => setViewMode('dev-production')}
               className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
             >
@@ -175,8 +199,8 @@ const Index = () => {
           </div>
         )}
 
-        {/* Document/Memory Mode Toggle - Show back to chat button */}
-        {(viewMode === 'documents' || viewMode === 'memory') && (
+        {/* Document/Memory/Orchestration Mode Toggle - Show back to chat button */}
+        {(viewMode === 'documents' || viewMode === 'memory' || viewMode === 'orchestration') && (
           <div className="absolute top-4 right-4 z-50">
             <Button
               variant="outline"
