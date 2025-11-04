@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.orchestration-memory]
 verify_jwt = false
+
+[functions.real-multi-llm]
+verify_jwt = false

@@ -1,439 +1,235 @@
-import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { 
-  Brain, 
-  Zap, 
-  Eye, 
-  Settings, 
-  Activity, 
-  Database,
-  Users,
-  AlertTriangle,
-  TrendingUp
+import {
+  Activity,
+  Zap,
+  TrendingUp,
+  Server,
+  CheckCircle,
+  Clock,
+  BarChart3
 } from 'lucide-react';
-import { useProductionWisdomNET } from '@/hooks/useProductionWisdomNET';
-import { HILControlCenter } from './HILControlCenter';
-import { AdvancedMemoryViewer } from './AdvancedMemoryViewer';
-import { ProductionSystemMap } from './ProductionSystemMap';
-import { VectorMemorySystem } from './VectorMemorySystem';
-import { AIModelOrchestrator } from './AIModelOrchestrator';
-import { RealtimeMonitor } from './RealtimeMonitor';
-import { AdvancedAnalytics } from './AdvancedAnalytics';
-import { IntegrationTesting } from './IntegrationTesting';
-import { AutonomousAgentSwarm } from './AutonomousAgentSwarm';
-import { MultiModalProcessor } from './MultiModalProcessor';
-import { AdvancedReasoningEngine } from './AdvancedReasoningEngine';
-import { DistributedOrchestrator } from './DistributedOrchestrator';
-import { SelfLearningSystem } from './SelfLearningSystem';
-import { ConsciousnessEmergence } from '@/components/AGI/ConsciousnessEmergence';
-import { QuantumCoherenceEngine } from '@/components/AGI/QuantumCoherenceEngine';
-import { UniversalProblemSolver } from '@/components/AGI/UniversalProblemSolver';
-import InfiniTree from '@/components/InfiniTree';
-import { toast } from 'sonner';
 
-export function ProductionDashboard() {
-  const {
-    isInitialized,
-    isLoading,
-    agents,
-    tasks,
-    metrics,
-    initialize,
-    refreshState,
-    createTask
-  } = useProductionWisdomNET();
-
+export const ProductionDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
 
-  useEffect(() => {
-    if (!isInitialized) {
-      initialize();
+  // Mock deployment data
+  const deployments = [
+    {
+      id: '1',
+      name: 'Code Generation Pipeline',
+      environment: 'production',
+      status: 'active',
+      executionCount: 1250,
+      errorRate: 0.02,
+      avgLatencyMs: 450
+    },
+    {
+      id: '2',
+      name: 'Research Analysis Chain',
+      environment: 'staging',
+      status: 'active',
+      executionCount: 89,
+      errorRate: 0.05,
+      avgLatencyMs: 680
+    },
+    {
+      id: '3',
+      name: 'Content Creation Flow',
+      environment: 'production',
+      status: 'active',
+      executionCount: 2100,
+      errorRate: 0.01,
+      avgLatencyMs: 320
     }
-  }, [isInitialized, initialize]);
+  ];
 
-  const handleAgentAction = async (agentId: string, action: string) => {
-    try {
-      // In a full implementation, this would call the appropriate agent control functions
-      toast.success(`Agent action: ${action} on ${agentId}`);
-      await refreshState();
-    } catch (error) {
-      toast.error(`Failed to perform agent action: ${action}`);
-    }
+  const metrics = {
+    totalExecutions: 3439,
+    avgLatency: 483,
+    successRate: 98.2,
+    activeDeployments: 3
   };
-
-  const handleTaskAction = async (taskId: string, action: string) => {
-    try {
-      // In a full implementation, this would call the appropriate task control functions
-      toast.success(`Task action: ${action} on ${taskId}`);
-      await refreshState();
-    } catch (error) {
-      toast.error(`Failed to perform task action: ${action}`);
-    }
-  };
-
-  const handleCreateTask = async (type: string) => {
-    try {
-      const taskId = await createTask(
-        `New ${type} Task`,
-        `Auto-generated ${type} task from dashboard`,
-        type,
-        7 // High priority
-      );
-      toast.success(`Created new ${type} task: ${taskId.slice(0, 8)}...`);
-    } catch (error) {
-      toast.error(`Failed to create ${type} task`);
-    }
-  };
-
-  if (!isInitialized) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="w-96">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-3">
-              <Brain className="w-6 h-6 animate-pulse" />
-              Initializing Production WisdomNET
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="text-center">
-              <div className="animate-spin w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-              <p className="text-muted-foreground">
-                Starting advanced agents, loading memory systems, and establishing HIL controls...
-              </p>
-            </div>
-            <Button 
-              onClick={initialize} 
-              disabled={isLoading}
-              className="w-full"
-            >
-              {isLoading ? 'Initializing...' : 'Initialize System'}
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
+    <div className="h-screen flex flex-col bg-gradient-mind">
       {/* Header */}
-      <div className="border-b border-white/10 bg-black/20 backdrop-blur-sm">
+      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Brain className="w-8 h-8 text-blue-400" />
-                <div>
-                  <h1 className="text-2xl font-bold">WisdomNET Production</h1>
-                  <p className="text-sm text-gray-400">Advanced AGI Development System</p>
-                </div>
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Server className="w-6 h-6 text-primary" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-neural-glow">
+                  Production Dashboard
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  Monitor and manage deployed orchestration chains
+                </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-6 text-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span>{metrics.active_agents} Active Agents</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  <span>{metrics.pending_tasks} Pending Tasks</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  <span>{metrics.memory_entries} Memory Entries</span>
-                </div>
-              </div>
-              
-              <Badge 
-                variant={metrics.system_load > 0.8 ? 'destructive' : 'default'}
-                className="bg-white/10 border-white/20"
-              >
-                Load: {(metrics.system_load * 100).toFixed(0)}%
+            <div className="flex items-center gap-3">
+              <Badge variant="outline" className="gap-2">
+                <Activity className="w-3 h-3" />
+                All Systems Operational
               </Badge>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-6 py-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-12 bg-white/5 border border-white/10">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-white/10">
-              <Activity className="w-3 h-3 mr-1" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="hil" className="data-[state=active]:bg-white/10">
-              <Eye className="w-3 h-3 mr-1" />
-              HIL
-            </TabsTrigger>
-            <TabsTrigger value="ai-models" className="data-[state=active]:bg-white/10">
-              <Brain className="w-3 h-3 mr-1" />
-              AI Models
-            </TabsTrigger>
-            <TabsTrigger value="vector-memory" className="data-[state=active]:bg-white/10">
-              <Database className="w-3 h-3 mr-1" />
-              Vector Memory
-            </TabsTrigger>
-            <TabsTrigger value="realtime" className="data-[state=active]:bg-white/10">
-              <Zap className="w-3 h-3 mr-1" />
-              Live Monitor
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="data-[state=active]:bg-white/10">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Analytics
-            </TabsTrigger>
-            <TabsTrigger value="testing" className="data-[state=active]:bg-white/10">
-              <Settings className="w-3 h-3 mr-1" />
-              Testing
-            </TabsTrigger>
-            <TabsTrigger value="system-map" className="data-[state=active]:bg-white/10">
-              <Users className="w-3 h-3 mr-1" />
-              System Map
-            </TabsTrigger>
-            <TabsTrigger value="3d-view" className="data-[state=active]:bg-white/10">
-              <Activity className="w-3 h-3 mr-1" />
-              3D View
-            </TabsTrigger>
-            <TabsTrigger value="consciousness" className="data-[state=active]:bg-white/10">
-              <Brain className="w-3 h-3 mr-1" />
-              Consciousness
-            </TabsTrigger>
-            <TabsTrigger value="quantum" className="data-[state=active]:bg-white/10">
-              <Zap className="w-3 h-3 mr-1" />
-              Quantum
-            </TabsTrigger>
-            <TabsTrigger value="universal-solver" className="data-[state=active]:bg-white/10">
-              <Settings className="w-3 h-3 mr-1" />
-              Universal
-            </TabsTrigger>
-          </TabsList>
+      {/* Metrics Overview */}
+      <div className="border-b bg-muted/30">
+        <div className="container mx-auto px-6 py-4">
+          <div className="grid grid-cols-4 gap-4">
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Total Executions</span>
+                <Zap className="w-4 h-4 text-primary" />
+              </div>
+              <div className="text-2xl font-bold text-neural-glow">
+                {metrics.totalExecutions.toLocaleString()}
+              </div>
+              <div className="text-xs text-green-500 mt-1">+12.5% from last hour</div>
+            </Card>
 
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Active Agents</p>
-                      <p className="text-3xl font-bold text-green-400">{metrics.active_agents}</p>
-                    </div>
-                    <Users className="w-12 h-12 text-green-400/50" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Pending Tasks</p>
-                      <p className="text-3xl font-bold text-blue-400">{metrics.pending_tasks}</p>
-                    </div>
-                    <Activity className="w-12 h-12 text-blue-400/50" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">Completed (24h)</p>
-                      <p className="text-3xl font-bold text-purple-400">{metrics.completed_tasks_24h}</p>
-                    </div>
-                    <TrendingUp className="w-12 h-12 text-purple-400/50" />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="bg-white/5 border-white/10">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-400">System Load</p>
-                      <p className={`text-3xl font-bold ${metrics.system_load > 0.8 ? 'text-red-400' : 'text-green-400'}`}>
-                        {(metrics.system_load * 100).toFixed(0)}%
-                      </p>
-                    </div>
-                    <Settings className="w-12 h-12 text-gray-400/50" />
-                  </div>
-                </CardContent>
-              </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Avg Latency</span>
+                <Clock className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="text-2xl font-bold text-neural-glow">
+                {metrics.avgLatency}ms
+              </div>
+              <div className="text-xs text-green-500 mt-1">-8% from baseline</div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Success Rate</span>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+              </div>
+              <div className="text-2xl font-bold text-neural-glow">
+                {metrics.successRate}%
+              </div>
+              <div className="text-xs text-green-500 mt-1">Above target</div>
+            </Card>
+
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm text-muted-foreground">Active Deployments</span>
+                <Server className="w-4 h-4 text-purple-500" />
+              </div>
+              <div className="text-2xl font-bold text-neural-glow">
+                {metrics.activeDeployments}
+              </div>
+              <div className="text-xs text-muted-foreground mt-1">All healthy</div>
+            </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <div className="border-b bg-muted/30">
+            <div className="container mx-auto px-6">
+              <TabsList className="grid grid-cols-3 w-full max-w-md">
+                <TabsTrigger value="overview" className="gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  Overview
+                </TabsTrigger>
+                <TabsTrigger value="deployments" className="gap-2">
+                  <Server className="w-4 h-4" />
+                  Deployments
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  Analytics
+                </TabsTrigger>
+              </TabsList>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card className="bg-white/5 border-white/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Agent Status Overview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {agents.slice(0, 6).map((agent) => (
-                    <div key={agent.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                      <div className="space-y-1">
-                        <div className="font-medium">{agent.name}</div>
-                        <div className="text-sm text-gray-400">{agent.role}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={agent.status === 'active' ? 'default' : 'secondary'}
-                          className="bg-white/10"
-                        >
-                          {agent.status}
-                        </Badge>
-                        <div className="text-sm text-right">
-                          <div>{(agent.performance_score * 100).toFixed(0)}%</div>
-                          <div className="text-xs text-gray-500">Performance</div>
+          <div className="flex-1 overflow-auto p-6">
+            <div className="container mx-auto max-w-7xl">
+              <TabsContent value="overview" className="m-0">
+                <div className="space-y-4">
+                  <h2 className="text-lg font-semibold">Active Deployments</h2>
+                  <div className="grid gap-4">
+                    {deployments.map((deployment) => (
+                      <Card key={deployment.id} className="p-4 hover:bg-accent/5 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <h3 className="font-semibold">{deployment.name}</h3>
+                              <Badge variant={deployment.environment === 'production' ? 'default' : 'secondary'}>
+                                {deployment.environment}
+                              </Badge>
+                              <Badge variant="outline" className="gap-1">
+                                <Activity className="w-3 h-3" />
+                                {deployment.status}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-3 gap-4 text-sm">
+                              <div>
+                                <span className="text-muted-foreground">Executions: </span>
+                                <span className="font-medium">{deployment.executionCount.toLocaleString()}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Error Rate: </span>
+                                <span className={`font-medium ${deployment.errorRate < 0.05 ? 'text-green-500' : 'text-yellow-500'}`}>
+                                  {(deployment.errorRate * 100).toFixed(2)}%
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">Avg Latency: </span>
+                                <span className="font-medium">{deployment.avgLatencyMs}ms</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm">
+                              View Logs
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              Metrics
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-
-              <Card className="bg-white/5 border-white/10">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="w-5 h-5" />
-                    Recent Tasks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {tasks.slice(0, 6).map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
-                      <div className="space-y-1">
-                        <div className="font-medium">{task.title}</div>
-                        <div className="text-sm text-gray-400">{task.type}</div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={task.status === 'completed' ? 'default' : 'secondary'}
-                          className="bg-white/10"
-                        >
-                          {task.status}
-                        </Badge>
-                        <div className="text-sm text-right">
-                          <div>P{task.priority}</div>
-                          <div className="text-xs text-gray-500">{(task.progress * 100).toFixed(0)}%</div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            </div>
-
-            <Card className="bg-white/5 border-white/10">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button 
-                    onClick={() => handleCreateTask('research')}
-                    variant="outline"
-                    className="bg-white/5 border-white/20 hover:bg-white/10"
-                  >
-                    Create Research Task
-                  </Button>
-                  <Button 
-                    onClick={() => handleCreateTask('code')}
-                    variant="outline"
-                    className="bg-white/5 border-white/20 hover:bg-white/10"
-                  >
-                    Create Code Task
-                  </Button>
-                  <Button 
-                    onClick={() => handleCreateTask('analyze')}
-                    variant="outline"
-                    className="bg-white/5 border-white/20 hover:bg-white/10"
-                  >
-                    Create Analysis Task
-                  </Button>
-                  <Button 
-                    onClick={refreshState}
-                    variant="outline"
-                    className="bg-white/5 border-white/20 hover:bg-white/10"
-                  >
-                    Refresh System
-                  </Button>
+                      </Card>
+                    ))}
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </TabsContent>
 
-          <TabsContent value="hil">
-            <HILControlCenter
-              agents={agents}
-              tasks={tasks}
-              onAgentAction={handleAgentAction}
-              onTaskAction={handleTaskAction}
-            />
-          </TabsContent>
+              <TabsContent value="deployments" className="m-0">
+                <Card className="p-8 text-center">
+                  <Server className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    Detailed deployment management coming soon
+                  </p>
+                </Card>
+              </TabsContent>
 
-          <TabsContent value="ai-models">
-            <AIModelOrchestrator />
-          </TabsContent>
-
-          <TabsContent value="vector-memory">
-            <VectorMemorySystem />
-          </TabsContent>
-
-          <TabsContent value="realtime">
-            <RealtimeMonitor />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <AdvancedAnalytics />
-          </TabsContent>
-
-          <TabsContent value="testing">
-            <IntegrationTesting />
-          </TabsContent>
-
-          <TabsContent value="system-map">
-            <ProductionSystemMap
-              agents={agents}
-              tasks={tasks}
-              metrics={metrics}
-            />
-          </TabsContent>
-
-          <TabsContent value="3d-view">
-            <Card className="bg-white/5 border-white/10 h-[800px]">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  3D System Visualization
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="h-full p-0">
-                <InfiniTree />
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="consciousness">
-            <ConsciousnessEmergence />
-          </TabsContent>
-
-          <TabsContent value="quantum">
-            <QuantumCoherenceEngine />
-          </TabsContent>
-
-          <TabsContent value="universal-solver">
-            <UniversalProblemSolver />
-          </TabsContent>
+              <TabsContent value="analytics" className="m-0">
+                <Card className="p-8 text-center">
+                  <TrendingUp className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    Advanced analytics and insights coming soon
+                  </p>
+                </Card>
+              </TabsContent>
+            </div>
+          </div>
         </Tabs>
       </div>
     </div>
   );
-}
+};

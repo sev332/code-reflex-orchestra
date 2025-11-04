@@ -21,7 +21,7 @@ interface LucidInterfaceProps {
 
 export function LucidInterface({ className }: LucidInterfaceProps) {
   const [lucidCore] = useState(() => new LucidCore(createDefaultLucidConfig()));
-  const [multiLLM] = useState(() => new MultiLLMEngine());
+  const [multiLLM] = useState(() => MultiLLMEngine.getInstance());
   const [systemState, setSystemState] = useState<any>({});
   const [activeChains, setActiveChains] = useState<LongPromptChain[]>([]);
   const [insights, setInsights] = useState<SystemInsight[]>([]);
@@ -91,12 +91,12 @@ export function LucidInterface({ className }: LucidInterfaceProps) {
     setIsProcessing(true);
     try {
       const request: MultiLLMRequest = {
-        prompt: promptInput,
-        models: selectedModels,
-        strategy: 'parallel'
+        provider: 'lovable',
+        model: 'google/gemini-2.5-flash',
+        messages: [{ role: 'user', content: promptInput }]
       };
 
-      const response = await multiLLM.callMultiLLM(request);
+      const response = await multiLLM.route(request.messages, request);
       console.log('Multi-LLM Response:', response);
       
       // Store in memory

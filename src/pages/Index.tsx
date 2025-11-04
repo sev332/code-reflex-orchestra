@@ -16,12 +16,14 @@ import { RightToolbar } from "@/components/ui/right-toolbar";
 import { Zap, Brain, Settings, MessageSquare, Code, Activity, FileText } from "lucide-react";
 import { toast } from "sonner";
 
+type ViewMode = 'chat' | 'dev-legacy' | 'dev-production' | 'documents' | 'memory' | 'orchestration';
+
 // Lazy load dev dashboards to prevent Three.js from loading in chat mode
 const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
 const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
 
 const Index = () => {
-  const [viewMode, setViewMode] = useState<'chat' | 'dev-legacy' | 'dev-production' | 'documents' | 'memory' | 'orchestration'>('chat');
+  const [viewMode, setViewMode] = useState<ViewMode>('chat');
 
   const getViewModeConfig = () => {
     switch (viewMode) {
