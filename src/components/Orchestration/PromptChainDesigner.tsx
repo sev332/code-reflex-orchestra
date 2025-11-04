@@ -57,11 +57,18 @@ export interface ChainNode {
 interface PromptChainDesignerProps {
   onExecute: (chain: { nodes: ChainNode[]; edges: Edge[] }) => Promise<void>;
   isExecuting?: boolean;
+  initialNodes?: ChainNode[];
+  initialEdges?: Edge[];
 }
 
-export const PromptChainDesigner = ({ onExecute, isExecuting }: PromptChainDesignerProps) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState<ChainNode>([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+export const PromptChainDesigner = ({ 
+  onExecute, 
+  isExecuting,
+  initialNodes,
+  initialEdges 
+}: PromptChainDesignerProps) => {
+  const [nodes, setNodes, onNodesChange] = useNodesState<ChainNode>(initialNodes || []);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges || []);
   const [selectedNode, setSelectedNode] = useState<ChainNode | null>(null);
   const [chainName, setChainName] = useState('Untitled Chain');
 

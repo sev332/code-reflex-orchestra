@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.code-executor]
 verify_jwt = false
+
+[functions.orchestration-memory]
+verify_jwt = false
