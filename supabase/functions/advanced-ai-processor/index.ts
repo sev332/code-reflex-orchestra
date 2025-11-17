@@ -86,26 +86,26 @@ serve(async (req) => {
 });
 
 function selectOptimalModel(type: string, priority?: number): string {
-  // Intelligent model routing based on task type and priority
+  // Using Lovable AI with Gemini models
   switch (type) {
     case 'reasoning':
-      return priority && priority >= 8 ? 'o3-2025-04-16' : 'gpt-5-2025-08-07';
+      return 'google/gemini-2.5-pro'; // Most capable for complex reasoning
     case 'creative':
-      return 'gpt-5-2025-08-07';
+      return 'google/gemini-2.5-flash'; // Balanced for creative tasks
     case 'analytical':
-      return 'o4-mini-2025-04-16';
+      return 'google/gemini-2.5-flash'; // Good for analysis
     case 'memory_search':
-      return 'gpt-5-mini-2025-08-07';
+      return 'google/gemini-2.5-flash-lite'; // Fast for retrieval
     default:
-      return 'gpt-4.1-2025-04-14';
+      return 'google/gemini-2.5-flash'; // Default balanced choice
   }
 }
 
 async function processWithAI(request: AIRequest, model: string): Promise<ModelResponse> {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   
-  if (!openAIApiKey) {
-    throw new Error('OpenAI API key not configured');
+  if (!lovableApiKey) {
+    throw new Error('LOVABLE_API_KEY not configured');
   }
 
   // Enhanced prompt with system context
@@ -125,27 +125,30 @@ async function processWithAI(request: AIRequest, model: string): Promise<ModelRe
   }
 
   const requestBody: any = {
-    model,
+    model: 'google/gemini-2.5-flash',
     messages,
     max_completion_tokens: 4000
   };
 
-  // Only add temperature for legacy models
-  if (model.includes('gpt-4o')) {
-    requestBody.temperature = 0.7;
-  }
+  requestBody.temperature = 0.7;
 
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+  const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${openAIApiKey}`,
+      'Authorization': `Bearer ${lovableApiKey}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
-    throw new Error(`OpenAI API error: ${response.statusText}`);
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+    if (response.status === 402) {
+      throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+    }
+    throw new Error(`Lovable AI API error: ${response.statusText}`);
   }
 
   const data = await response.json();

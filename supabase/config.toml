@@ -30,5 +30,8 @@ verify_jwt = false
 [functions.orchestration-memory]
 verify_jwt = false
 
-[functions.real-multi-llm]
+[functions.advanced-ai-processor]
+verify_jwt = false
+
+[functions.multi-agent-orchestrator]
 verify_jwt = false
