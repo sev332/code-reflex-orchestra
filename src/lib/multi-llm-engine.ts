@@ -24,6 +24,16 @@ export interface MultiLLMRequest {
   maxTokens?: number;
 }
 
+export interface ModelInfo {
+  id: string;
+  name: string;
+  provider: 'lovable' | 'anthropic' | 'custom';
+  costTier: 'free' | 'low' | 'medium' | 'high';
+  contextWindow: number;
+  multimodal: boolean;
+  bestFor: string[];
+}
+
 export interface LLMResponse {
   content: string;
   model: string;
@@ -98,30 +108,83 @@ export class MultiLLMEngine {
   }
 
   /**
-   * Get available models for a provider
+   * Get all available models with metadata
    */
-  getAvailableModels(provider: string): string[] {
-    switch (provider) {
-      case 'lovable':
-        return [
-          'google/gemini-2.5-pro',
-          'google/gemini-2.5-flash',
-          'google/gemini-2.5-flash-lite',
-          'openai/gpt-5',
-          'openai/gpt-5-mini',
-          'openai/gpt-5-nano'
-        ];
-      case 'anthropic':
-        return [
-          'claude-sonnet-4-5',
-          'claude-opus-4-1-20250805',
-          'claude-sonnet-4-20250514'
-        ];
-      case 'custom':
-        return ['custom-model'];
-      default:
-        return [];
-    }
+  getAvailableModels(): ModelInfo[] {
+    return [
+      {
+        id: 'google/gemini-2.5-pro',
+        name: 'Gemini 2.5 Pro',
+        provider: 'lovable',
+        costTier: 'high',
+        contextWindow: 2000000,
+        multimodal: true,
+        bestFor: ['reasoning', 'complex tasks', 'multimodal']
+      },
+      {
+        id: 'google/gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        provider: 'lovable',
+        costTier: 'medium',
+        contextWindow: 1000000,
+        multimodal: true,
+        bestFor: ['balanced performance', 'general purpose']
+      },
+      {
+        id: 'google/gemini-2.5-flash-lite',
+        name: 'Gemini 2.5 Flash Lite',
+        provider: 'lovable',
+        costTier: 'low',
+        contextWindow: 1000000,
+        multimodal: false,
+        bestFor: ['speed', 'simple tasks', 'classification']
+      },
+      {
+        id: 'openai/gpt-5',
+        name: 'GPT-5',
+        provider: 'lovable',
+        costTier: 'high',
+        contextWindow: 128000,
+        multimodal: true,
+        bestFor: ['coding', 'reasoning', 'complex analysis']
+      },
+      {
+        id: 'openai/gpt-5-mini',
+        name: 'GPT-5 Mini',
+        provider: 'lovable',
+        costTier: 'medium',
+        contextWindow: 128000,
+        multimodal: true,
+        bestFor: ['balanced cost', 'general purpose']
+      },
+      {
+        id: 'openai/gpt-5-nano',
+        name: 'GPT-5 Nano',
+        provider: 'lovable',
+        costTier: 'low',
+        contextWindow: 32000,
+        multimodal: false,
+        bestFor: ['speed', 'high volume', 'simple tasks']
+      },
+      {
+        id: 'claude-sonnet-4-5',
+        name: 'Claude Sonnet 4.5',
+        provider: 'anthropic',
+        costTier: 'high',
+        contextWindow: 200000,
+        multimodal: true,
+        bestFor: ['analysis', 'writing', 'research']
+      },
+      {
+        id: 'claude-opus-4-1-20250805',
+        name: 'Claude Opus 4.1',
+        provider: 'anthropic',
+        costTier: 'high',
+        contextWindow: 200000,
+        multimodal: true,
+        bestFor: ['complex reasoning', 'research', 'analysis']
+      }
+    ];
   }
 
   /**

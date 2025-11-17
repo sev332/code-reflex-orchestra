@@ -13,7 +13,7 @@ import {
   ChevronRight, Activity, BarChart3, Target
 } from 'lucide-react';
 import { LucidCore, createDefaultLucidConfig, type LongPromptChain, type SystemInsight, type CodeAnalysisResult } from '@/lib/lucid-core';
-import { MultiLLMEngine, type MultiLLMRequest } from '@/lib/multi-llm-engine';
+import { MultiLLMEngine, type MultiLLMRequest, type ModelInfo } from '@/lib/multi-llm-engine';
 
 interface LucidInterfaceProps {
   className?: string;
@@ -128,7 +128,7 @@ export function LucidInterface({ className }: LucidInterfaceProps) {
     }
   };
 
-  const availableModels = multiLLM.getAvailableModels();
+  const availableModels: ModelInfo[] = multiLLM.getAvailableModels();
 
   return (
     <div className={`space-y-6 ${className}`}>
