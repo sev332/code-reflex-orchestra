@@ -43,8 +43,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useReasoningChat } from '@/hooks/useReasoningChat';
 import { ReasoningTrace } from './ReasoningTrace';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
-import { deepThinkOrchestrator } from '@/lib/deep-think-orchestration';
-import type { ReasoningChain } from '@/lib/deep-think-orchestration';
 import { toast } from 'sonner';
 import { AIActionConfirmation, AIActionType } from './AIActionConfirmation';
 
@@ -97,8 +95,6 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [chunks, setChunks] = useState<ConversationChunk[]>([]);
-  const [activeReasoningChain, setActiveReasoningChain] = useState<ReasoningChain | null>(null);
-  const [showReasoningTrace, setShowReasoningTrace] = useState(false);
   const [contextWindow, setContextWindow] = useState<ContextWindow>({
     active_memories: 0,
     reasoning_depth: 0,
