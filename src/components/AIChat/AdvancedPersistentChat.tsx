@@ -119,6 +119,8 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const sessionIdRef = useRef(crypto.randomUUID());
   const { sendMessage: sendCMCMessage, isProcessing: cmcProcessing, currentReasoning } = useReasoningChat();
   const [useCMCMode, setUseCMCMode] = useState(true);
+  const [useDeepThinkMode, setUseDeepThinkMode] = useState(false); // New deep thinking mode
+  const [currentThinking, setCurrentThinking] = useState<any>(null);
   
   const { 
     backgroundAgents, 
@@ -270,6 +272,47 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     setIsProcessing(true);
 
     try {
+      // Deep Think Mode: Multi-Agent Orchestration
+      if (useDeepThinkMode) {
+        toast.info('🧠 Activating Deep Thinking Mode with Multi-Agent System...');
+        
+        const { data, error } = await supabase.functions.invoke("multi-agent-orchestrator", {
+          body: {
+            message: userInput,
+            sessionId: sessionIdRef.current,
+            history: messages.slice(-5).map(m => ({ role: m.role, content: m.content }))
+          },
+        });
+        
+        if (error) throw error;
+        
+        if (data) {
+          setCurrentThinking(data);
+          
+          const aiMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: data.answer,
+            timestamp: new Date().toISOString(),
+            confidence: data.verification.confidence,
+            metadata: {
+              model: 'Multi-Agent Deep Think',
+              orchestration: {
+                steps: data.thinkingSteps,
+                agents: data.agents,
+                plan: data.orchestrationPlan,
+                trace_id: data.trace_id
+              }
+            }
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          await saveMessage(aiMessage);
+          setIsProcessing(false);
+          return;
+        }
+      }
+      
       // CMC Mode: Use full reasoning pipeline
       if (useCMCMode) {
         const response = await sendCMCMessage(userInput, sessionIdRef.current);
@@ -847,12 +890,28 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                 size="sm"
                 onClick={() => {
                   setUseCMCMode(!useCMCMode);
+                  setUseDeepThinkMode(false); // Turn off deep think when CMC is toggled
                   toast.info(useCMCMode ? "Switched to legacy mode" : "Switched to CMC reasoning mode");
                 }}
                 className="neural-glow"
               >
                 <Zap className="w-4 h-4 mr-2" />
                 {useCMCMode ? "CMC Active" : "Legacy Mode"}
+              </Button>
+              
+              {/* Deep Think Mode Toggle */}
+              <Button
+                variant={useDeepThinkMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setUseDeepThinkMode(!useDeepThinkMode);
+                  setUseCMCMode(false); // Turn off CMC when deep think is enabled
+                  toast.info(useDeepThinkMode ? "Switched to standard mode" : "🧠 Deep Thinking Mode Activated - Multi-Agent Orchestration");
+                }}
+                className="neural-glow"
+              >
+                <Network className="w-4 h-4 mr-2" />
+                {useDeepThinkMode ? "Deep Think Active" : "Deep Think Off"}
               </Button>
               
               <div className="flex items-center gap-4 text-sm">
@@ -950,8 +1009,30 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             <div className="max-w-4xl mx-auto space-y-6">
               {Array.isArray(messages) && messages.map((message) => (
                 <div key={message.id}>
-                  {/* AIMOS Thoughts Panel for AI responses */}
-                  {message.role === 'assistant' && message.metadata?.orchestration && (
+                  {/* Multi-Agent Deep Thinking Panel */}
+                  {message.role === 'assistant' && message.metadata?.orchestration?.steps && (
+                    <div className="mb-3">
+                      <div className="p-4 bg-gradient-to-br from-primary/5 via-background/50 to-accent/5 border border-primary/20 rounded-lg">
+                        <div className="flex items-center gap-3 mb-3">
+                          <Network className="w-5 h-5 text-primary animate-pulse" />
+                          <span className="font-semibold">Multi-Agent Deep Thinking</span>
+                          <Badge variant="outline">{message.metadata.orchestration.steps?.length || 0} steps</Badge>
+                          <Badge variant="secondary">{message.metadata.orchestration.agents?.length || 0} agents</Badge>
+                        </div>
+                        <div className="grid grid-cols-5 gap-2">
+                          {message.metadata.orchestration.agents?.map((agent: any) => (
+                            <div key={agent.id} className="p-2 bg-background/50 rounded text-xs">
+                              <div className="font-medium">{agent.name}</div>
+                              <div className="text-muted-foreground">{agent.role}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Legacy AIMOS Panel */}
+                  {message.role === 'assistant' && message.metadata?.orchestration && !message.metadata?.orchestration?.steps && (
                     <AIMOSThoughtsPanel 
                       orchestration={message.metadata.orchestration}
                       messageId={message.id}
