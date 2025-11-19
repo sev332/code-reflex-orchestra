@@ -1021,14 +1021,6 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                     />
                   )}
                   
-                  {/* Legacy AIMOS Panel */}
-                  {message.role === 'assistant' && message.metadata?.orchestration && !message.metadata?.orchestration?.steps && (
-                    <AIMOSThoughtsPanel 
-                      orchestration={message.metadata.orchestration}
-                      messageId={message.id}
-                    />
-                  )}
-                  
                   <div
                     className={`flex gap-4 ${
                       message.role === 'user' ? 'justify-end' : 'justify-start'
