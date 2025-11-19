@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.multi-agent-orchestrator]
 verify_jwt = false
+
+[functions.cmc-chat-stream]
+verify_jwt = false

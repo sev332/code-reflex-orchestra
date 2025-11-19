@@ -42,6 +42,8 @@ import { useDocumentEditor } from '@/hooks/useDocumentEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useReasoningChat } from '@/hooks/useReasoningChat';
 import { ReasoningTrace } from './ReasoningTrace';
+import { useStreamingReasoning } from '@/hooks/useStreamingReasoning';
+import { LiveThinkingPanel } from './LiveThinkingPanel';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
 import { toast } from 'sonner';
 import { AIActionConfirmation, AIActionType } from './AIActionConfirmation';
@@ -118,8 +120,17 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(crypto.randomUUID());
   const { sendMessage: sendCMCMessage, isProcessing: cmcProcessing, currentReasoning } = useReasoningChat();
+  const { 
+    startStreaming, 
+    isStreaming, 
+    orchestrationPlan, 
+    thinkingSteps, 
+    agents: streamingAgents,
+    finalResponse 
+  } = useStreamingReasoning();
   const [useCMCMode, setUseCMCMode] = useState(true);
-  const [useDeepThinkMode, setUseDeepThinkMode] = useState(false); // New deep thinking mode
+  const [useDeepThinkMode, setUseDeepThinkMode] = useState(false);
+  const [useStreamingMode, setUseStreamingMode] = useState(true);
   const [currentThinking, setCurrentThinking] = useState<any>(null);
   
   const { 
@@ -272,7 +283,47 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     setIsProcessing(true);
 
     try {
-      // Deep Think Mode: Multi-Agent Orchestration
+      // Streaming Mode: Real-time APOE reasoning with live updates
+      if (useStreamingMode) {
+        toast.info('🧠 Starting Live Deep Reasoning Stream...');
+        
+        await startStreaming(
+          userInput,
+          sessionIdRef.current,
+          'user-' + crypto.randomUUID(),
+          (step) => {
+            // Each step is displayed live in the panel
+            console.log('📊 Live step update:', step.type);
+          },
+          async (response) => {
+            // Final response received
+            const aiMessage: ChatMessage = {
+              id: crypto.randomUUID(),
+              role: 'assistant',
+              content: response.answer,
+              timestamp: new Date().toISOString(),
+              confidence: response.verification.confidence,
+              metadata: {
+                model: 'AIMOS-Stream',
+                orchestration: {
+                  thinkingSteps,
+                  agents: streamingAgents,
+                  orchestrationPlan,
+                  verification: response.verification,
+                  trace_id: response.trace_id
+                }
+              }
+            };
+            
+            setMessages(prev => [...prev, aiMessage]);
+            await saveMessage(aiMessage);
+            setIsProcessing(false);
+          }
+        );
+        return;
+      }
+      
+      // Deep Think Mode: Multi-Agent Orchestration (legacy)
       if (useDeepThinkMode) {
         toast.info('🧠 Activating Deep Thinking Mode with Multi-Agent System...');
         
@@ -891,13 +942,46 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                 size="sm"
                 onClick={() => {
                   setUseCMCMode(!useCMCMode);
-                  setUseDeepThinkMode(false); // Turn off deep think when CMC is toggled
+                  setUseDeepThinkMode(false);
+                  setUseStreamingMode(false);
                   toast.info(useCMCMode ? "Switched to legacy mode" : "Switched to CMC reasoning mode");
                 }}
                 className="neural-glow"
               >
                 <Zap className="w-4 h-4 mr-2" />
                 {useCMCMode ? "CMC Active" : "Legacy Mode"}
+              </Button>
+              
+              {/* Streaming Mode Toggle */}
+              <Button
+                variant={useStreamingMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setUseStreamingMode(!useStreamingMode);
+                  setUseCMCMode(false);
+                  setUseDeepThinkMode(false);
+                  toast.info(useStreamingMode ? "Streaming disabled" : "Live Streaming Mode activated");
+                }}
+                className="neural-glow"
+              >
+                <Activity className="w-4 h-4 mr-2" />
+                {useStreamingMode ? "Live Stream" : "Batch Mode"}
+              </Button>
+              
+              {/* Deep Think Mode Toggle */}
+              <Button
+                variant={useDeepThinkMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setUseDeepThinkMode(!useDeepThinkMode);
+                  setUseCMCMode(false);
+                  setUseStreamingMode(false);
+                  toast.info(useDeepThinkMode ? "Deep Think disabled" : "Deep Think Mode activated");
+                }}
+                className="neural-glow"
+              >
+                <Brain className="w-4 h-4 mr-2" />
+                {useDeepThinkMode ? "Deep Think" : "Normal Mode"}
               </Button>
               
               {/* Deep Think Mode Toggle */}
@@ -1007,6 +1091,18 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           {/* Chat Messages */}
         <div className="flex-1 flex flex-col">
           <ScrollArea className="flex-1 p-6">
+            {/* Live Thinking Panel - Shows BEFORE response during streaming */}
+            {isStreaming && (
+              <div className="max-w-4xl mx-auto mb-6">
+                <LiveThinkingPanel
+                  orchestrationPlan={orchestrationPlan}
+                  thinkingSteps={thinkingSteps}
+                  agents={streamingAgents}
+                  isStreaming={isStreaming}
+                />
+              </div>
+            )}
+            
             <div className="max-w-4xl mx-auto space-y-6">
               {Array.isArray(messages) && messages.map((message) => (
                 <div key={message.id}>
