@@ -298,9 +298,10 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             metadata: {
               model: 'Multi-Agent Deep Think',
               orchestration: {
-                steps: data.thinkingSteps,
+                thinkingSteps: data.thinkingSteps,
                 agents: data.agents,
-                plan: data.orchestrationPlan,
+                orchestrationPlan: data.orchestrationPlan,
+                verification: data.verification,
                 trace_id: data.trace_id
               }
             }
@@ -1010,25 +1011,14 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               {Array.isArray(messages) && messages.map((message) => (
                 <div key={message.id}>
                   {/* Multi-Agent Deep Thinking Panel */}
-                  {message.role === 'assistant' && message.metadata?.orchestration?.steps && (
-                    <div className="mb-3">
-                      <div className="p-4 bg-gradient-to-br from-primary/5 via-background/50 to-accent/5 border border-primary/20 rounded-lg">
-                        <div className="flex items-center gap-3 mb-3">
-                          <Network className="w-5 h-5 text-primary animate-pulse" />
-                          <span className="font-semibold">Multi-Agent Deep Thinking</span>
-                          <Badge variant="outline">{message.metadata.orchestration.steps?.length || 0} steps</Badge>
-                          <Badge variant="secondary">{message.metadata.orchestration.agents?.length || 0} agents</Badge>
-                        </div>
-                        <div className="grid grid-cols-5 gap-2">
-                          {message.metadata.orchestration.agents?.map((agent: any) => (
-                            <div key={agent.id} className="p-2 bg-background/50 rounded text-xs">
-                              <div className="font-medium">{agent.name}</div>
-                              <div className="text-muted-foreground">{agent.role}</div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
+                  {message.role === 'assistant' && message.metadata?.orchestration?.thinkingSteps && (
+                    <AIMOSThoughtsPanel 
+                      thinkingSteps={message.metadata.orchestration.thinkingSteps || []}
+                      agents={message.metadata.orchestration.agents || []}
+                      orchestrationPlan={message.metadata.orchestration.orchestrationPlan || { totalSteps: 0, currentStep: 0, complexity: 'Unknown', memoryStrategy: 'Unknown' }}
+                      verification={message.metadata.orchestration.verification || { confidence: 0, provenance_coverage: 0, semantic_entropy: 0 }}
+                      messageId={message.id}
+                    />
                   )}
                   
                   {/* Legacy AIMOS Panel */}
