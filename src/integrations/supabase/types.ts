@@ -617,6 +617,45 @@ export type Database = {
           },
         ]
       }
+      documentation_chunks: {
+        Row: {
+          chapter: string | null
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          section: string | null
+          source: string
+          token_count: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          chapter?: string | null
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          section?: string | null
+          source: string
+          token_count?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          chapter?: string | null
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          section?: string | null
+          source?: string
+          token_count?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           created_at: string
