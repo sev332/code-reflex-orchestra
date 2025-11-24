@@ -1062,7 +1062,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      match_documentation: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          chapter: string
+          content: string
+          id: string
+          section: string
+          similarity: number
+          source: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
