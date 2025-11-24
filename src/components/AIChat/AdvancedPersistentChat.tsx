@@ -296,7 +296,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             console.log('📊 Live step update:', step.type);
           },
           async (response) => {
-            // Final response received
+            // Final response received - persist thinking steps in metadata
             const aiMessage: ChatMessage = {
               id: crypto.randomUUID(),
               role: 'assistant',
@@ -306,9 +306,9 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               metadata: {
                 model: 'AIMOS-Stream',
                 orchestration: {
-                  thinkingSteps,
+                  thinkingSteps: thinkingSteps, // Store complete thinking history
                   agents: streamingAgents,
-                  orchestrationPlan,
+                  orchestrationPlan: orchestrationPlan,
                   verification: response.verification,
                   trace_id: response.trace_id
                 }
