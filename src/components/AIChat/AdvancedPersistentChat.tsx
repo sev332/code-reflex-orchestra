@@ -1106,14 +1106,15 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             <div className="max-w-4xl mx-auto space-y-6">
               {Array.isArray(messages) && messages.map((message) => (
                 <div key={message.id}>
-                  {/* Multi-Agent Deep Thinking Panel */}
+                  {/* Historical Reasoning Panel - Shows AFTER response is complete */}
                   {message.role === 'assistant' && message.metadata?.orchestration?.thinkingSteps && (
-                    <AIMOSThoughtsPanel 
+                    <LiveThinkingPanel
                       thinkingSteps={message.metadata.orchestration.thinkingSteps || []}
                       agents={message.metadata.orchestration.agents || []}
-                      orchestrationPlan={message.metadata.orchestration.orchestrationPlan || { totalSteps: 0, currentStep: 0, complexity: 'Unknown', memoryStrategy: 'Unknown' }}
-                      verification={message.metadata.orchestration.verification || { confidence: 0, provenance_coverage: 0, semantic_entropy: 0 }}
-                      messageId={message.id}
+                      orchestrationPlan={message.metadata.orchestration.orchestrationPlan || null}
+                      isStreaming={false}
+                      isCollapsible={true}
+                      defaultExpanded={false}
                     />
                   )}
                   
