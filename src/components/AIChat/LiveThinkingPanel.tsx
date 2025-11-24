@@ -16,14 +16,19 @@ interface LiveThinkingPanelProps {
   thinkingSteps: StreamingStep[];
   agents: AgentInfo[];
   isStreaming: boolean;
+  isCollapsible?: boolean;
+  defaultExpanded?: boolean;
 }
 
 export const LiveThinkingPanel: React.FC<LiveThinkingPanelProps> = ({
   orchestrationPlan,
   thinkingSteps,
   agents,
-  isStreaming
+  isStreaming,
+  isCollapsible = true,
+  defaultExpanded = true
 }) => {
+  const [isExpanded, setIsExpanded] = React.useState(defaultExpanded);
   const getStepIcon = (type: string, status: string) => {
     if (status === "working") return <Loader2 className="w-4 h-4 animate-spin" />;
     if (status === "error") return <AlertCircle className="w-4 h-4" />;
@@ -57,17 +62,30 @@ export const LiveThinkingPanel: React.FC<LiveThinkingPanelProps> = ({
     return (orchestrationPlan.currentStep / orchestrationPlan.totalSteps) * 100;
   };
 
-  if (!orchestrationPlan && !isStreaming) return null;
+  // Always show if there are thinking steps (for historical reasoning)
+  if (!orchestrationPlan && !isStreaming && thinkingSteps.length === 0) return null;
 
   return (
     <Card className="mb-4 border-primary/30 bg-gradient-to-br from-primary/10 via-background to-accent/10 shadow-lg">
-      <div className="p-4 border-b border-border/50">
+      <div 
+        className="p-4 border-b border-border/50 cursor-pointer hover:bg-accent/5 transition-colors"
+        onClick={() => isCollapsible && setIsExpanded(!isExpanded)}
+      >
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <Brain className="w-6 h-6 text-primary animate-pulse" />
+            <Brain className={`w-6 h-6 text-primary ${isStreaming ? 'animate-pulse' : ''}`} />
             <div>
-              <h3 className="font-semibold text-lg">AI Deep Reasoning Process</h3>
-              <p className="text-xs text-muted-foreground">Live multi-agent orchestration</p>
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                AI Deep Reasoning Process
+                {isCollapsible && (
+                  <span className="text-xs text-muted-foreground">
+                    {isExpanded ? '▼' : '▶'}
+                  </span>
+                )}
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                {isStreaming ? 'Live multi-agent orchestration' : 'Historical reasoning trace'}
+              </p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -97,8 +115,9 @@ export const LiveThinkingPanel: React.FC<LiveThinkingPanelProps> = ({
         )}
       </div>
 
-      <div className="p-4">
-        <Tabs defaultValue="steps" className="w-full">
+      {isExpanded && (
+        <div className="p-4">
+          <Tabs defaultValue="steps" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="steps">Thinking Steps</TabsTrigger>
             <TabsTrigger value="agents">Active Agents</TabsTrigger>
@@ -171,15 +190,17 @@ export const LiveThinkingPanel: React.FC<LiveThinkingPanelProps> = ({
                         </div>
                       )}
                       
-                      {step.detail && (
-                        <div className="mt-2 p-3 bg-background/50 rounded-md border border-border/50">
-                          <p className="text-sm text-foreground/90 whitespace-pre-wrap">
-                            {step.detail.length > 300 
-                              ? `${step.detail.substring(0, 300)}...` 
-                              : step.detail
-                            }
-                          </p>
-                        </div>
+                       {step.detail && (
+                        <details className="mt-2" open={step.detail.length <= 300}>
+                          <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground mb-1">
+                            {step.detail.length > 300 ? 'View full reasoning output' : 'Reasoning output'}
+                          </summary>
+                          <div className="p-3 bg-background/50 rounded-md border border-border/50">
+                            <p className="text-sm text-foreground/90 whitespace-pre-wrap">
+                              {step.detail}
+                            </p>
+                          </div>
+                        </details>
                       )}
                       
                       {step.inputPrompt && (
@@ -316,7 +337,8 @@ export const LiveThinkingPanel: React.FC<LiveThinkingPanelProps> = ({
             </TabsContent>
           </ScrollArea>
         </Tabs>
-      </div>
+        </div>
+      )}
     </Card>
   );
 };
