@@ -44,7 +44,9 @@ import { useReasoningChat } from '@/hooks/useReasoningChat';
 import { ReasoningTrace } from './ReasoningTrace';
 import { useStreamingReasoning } from '@/hooks/useStreamingReasoning';
 import { LiveThinkingPanel } from './LiveThinkingPanel';
+import { AgentDiscordPanel } from './AgentDiscordPanel';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
+import { useAIMOSStreaming } from '@/hooks/useAIMOSStreaming';
 import { toast } from 'sonner';
 import { AIActionConfirmation, AIActionType } from './AIActionConfirmation';
 
