@@ -42,7 +42,6 @@ import { useDocumentEditor } from '@/hooks/useDocumentEditor';
 import { supabase } from '@/integrations/supabase/client';
 import { useReasoningChat } from '@/hooks/useReasoningChat';
 import { ReasoningTrace } from './ReasoningTrace';
-import { useStreamingReasoning } from '@/hooks/useStreamingReasoning';
 import { LiveThinkingPanel } from './LiveThinkingPanel';
 import { AgentDiscordPanel } from './AgentDiscordPanel';
 import { sdfCvfCore } from '@/lib/sdf-cvf-core';
@@ -128,8 +127,11 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     orchestrationPlan, 
     thinkingSteps, 
     agents: streamingAgents,
-    finalResponse 
-  } = useStreamingReasoning();
+    discordMessages,
+    discordThreads,
+    finalResponse,
+    currentMode 
+  } = useAIMOSStreaming();
   const [useCMCMode, setUseCMCMode] = useState(true);
   const [useDeepThinkMode, setUseDeepThinkMode] = useState(false);
   const [useStreamingMode, setUseStreamingMode] = useState(true);
@@ -289,39 +291,39 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
       if (useStreamingMode) {
         toast.info('🧠 Starting Live Deep Reasoning Stream...');
         
-        await startStreaming(
+        const response = await startStreaming(
           userInput,
           sessionIdRef.current,
-          'user-' + crypto.randomUUID(),
-          (step) => {
-            // Each step is displayed live in the panel
-            console.log('📊 Live step update:', step.type);
-          },
-          async (response) => {
-            // Final response received - persist thinking steps in metadata
-            const aiMessage: ChatMessage = {
-              id: crypto.randomUUID(),
-              role: 'assistant',
-              content: response.answer,
-              timestamp: new Date().toISOString(),
-              confidence: response.verification.confidence,
-              metadata: {
-                model: 'AIMOS-Stream',
-                orchestration: {
-                  thinkingSteps: thinkingSteps, // Store complete thinking history
-                  agents: streamingAgents,
-                  orchestrationPlan: orchestrationPlan,
-                  verification: response.verification,
-                  trace_id: response.trace_id
-                }
-              }
-            };
-            
-            setMessages(prev => [...prev, aiMessage]);
-            await saveMessage(aiMessage);
-            setIsProcessing(false);
-          }
+          'user-' + crypto.randomUUID()
         );
+        
+        if (response) {
+          // Final response received - persist thinking steps in metadata
+          const aiMessage: ChatMessage = {
+            id: crypto.randomUUID(),
+            role: 'assistant',
+            content: response.answer,
+            timestamp: new Date().toISOString(),
+            confidence: response.verification.confidence,
+            metadata: {
+              model: 'AIMOS-Stream',
+              orchestration: {
+                thinkingSteps: thinkingSteps,
+                agents: streamingAgents,
+                discordMessages: discordMessages,
+                discordThreads: discordThreads,
+                orchestrationPlan: orchestrationPlan,
+                verification: response.verification,
+                trace_id: response.trace_id,
+                mode_used: response.mode_used
+              }
+            }
+          };
+          
+          setMessages(prev => [...prev, aiMessage]);
+          await saveMessage(aiMessage);
+        }
+        setIsProcessing(false);
         return;
       }
       
@@ -1095,13 +1097,46 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           <ScrollArea className="flex-1 p-6">
             {/* Live Thinking Panel - Shows BEFORE response during streaming */}
             {isStreaming && (
-              <div className="max-w-4xl mx-auto mb-6">
+              <div className="max-w-4xl mx-auto mb-6 space-y-4">
                 <LiveThinkingPanel
-                  orchestrationPlan={orchestrationPlan}
-                  thinkingSteps={thinkingSteps}
-                  agents={streamingAgents}
+                  orchestrationPlan={orchestrationPlan ? {
+                    totalSteps: orchestrationPlan.totalSteps,
+                    currentStep: orchestrationPlan.currentStep,
+                    complexity: orchestrationPlan.complexity,
+                    memoryStrategy: orchestrationPlan.memoryStrategy,
+                  } : null}
+                  thinkingSteps={thinkingSteps.map(s => ({
+                    type: s.type,
+                    agent: s.agent,
+                    status: s.status,
+                    duration: s.duration,
+                    detail: s.detail,
+                    output: s.output,
+                    metrics: s.metrics,
+                    inputPrompt: s.inputPrompt,
+                  }))}
+                  agents={streamingAgents.map(a => ({
+                    id: a.agent_id,
+                    name: a.name,
+                    role: a.domain,
+                    status: a.status,
+                    tasksCompleted: a.tasksCompleted || 0,
+                  }))}
                   isStreaming={isStreaming}
                 />
+                
+                {/* Agent Discord Panel - Shows live agent communication */}
+                {(discordMessages.length > 0 || discordThreads.length > 0) && (
+                  <AgentDiscordPanel
+                    messages={discordMessages}
+                    threads={discordThreads}
+                    agents={streamingAgents.map(a => ({
+                      ...a,
+                      current_mode: currentMode,
+                    }))}
+                    isStreaming={isStreaming}
+                  />
+                )}
               </div>
             )}
             
