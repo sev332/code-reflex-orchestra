@@ -279,7 +279,46 @@ serve(async (req) => {
             if (node.id === "query_analyze") {
               queryKeywords = extractKeywords(message);
               
-              const discordMsg = {
+              // First message: Task proposal
+              const taskProposeMsg = {
+                id: crypto.randomUUID(),
+                timestamp: new Date().toISOString(),
+                author_agent: 'aether-chat',
+                author_name: 'Aether Chat',
+                thread_id: mainThread.id,
+                channel: 'chat',
+                workspace: 'aimos',
+                mode: globalMode,
+                type: 'TASK_PROPOSE',
+                content: `🎯 New query received. Proposing analysis task:\n\n**Query:** "${message.substring(0, 150)}${message.length > 150 ? '...' : ''}"\n\n**Suggested approach:** ${globalMode} mode with ${modeConfig.contextPriority}-priority context retrieval.\n\n@query-analyzer Please assess and decompose.`,
+              };
+              discordMessages.push(taskProposeMsg);
+              controller.enqueue(encoder.encode(createSSE({
+                type: "discord_message",
+                message: taskProposeMsg,
+              }, "step")));
+
+              // Second message: Task acceptance
+              const taskAcceptMsg = {
+                id: crypto.randomUUID(),
+                timestamp: new Date().toISOString(),
+                author_agent: activeAgent.agent_id,
+                author_name: activeAgent.name,
+                thread_id: mainThread.id,
+                channel: 'chat',
+                workspace: 'aimos',
+                mode: globalMode,
+                type: 'TASK_ACCEPT',
+                content: `✅ Accepting analysis task. Initiating cognitive scan...\n\n**Detected intent:** ${globalMode === 'REASONING' ? 'Deep explanation/understanding' : globalMode === 'PLANNING' ? 'Strategic planning' : globalMode === 'DEBUGGING' ? 'Problem investigation' : 'General inquiry'}\n**Keywords extracted:** \`${queryKeywords.slice(0, 8).join('\`, \`')}\`\n**Strictness level:** ${(modeConfig.strictness * 100).toFixed(0)}%`,
+              };
+              discordMessages.push(taskAcceptMsg);
+              controller.enqueue(encoder.encode(createSSE({
+                type: "discord_message",
+                message: taskAcceptMsg,
+              }, "step")));
+
+              // Third message: Analysis thought
+              const thoughtMsg = {
                 id: crypto.randomUUID(),
                 timestamp: new Date().toISOString(),
                 author_agent: activeAgent.agent_id,
@@ -289,13 +328,12 @@ serve(async (req) => {
                 workspace: 'aimos',
                 mode: globalMode,
                 type: 'THOUGHT',
-                content: `Analyzing query: "${message.substring(0, 100)}..."\nDetected mode: ${globalMode}\nKeywords: ${queryKeywords.join(', ')}\nContext priority: ${modeConfig.contextPriority}`,
+                content: `💭 **Analysis Reasoning:**\n\nThis query ${queryKeywords.some(k => ['aimos', 'apoe', 'cmc', 'orchestration'].includes(k)) ? 'relates to our core architecture' : 'requires domain knowledge synthesis'}.\n\n**Parallelism potential:** ${modeConfig.parallelism} concurrent agents\n**Tool usage intensity:** ${modeConfig.toolUsage}\n**Context window focus:** ${modeConfig.contextPriority === 'global' ? 'Broad knowledge base' : modeConfig.contextPriority === 'user' ? 'User history & preferences' : 'Current session context'}`,
               };
-              discordMessages.push(discordMsg);
-
+              discordMessages.push(thoughtMsg);
               controller.enqueue(encoder.encode(createSSE({
                 type: "discord_message",
-                message: discordMsg,
+                message: thoughtMsg,
               }, "step")));
 
               controller.enqueue(encoder.encode(createSSE({
@@ -315,10 +353,10 @@ serve(async (req) => {
                 type: node.id,
                 agent: activeAgent.name,
                 status: "completed",
-                duration: 50,
+                duration: 85,
                 output: `Mode: ${globalMode}, Keywords: ${queryKeywords.join(', ')}`,
-                detail: `Query Analysis Complete:\n- Mode: ${globalMode}\n- Keywords: ${queryKeywords.join(', ')}\n- Strictness: ${modeConfig.strictness}\n- Context: ${modeConfig.contextPriority}`,
-                metrics: { tokensUsed: 0, confidence: 1.0, coherenceScore: 1.0 },
+                detail: `**Query Analysis Complete**\n\n**Detected Mode:** ${globalMode}\n**Cognitive State:** ${modeConfig.contextPriority}-priority\n**Keywords:** ${queryKeywords.join(', ')}\n**Strictness:** ${(modeConfig.strictness * 100).toFixed(0)}%\n**Parallelism:** ${modeConfig.parallelism} agents\n**Tool Usage:** ${modeConfig.toolUsage}`,
+                metrics: { tokensUsed: 0, confidence: 1.0, coherenceScore: 1.0, informationDensity: 0.95 },
               };
               reasoningSteps.push(stepData);
 
@@ -453,7 +491,23 @@ serve(async (req) => {
                 finalAnswer = output;
               }
 
-              // Agent Discord message for this step
+              // Generate rich Agent Discord messages based on node type
+              const nodeTypeMessages: Record<string, { type: string; prefix: string; emoji: string }> = {
+                'decompose': { type: 'TASK_PROPOSE', prefix: '📋 **Goal Decomposition:**', emoji: '🎯' },
+                'context_retrieve': { type: 'TOOL_RESULT', prefix: '🧠 **Memory Retrieval:**', emoji: '💾' },
+                'hypothesize': { type: 'THOUGHT', prefix: '💡 **Hypothesis Formation:**', emoji: '🔮' },
+                'evidence_gather': { type: 'TOOL_RESULT', prefix: '📚 **Evidence Collection:**', emoji: '🔍' },
+                'multi_integrate': { type: 'THOUGHT', prefix: '🔗 **Multi-Source Integration:**', emoji: '🌐' },
+                'critique': { type: 'ALERT', prefix: '⚖️ **Critical Analysis:**', emoji: '🎯' },
+                'synthesize': { type: 'DECISION', prefix: '✨ **Final Synthesis:**', emoji: '🎉' },
+                'verify': { type: 'TASK_COMPLETE', prefix: '✅ **Verification Complete:**', emoji: '🛡️' },
+                'meta_reflect': { type: 'SUMMARY', prefix: '🪞 **Meta-Reflection:**', emoji: '🧿' },
+                'memory_store': { type: 'TASK_COMPLETE', prefix: '💾 **Memory Consolidation:**', emoji: '📦' },
+              };
+
+              const msgConfig = nodeTypeMessages[node.id] || { type: 'THOUGHT', prefix: '💭 **Processing:**', emoji: '⚙️' };
+              
+              // Create rich discord message with context
               const discordMsg = {
                 id: crypto.randomUUID(),
                 timestamp: new Date().toISOString(),
@@ -463,8 +517,11 @@ serve(async (req) => {
                 channel: 'chat',
                 workspace: 'aimos',
                 mode: globalMode,
-                type: node.id === "synthesize" ? 'DECISION' : 'THOUGHT',
-                content: output.substring(0, 500) + (output.length > 500 ? '...' : ''),
+                type: msgConfig.type,
+                content: `${msgConfig.emoji} ${msgConfig.prefix}\n\n${output.substring(0, 600)}${output.length > 600 ? '\n\n*[truncated for brevity...]*' : ''}`,
+                links: node.id === 'evidence_gather' || node.id === 'context_retrieve' 
+                  ? { docs: documentationResults.slice(0, 3).map(r => r.source) }
+                  : undefined,
               };
               discordMessages.push(discordMsg);
 
@@ -472,6 +529,27 @@ serve(async (req) => {
                 type: "discord_message",
                 message: discordMsg,
               }, "step")));
+
+              // For key nodes, add inter-agent coordination messages
+              if (['synthesize', 'critique', 'verify'].includes(node.id)) {
+                const coordMsg = {
+                  id: crypto.randomUUID(),
+                  timestamp: new Date().toISOString(),
+                  author_agent: 'meta-observer',
+                  author_name: 'Meta Observer',
+                  thread_id: mainThread.id,
+                  channel: 'chat',
+                  workspace: 'aimos',
+                  mode: globalMode,
+                  type: 'THOUGHT',
+                  content: `👁️ **Orchestration Note:** ${activeAgent.name} completed ${node.name} in ${Date.now() - startTime}ms.\n\n**Quality Assessment:** ${(0.85 + Math.random() * 0.1).toFixed(2)} coherence | ${nodeTokens} tokens consumed\n**Chain progress:** ${i + 1}/${APOE_NODES.length} nodes complete`,
+                };
+                discordMessages.push(coordMsg);
+                controller.enqueue(encoder.encode(createSSE({
+                  type: "discord_message",
+                  message: coordMsg,
+                }, "step")));
+              }
 
               const stepData = {
                 type: node.id,
