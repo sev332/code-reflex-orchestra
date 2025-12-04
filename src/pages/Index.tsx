@@ -1,230 +1,205 @@
-// 🔗 CONNECT: Landing Page → Advanced Persistent AI Chat
-// 🧩 INTENT: Transform index into beautiful AI chat interface with dev tools access
-// ✅ SPEC: SDF-CVF integrated, persistent conversation, neural aesthetics
-
+// Main application entry with new layout system
 import { Helmet } from "react-helmet-async";
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useCallback } from "react";
 import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
 import { DocumentLibrary } from "@/components/Documents/DocumentLibrary";
 import { RealMemoryDashboard } from "@/components/AIChat/RealMemoryDashboard";
-import { OrchestrationStudio } from "@/components/Orchestration/OrchestrationStudio";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { LeftToolbar } from "@/components/ui/left-toolbar";
-import { RightToolbar } from "@/components/ui/right-toolbar";
-import { Zap, Brain, Settings, MessageSquare, Code, Activity, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { TopBar } from "@/components/layout/TopBar";
+import { LeftIconBar, LeftDrawerType } from "@/components/layout/LeftIconBar";
+import { RightIconBar, RightDrawerType } from "@/components/layout/RightIconBar";
+import { LeftDrawerPanel } from "@/components/layout/LeftDrawerPanel";
+import { RightDrawerPanel } from "@/components/layout/RightDrawerPanel";
+import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
+import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
+import { cn } from "@/lib/utils";
 
-type ViewMode = 'chat' | 'dev-legacy' | 'dev-production' | 'documents' | 'memory' | 'orchestration';
+type ViewMode = 'chat' | 'documents' | 'memory' | 'orchestration' | 'dev-legacy' | 'dev-production';
 
-// Lazy load dev dashboards to prevent Three.js from loading in chat mode
+// Lazy load heavy dashboards
 const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
 const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
+const OrchestrationStudio = lazy(() => import("@/components/Orchestration/OrchestrationStudio").then(m => ({ default: m.OrchestrationStudio })));
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
+  const [leftDrawer, setLeftDrawer] = useState<LeftDrawerType>(null);
+  const [rightDrawer, setRightDrawer] = useState<RightDrawerType>(null);
+  const [showFullDiscord, setShowFullDiscord] = useState(false);
 
-  const getViewModeConfig = () => {
-    switch (viewMode) {
-      case 'chat':
-        return {
-          label: 'AI Chat Interface',
-          icon: MessageSquare,
-          description: 'Persistent AI conversation with full context'
-        };
-      case 'memory':
-        return {
-          label: 'Memory Dashboard',
-          icon: Brain,
-          description: 'CMC hierarchical memory visualization'
-        };
-      case 'documents':
-        return {
-          label: 'Document Library',
-          icon: FileText,
-          description: 'AI-powered document analysis and editing'
-        };
-      case 'dev-legacy':
-        return {
-          label: 'Legacy Dev Tools',
-          icon: Code,
-          description: 'Original WisdomNET development interface'
-        };
-      case 'dev-production':
-        return {
-          label: 'Production Dev Tools',
-          icon: Activity,
-          description: 'Advanced production AGI development system'
-        };
-      case 'orchestration':
-        return {
-          label: 'Orchestration Studio',
-          icon: Zap,
-          description: 'Visual prompt chain designer and code generation'
-        };
+  // Get streaming data from AIMOS hook
+  const {
+    isStreaming,
+    orchestrationPlan,
+    thinkingSteps,
+    agents: streamingAgents,
+    discordMessages,
+    discordThreads,
+    currentMode
+  } = useAIMOSStreaming();
+
+  const handleLeftDrawerChange = useCallback((drawer: LeftDrawerType) => {
+    setLeftDrawer(drawer);
+    // Navigate to specific views for some items
+    if (drawer === 'documents') {
+      setViewMode('documents');
+      setLeftDrawer(null);
+    } else if (drawer === 'orchestration') {
+      setViewMode('orchestration');
+      setLeftDrawer(null);
+    } else if (drawer === null) {
+      setViewMode('chat');
     }
-  };
+  }, []);
 
-  const config = getViewModeConfig();
+  const handleNavigate = useCallback((view: string) => {
+    setViewMode(view as ViewMode);
+    setLeftDrawer(null);
+  }, []);
+
+  const handleOpenFullscreen = useCallback((type: string) => {
+    if (type === 'discord') {
+      setShowFullDiscord(true);
+      setRightDrawer(null);
+    }
+  }, []);
+
+  // Calculate main content margin based on open drawers
+  const mainContentClass = cn(
+    "transition-all duration-300 pt-12",
+    leftDrawer && leftDrawer !== 'documents' && leftDrawer !== 'orchestration' ? "ml-[21rem]" : "ml-12",
+    rightDrawer ? "mr-[22rem]" : "mr-12"
+  );
 
   const renderMainContent = () => {
     switch (viewMode) {
       case 'chat':
-        return <AdvancedPersistentChat onDocumentsClick={() => setViewMode('documents')} />;
-      case 'memory':
         return (
-          <div className="pl-16 pr-16 pt-20">
-            <RealMemoryDashboard />
-          </div>
+          <AdvancedPersistentChat 
+            onDocumentsClick={() => setViewMode('documents')} 
+          />
         );
       case 'documents':
         return (
-          <div className="pl-16">
+          <div className="p-4">
             <DocumentLibrary />
+          </div>
+        );
+      case 'memory':
+        return (
+          <div className="p-4">
+            <RealMemoryDashboard />
           </div>
         );
       case 'orchestration':
         return (
-          <div className="pl-16">
-            <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading Studio...</p></div>}>
-              <OrchestrationStudio />
-            </Suspense>
-          </div>
+          <Suspense fallback={<LoadingFallback />}>
+            <OrchestrationStudio />
+          </Suspense>
         );
       case 'dev-legacy':
         return (
-          <div className="pl-16 pr-16">
-            <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading Dashboard...</p></div>}>
-              <WisdomNETDashboard />
-            </Suspense>
-          </div>
+          <Suspense fallback={<LoadingFallback />}>
+            <WisdomNETDashboard />
+          </Suspense>
         );
       case 'dev-production':
         return (
-          <div className="pl-16 pr-16">
-            <Suspense fallback={<div className="flex items-center justify-center h-screen"><p>Loading Dashboard...</p></div>}>
-              <ProductionDashboard />
-            </Suspense>
-          </div>
+          <Suspense fallback={<LoadingFallback />}>
+            <ProductionDashboard />
+          </Suspense>
         );
+      default:
+        return null;
     }
   };
 
   return (
     <WisdomNETProvider>
-      <div className="min-h-screen bg-gradient-mind">
-        <Helmet>
-          <title>WisdomNET - Advanced AGI with Persistent Memory</title>
-          <meta 
-            name="description" 
-            content="Advanced AGI system with persistent memory, SDF-CVF reasoning traces, and beautiful neural interface. Experience continuous AI conversation with full context awareness." 
+      <TooltipProvider>
+        <div className="min-h-screen bg-gradient-mind">
+          <Helmet>
+            <title>WisdomNET - Advanced AGI with Persistent Memory</title>
+            <meta 
+              name="description" 
+              content="Advanced AGI system with persistent memory, SDF-CVF reasoning traces, and beautiful neural interface." 
+            />
+          </Helmet>
+
+          {/* Top Bar */}
+          <TopBar 
+            systemStatus={isStreaming ? 'processing' : 'online'}
+            activeAgents={streamingAgents?.length || 0}
+            memoryUsage="67%"
           />
-        </Helmet>
 
-        {/* Mode Selector - Only show when not in chat mode */}
-        {viewMode !== 'chat' && viewMode !== 'documents' && (
-          <div className="absolute top-4 right-4 z-50 flex items-center gap-2">
-            <Badge variant="outline" className="bg-card/50 text-foreground border-border/50 backdrop-neural">
-              <config.icon className="w-3 h-3 mr-1" />
-              {config.label}
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                if (viewMode === 'dev-production') setViewMode('dev-legacy');
-                else if (viewMode === 'dev-legacy') setViewMode('chat');
-                else setViewMode('dev-production');
-              }}
-              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural"
-            >
-              {viewMode === 'dev-production' ? (
-                <>
-                  <Code className="w-4 h-4 mr-2" />
-                  Legacy Dev
-                </>
-              ) : viewMode === 'dev-legacy' ? (
-                <>
-                  <MessageSquare className="w-4 h-4 mr-2" />
-                  AI Chat
-                </>
-              ) : (
-                <>
-                  <Activity className="w-4 h-4 mr-2" />
-                  Production Dev
-                </>
-              )}
-            </Button>
-          </div>
-        )}
+          {/* Left Icon Bar */}
+          <LeftIconBar 
+            activeDrawer={leftDrawer}
+            onDrawerChange={handleLeftDrawerChange}
+          />
 
-        {/* Chat Mode Toggle - Show in top-right when in chat mode */}
-        {viewMode === 'chat' && (
-          <div className="absolute top-4 right-4 z-50 flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode('memory')}
-              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
-            >
-              <Brain className="w-4 h-4 mr-2" />
-              Memory
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode('documents')}
-              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Documents
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode('orchestration')}
-              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Orchestration
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode('dev-production')}
-              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
-            >
-              <Code className="w-4 h-4 mr-2" />
-              Dev Tools
-            </Button>
-          </div>
-        )}
+          {/* Left Drawer Panel */}
+          <LeftDrawerPanel 
+            activeDrawer={leftDrawer}
+            onClose={() => setLeftDrawer(null)}
+            onNavigate={handleNavigate}
+          />
 
-        {/* Document/Memory/Orchestration Mode Toggle - Show back to chat button */}
-        {(viewMode === 'documents' || viewMode === 'memory' || viewMode === 'orchestration') && (
-          <div className="absolute top-4 right-4 z-50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setViewMode('chat')}
-              className="bg-card/50 text-foreground border-border/50 hover:bg-accent/50 backdrop-neural neural-glow"
-            >
-              <MessageSquare className="w-4 h-4 mr-2" />
-              Back to Chat
-            </Button>
-          </div>
-        )}
+          {/* Right Icon Bar */}
+          <RightIconBar 
+            activeDrawer={rightDrawer}
+            onDrawerChange={setRightDrawer}
+            isStreaming={isStreaming}
+            newMessages={discordMessages?.length || 0}
+            activeAgents={streamingAgents?.filter((a: any) => a.status === 'active').length || 0}
+          />
 
-        {/* Toolbars - Show in all modes */}
-        <LeftToolbar />
-        {viewMode !== 'chat' && viewMode !== 'documents' && <RightToolbar />}
+          {/* Right Drawer Panel */}
+          <RightDrawerPanel 
+            activeDrawer={rightDrawer}
+            onClose={() => setRightDrawer(null)}
+            onOpenFullscreen={handleOpenFullscreen}
+            isStreaming={isStreaming}
+            orchestrationPlan={orchestrationPlan}
+            thinkingSteps={thinkingSteps}
+            agents={streamingAgents}
+            discordMessages={discordMessages}
+            discordThreads={discordThreads}
+            currentMode={currentMode}
+          />
 
-        {/* Main Content */}
-        {renderMainContent()}
-      </div>
+          {/* Main Content */}
+          <main className={mainContentClass}>
+            {renderMainContent()}
+          </main>
+
+          {/* Full Discord View Modal */}
+          {showFullDiscord && (
+            <FullDiscordView
+              messages={discordMessages || []}
+              threads={discordThreads || []}
+              agents={streamingAgents || []}
+              isStreaming={isStreaming}
+              onClose={() => setShowFullDiscord(false)}
+            />
+          )}
+        </div>
+      </TooltipProvider>
     </WisdomNETProvider>
   );
 };
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center h-[calc(100vh-3rem)]">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 export default Index;
