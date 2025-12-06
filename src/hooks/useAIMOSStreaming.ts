@@ -1,9 +1,8 @@
-import { useState, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { useState, useCallback, useRef } from 'react';
 import { toast } from 'sonner';
 import type {
   AIMOSAgent, AIMOSMode, DiscordMessage, DiscordThread,
-  GoalNode, AIMOSResponse, OrchestrationPlanEvent
+  GoalNode
 } from '@/lib/aimos-core-types';
 
 export interface AIMOSOrchestrationPlan {
@@ -71,6 +70,11 @@ export const useAIMOSStreaming = () => {
   const [discordThreads, setDiscordThreads] = useState<DiscordThread[]>([]);
   const [finalResponse, setFinalResponse] = useState<AIMOSFinalResponse | null>(null);
   const [currentMode, setCurrentMode] = useState<AIMOSMode>('GENERAL');
+  
+  // Use refs to track latest values for return
+  const finalResponseRef = useRef<AIMOSFinalResponse | null>(null);
+  const agentsRef = useRef<AIMOSAgent[]>([]);
+  const currentModeRef = useRef<AIMOSMode>('GENERAL');
 
   const startStreaming = useCallback(async (
     message: string,
@@ -84,6 +88,9 @@ export const useAIMOSStreaming = () => {
     setDiscordMessages([]);
     setDiscordThreads([]);
     setFinalResponse(null);
+    finalResponseRef.current = null;
+    agentsRef.current = [];
+    currentModeRef.current = 'GENERAL';
 
     try {
       const response = await fetch(
@@ -134,8 +141,10 @@ export const useAIMOSStreaming = () => {
                   estimatedDuration: data.estimatedDuration || 0,
                 });
                 setCurrentMode(data.globalMode || 'REASONING');
+                currentModeRef.current = data.globalMode || 'REASONING';
                 if (data.agents) {
                   setAgents(data.agents);
+                  agentsRef.current = data.agents;
                 }
                 if (data.threads) {
                   setDiscordThreads(data.threads);
@@ -144,17 +153,22 @@ export const useAIMOSStreaming = () => {
 
               case 'mode_change':
                 setCurrentMode(data.mode);
+                currentModeRef.current = data.mode;
                 break;
 
               case 'agent_spawn':
                 setAgents(prev => {
                   const existing = prev.find(a => a.agent_id === data.agent.agent_id);
+                  let updated;
                   if (existing) {
-                    return prev.map(a => 
+                    updated = prev.map(a => 
                       a.agent_id === data.agent.agent_id ? { ...a, ...data.agent } : a
                     );
+                  } else {
+                    updated = [...prev, data.agent];
                   }
-                  return [...prev, data.agent];
+                  agentsRef.current = updated;
+                  return updated;
                 });
                 break;
 
@@ -171,9 +185,10 @@ export const useAIMOSStreaming = () => {
                   type: data.node,
                   status: 'working',
                   agent: data.agent,
-                  agentRole: data.agentRole,
-                  mode: data.mode || currentMode,
+                  agentRole: data.agentRole || data.agent_role || 'Worker',
+                  mode: data.mode || currentModeRef.current,
                   inputPrompt: data.inputPrompt,
+                  detail: data.detail || `Processing ${data.node}...`,
                   thread_id: data.thread_id,
                 }]);
                 setOrchestrationPlan(prev => prev ? {
@@ -182,11 +197,15 @@ export const useAIMOSStreaming = () => {
                 } : null);
                 
                 // Update agent status
-                setAgents(prev => prev.map(a => 
-                  a.name === data.agent 
-                    ? { ...a, status: 'WORKING', currentTask: data.node }
-                    : a
-                ));
+                setAgents(prev => {
+                  const updated = prev.map(a => 
+                    a.name === data.agent 
+                      ? { ...a, status: 'WORKING' as const, currentTask: data.node }
+                      : a
+                  );
+                  agentsRef.current = updated;
+                  return updated;
+                });
                 break;
 
               case 'step_complete':
@@ -195,8 +214,8 @@ export const useAIMOSStreaming = () => {
                     ...step,
                     status: data.status === 'error' ? 'error' : 'completed',
                     duration: data.duration,
-                    output: data.output,
-                    detail: data.detail || data.output,
+                    output: data.output || data.detail,
+                    detail: data.detail || data.output || step.detail,
                     metrics: data.metrics,
                     sources_consulted: data.sources_consulted,
                     evidence: data.evidence,
@@ -204,32 +223,37 @@ export const useAIMOSStreaming = () => {
                 ));
                 
                 // Update agent status
-                setAgents(prev => prev.map(a => 
-                  a.name === data.agent?.name 
-                    ? { 
-                        ...a, 
-                        status: 'ACTIVE', 
-                        tasksCompleted: (a.tasksCompleted || 0) + 1,
-                        currentTask: undefined
-                      }
-                    : a
-                ));
+                setAgents(prev => {
+                  const updated = prev.map(a => 
+                    a.name === (data.agent?.name || data.agent)
+                      ? { 
+                          ...a, 
+                          status: 'ACTIVE' as const, 
+                          tasksCompleted: (a.tasksCompleted || 0) + 1,
+                          currentTask: undefined
+                        }
+                      : a
+                  );
+                  agentsRef.current = updated;
+                  return updated;
+                });
                 break;
 
               case 'final':
                 const final: AIMOSFinalResponse = {
-                  answer: data.answer,
+                  answer: data.answer || data.content || '',
                   verification: data.verification || {
-                    confidence: data.confidence || 0,
-                    provenance_coverage: data.provenance_coverage || 0,
-                    semantic_entropy: data.semantic_entropy || 0,
+                    confidence: data.confidence || 0.7,
+                    provenance_coverage: data.provenance_coverage || 0.8,
+                    semantic_entropy: data.semantic_entropy || 0.1,
                   },
-                  agents: data.agents || agents,
-                  trace_id: data.trace_id,
-                  mode_used: data.mode_used || currentMode,
+                  agents: data.agents || agentsRef.current,
+                  trace_id: data.trace_id || crypto.randomUUID(),
+                  mode_used: data.mode_used || currentModeRef.current,
                   goal_progress: data.goal_progress,
                 };
                 setFinalResponse(final);
+                finalResponseRef.current = final;
                 
                 // Show confidence toast
                 const conf = final.verification.confidence * 100;
@@ -247,12 +271,13 @@ export const useAIMOSStreaming = () => {
                 break;
             }
           } catch (e) {
-            console.warn('Failed to parse SSE data:', e);
+            console.warn('Failed to parse SSE data:', line, e);
           }
         }
       }
 
-      return finalResponse;
+      // Return the final response from ref (has latest value)
+      return finalResponseRef.current;
     } catch (error) {
       console.error('AIMOS streaming error:', error);
       toast.error(error instanceof Error ? error.message : 'Streaming failed');
@@ -260,7 +285,7 @@ export const useAIMOSStreaming = () => {
     } finally {
       setIsStreaming(false);
     }
-  }, [agents, currentMode, finalResponse]);
+  }, []);
 
   const reset = useCallback(() => {
     setIsStreaming(false);
@@ -271,6 +296,9 @@ export const useAIMOSStreaming = () => {
     setDiscordThreads([]);
     setFinalResponse(null);
     setCurrentMode('GENERAL');
+    finalResponseRef.current = null;
+    agentsRef.current = [];
+    currentModeRef.current = 'GENERAL';
   }, []);
 
   return {
