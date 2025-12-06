@@ -12,6 +12,8 @@ import { RightIconBar, RightDrawerType } from "@/components/layout/RightIconBar"
 import { LeftDrawerPanel } from "@/components/layout/LeftDrawerPanel";
 import { RightDrawerPanel } from "@/components/layout/RightDrawerPanel";
 import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
+import { NebulaBackground } from "@/components/ui/NebulaBackground";
+import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { cn } from "@/lib/utils";
 
@@ -67,7 +69,7 @@ const Index = () => {
 
   // Calculate main content margin based on open drawers
   const mainContentClass = cn(
-    "transition-all duration-300 pt-12",
+    "transition-all duration-300 pt-12 relative z-10",
     leftDrawer && leftDrawer !== 'documents' && leftDrawer !== 'orchestration' ? "ml-[21rem]" : "ml-12",
     rightDrawer ? "mr-[22rem]" : "mr-12"
   );
@@ -118,14 +120,18 @@ const Index = () => {
   return (
     <WisdomNETProvider>
       <TooltipProvider>
-        <div className="min-h-screen bg-gradient-mind">
+        <div className="min-h-screen relative overflow-hidden">
           <Helmet>
-            <title>WisdomNET - Advanced AGI with Persistent Memory</title>
+            <title>LUCID - Advanced AGI with Persistent Memory</title>
             <meta 
               name="description" 
               content="Advanced AGI system with persistent memory, SDF-CVF reasoning traces, and beautiful neural interface." 
             />
           </Helmet>
+
+          {/* Animated Background Layers */}
+          <NebulaBackground isProcessing={isStreaming} intensity={0.5} />
+          <NeuralParticles isProcessing={isStreaming} particleCount={60} connectionDistance={100} />
 
           {/* Top Bar */}
           <TopBar 
@@ -195,7 +201,7 @@ function LoadingFallback() {
   return (
     <div className="flex items-center justify-center h-[calc(100vh-3rem)]">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </div>
