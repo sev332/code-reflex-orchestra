@@ -9,7 +9,6 @@ import {
   Database,
   Activity,
   Eye,
-  Sparkles,
   GitBranch,
   Cpu,
   Network,
@@ -33,16 +32,17 @@ const iconBarItems: Array<{
   icon: React.ComponentType<any>;
   label: string;
   badge?: 'streaming' | 'messages' | 'agents';
+  activeColor?: string;
 }> = [
-  { id: 'thinking', icon: Brain, label: 'Live Thinking', badge: 'streaming' },
-  { id: 'discord', icon: MessageCircle, label: 'Agent Discord', badge: 'messages' },
-  { id: 'agents', icon: Users, label: 'Active Agents', badge: 'agents' },
-  { id: 'memory', icon: Database, label: 'Memory Systems' },
-  { id: 'context', icon: Eye, label: 'Context Analysis' },
-  { id: 'reasoning', icon: GitBranch, label: 'Reasoning Chains' },
-  { id: 'analytics', icon: Activity, label: 'Analytics' },
-  { id: 'processing', icon: Cpu, label: 'Processing' },
-  { id: 'network', icon: Network, label: 'Network' },
+  { id: 'thinking', icon: Brain, label: 'Live Thinking', badge: 'streaming', activeColor: 'text-amber-500' },
+  { id: 'discord', icon: MessageCircle, label: 'Agent Discord', badge: 'messages', activeColor: 'text-purple-500' },
+  { id: 'agents', icon: Users, label: 'Active Agents', badge: 'agents', activeColor: 'text-cyan-500' },
+  { id: 'memory', icon: Database, label: 'Memory Systems', activeColor: 'text-emerald-500' },
+  { id: 'context', icon: Eye, label: 'Context Analysis', activeColor: 'text-blue-500' },
+  { id: 'reasoning', icon: GitBranch, label: 'Reasoning Chains', activeColor: 'text-orange-500' },
+  { id: 'analytics', icon: Activity, label: 'Analytics', activeColor: 'text-pink-500' },
+  { id: 'processing', icon: Cpu, label: 'Processing', activeColor: 'text-red-500' },
+  { id: 'network', icon: Network, label: 'Network', activeColor: 'text-indigo-500' },
 ];
 
 export function RightIconBar({ 
@@ -60,14 +60,22 @@ export function RightIconBar({
     return null;
   };
 
+  const isItemActive = (item: typeof iconBarItems[0]) => {
+    if (item.badge === 'streaming' && isStreaming) return true;
+    if (item.badge === 'messages' && newMessages > 0) return true;
+    if (item.badge === 'agents' && activeAgents > 0) return true;
+    return false;
+  };
+
   return (
     <div className={cn(
-      "fixed right-0 top-12 bottom-0 w-12 bg-background/80 backdrop-blur-xl border-l border-border/50 z-40 flex flex-col items-center py-3 gap-1",
+      "fixed right-0 top-12 bottom-0 w-12 bg-background/60 backdrop-blur-xl border-l border-border/30 z-40 flex flex-col items-center py-3 gap-1",
       className
     )}>
       {iconBarItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeDrawer === item.id;
+        const hasActivity = isItemActive(item);
         const badgeValue = getBadgeValue(item.badge);
         
         return (
@@ -79,22 +87,46 @@ export function RightIconBar({
                   size="icon"
                   onClick={() => onDrawerChange(isActive ? null : item.id)}
                   className={cn(
-                    "w-10 h-10 rounded-xl transition-all duration-200",
-                    isActive && "bg-primary/10 text-primary shadow-sm",
-                    item.badge === 'streaming' && isStreaming && "animate-pulse"
+                    "w-10 h-10 rounded-xl transition-all duration-300 relative overflow-hidden",
+                    isActive && "bg-white/10 shadow-lg",
+                    hasActivity && !isActive && "bg-white/5"
                   )}
                 >
+                  {/* Glow effect when active or has activity */}
+                  {(isActive || hasActivity) && (
+                    <div 
+                      className={cn(
+                        "absolute inset-0 opacity-20 blur-md",
+                        item.activeColor?.replace('text-', 'bg-') || 'bg-primary'
+                      )} 
+                    />
+                  )}
+                  
                   <Icon className={cn(
-                    "w-5 h-5",
-                    isActive && "scale-110",
-                    item.badge === 'streaming' && isStreaming && "text-amber-500"
+                    "w-5 h-5 relative z-10 transition-all duration-300",
+                    isActive && cn("scale-110", item.activeColor),
+                    hasActivity && !isActive && cn(item.activeColor, "animate-pulse"),
+                    !isActive && !hasActivity && "text-muted-foreground"
                   )} />
                 </Button>
+                
+                {/* Activity ring */}
+                {hasActivity && (
+                  <div className={cn(
+                    "absolute inset-0 rounded-xl border-2 animate-pulse pointer-events-none",
+                    item.id === 'thinking' && "border-amber-500/50",
+                    item.id === 'discord' && "border-purple-500/50",
+                    item.id === 'agents' && "border-cyan-500/50"
+                  )} />
+                )}
+                
                 {badgeValue && (
                   <Badge 
                     className={cn(
-                      "absolute -top-1 -right-1 px-1.5 py-0 text-[10px] min-w-[18px] h-[18px] flex items-center justify-center",
-                      item.badge === 'streaming' ? "bg-amber-500 text-white animate-pulse" : "bg-primary"
+                      "absolute -top-1 -right-1 px-1.5 py-0 text-[10px] min-w-[18px] h-[18px] flex items-center justify-center border-0",
+                      item.badge === 'streaming' && "bg-amber-500 text-white animate-pulse shadow-lg shadow-amber-500/50",
+                      item.badge === 'messages' && "bg-purple-500 text-white shadow-lg shadow-purple-500/50",
+                      item.badge === 'agents' && "bg-cyan-500 text-white shadow-lg shadow-cyan-500/50"
                     )}
                   >
                     {badgeValue}
@@ -102,7 +134,14 @@ export function RightIconBar({
                 )}
               </div>
             </TooltipTrigger>
-            <TooltipContent side="left">{item.label}</TooltipContent>
+            <TooltipContent side="left" className="bg-background/95 backdrop-blur-xl border-border/50">
+              <div className="flex items-center gap-2">
+                <span>{item.label}</span>
+                {hasActivity && (
+                  <span className={cn("text-xs", item.activeColor)}>Active</span>
+                )}
+              </div>
+            </TooltipContent>
           </Tooltip>
         );
       })}

@@ -17,7 +17,6 @@ import {
   ChevronRight,
   CheckCircle
 } from 'lucide-react';
-import { WisdomNetLogo } from '@/components/WisdomNET/WisdomNetLogo';
 import { supabase } from '@/integrations/supabase/client';
 import { useAIMOSStreaming } from '@/hooks/useAIMOSStreaming';
 import { toast } from 'sonner';
@@ -95,7 +94,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
         const systemMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'system',
-          content: 'WisdomNET AGI initialized. I have persistent memory and full reasoning capabilities.',
+          content: 'LUCID AGI initialized. I have persistent memory and full reasoning capabilities.',
           timestamp: new Date().toISOString(),
           confidence: 1.0
         };
@@ -143,7 +142,9 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
         'user-' + crypto.randomUUID()
       );
       
-      if (response) {
+      console.log('AIMOS Response:', response);
+      
+      if (response && response.answer) {
         const aiMessage: ChatMessage = {
           id: crypto.randomUUID(),
           role: 'assistant',
@@ -151,7 +152,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           timestamp: new Date().toISOString(),
           confidence: response.verification?.confidence,
           metadata: {
-            model: 'AIMOS-Stream',
+            model: 'LUCID-Stream',
             orchestration: {
               thinkingSteps: thinkingSteps,
               agents: streamingAgents,
@@ -167,6 +168,9 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
         
         setMessages(prev => [...prev, aiMessage]);
         await saveMessage(aiMessage);
+      } else {
+        console.error('No response received from AIMOS');
+        toast.error('No response received. Check the edge function logs.');
       }
     } catch (error) {
       console.error('Error processing message:', error);
@@ -196,9 +200,11 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               {/* Avatar */}
               <Avatar className="w-8 h-8 flex-shrink-0">
                 <AvatarFallback className={cn(
-                  message.role === 'user' ? "bg-primary text-primary-foreground" : "bg-card"
+                  message.role === 'user' 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-gradient-to-br from-cyan-500/20 to-purple-500/20 border border-cyan-500/30"
                 )}>
-                  {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                  {message.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4 text-cyan-400" />}
                 </AvatarFallback>
               </Avatar>
 
@@ -211,7 +217,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                   "px-4 py-3",
                   message.role === 'user' 
                     ? "bg-primary text-primary-foreground" 
-                    : "bg-card"
+                    : "bg-card/80 backdrop-blur-sm border-border/50"
                 )}>
                   <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 </Card>
@@ -226,7 +232,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                   </span>
                   
                   {message.confidence && (
-                    <Badge variant="outline" className="text-xs py-0 h-5">
+                    <Badge variant="outline" className="text-xs py-0 h-5 border-cyan-500/30 text-cyan-400">
                       {Math.round(message.confidence * 100)}% confident
                     </Badge>
                   )}
@@ -236,7 +242,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-5 px-1 text-xs text-muted-foreground"
+                      className="h-5 px-1 text-xs text-muted-foreground hover:text-cyan-400"
                       onClick={() => setExpandedOrchestration(
                         expandedOrchestration === message.id ? null : message.id
                       )}
@@ -253,24 +259,26 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
 
                 {/* Expanded Orchestration Details */}
                 {expandedOrchestration === message.id && message.metadata?.orchestration && (
-                  <Card className="mt-2 p-3 bg-muted/50 w-full max-w-lg">
-                    <p className="text-xs font-medium mb-2">Reasoning Trace</p>
+                  <Card className="mt-2 p-3 bg-muted/30 backdrop-blur-sm w-full max-w-lg border-border/50">
+                    <p className="text-xs font-medium mb-2 text-cyan-400">Reasoning Trace</p>
                     <div className="space-y-2">
                       {message.metadata.orchestration.thinkingSteps?.slice(0, 5).map((step: any, i: number) => (
-                        <div key={i} className="flex items-center gap-2 text-xs">
-                          <CheckCircle className="w-3 h-3 text-emerald-500" />
-                          <span className="font-medium">{step.agent || step.name}</span>
-                          <span className="text-muted-foreground truncate">{step.output?.substring(0, 50)}...</span>
+                        <div key={i} className="flex items-start gap-2 text-xs">
+                          <CheckCircle className="w-3 h-3 text-emerald-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <span className="font-medium text-foreground">{step.agent || step.name || step.type}</span>
+                            <p className="text-muted-foreground mt-0.5">{step.detail || step.output?.substring(0, 100)}...</p>
+                          </div>
                         </div>
                       ))}
                     </div>
                     {message.metadata.orchestration.verification && (
-                      <div className="mt-2 pt-2 border-t border-border">
-                        <div className="flex gap-2">
-                          <Badge variant="outline" className="text-xs">
+                      <div className="mt-2 pt-2 border-t border-border/50">
+                        <div className="flex gap-2 flex-wrap">
+                          <Badge variant="outline" className="text-xs border-cyan-500/30 text-cyan-400">
                             κ: {message.metadata.orchestration.verification.provenance_coverage?.toFixed(2)}
                           </Badge>
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs border-purple-500/30 text-purple-400">
                             Entropy: {message.metadata.orchestration.verification.semantic_entropy?.toFixed(3)}
                           </Badge>
                         </div>
@@ -286,20 +294,27 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           {isStreaming && (
             <div className="flex gap-3">
               <Avatar className="w-8 h-8">
-                <AvatarFallback className="bg-card">
+                <AvatarFallback className="bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
                   <Brain className="w-4 h-4 animate-pulse text-amber-500" />
                 </AvatarFallback>
               </Avatar>
-              <Card className="px-4 py-3 bg-card">
+              <Card className="px-4 py-3 bg-card/80 backdrop-blur-sm border-amber-500/30">
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
                   <span className="text-sm text-muted-foreground">
                     {currentMode ? `${currentMode} mode active...` : 'Thinking...'}
                   </span>
                 </div>
                 {orchestrationPlan && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Step {orchestrationPlan.currentStep || 0} of {orchestrationPlan.totalSteps || 0}
+                  <div className="mt-2 space-y-1">
+                    <div className="text-xs text-muted-foreground">
+                      Step {orchestrationPlan.currentStep || 0} of {orchestrationPlan.totalSteps || 0}
+                    </div>
+                    {thinkingSteps.length > 0 && (
+                      <div className="text-xs text-cyan-400">
+                        {thinkingSteps[thinkingSteps.length - 1]?.type}: {thinkingSteps[thinkingSteps.length - 1]?.detail?.substring(0, 60)}...
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
@@ -311,7 +326,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
       </ScrollArea>
 
       {/* Input Area */}
-      <div className="border-t border-border bg-background/80 backdrop-blur-sm p-4">
+      <div className="border-t border-border/50 bg-background/60 backdrop-blur-xl p-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-2">
             <Input
@@ -320,12 +335,12 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               onKeyPress={handleKeyPress}
               placeholder="Ask anything..."
               disabled={isProcessing || isStreaming}
-              className="flex-1"
+              className="flex-1 bg-background/50 border-border/50 focus:border-cyan-500/50"
             />
             <Button 
               onClick={handleSend} 
               disabled={!input.trim() || isProcessing || isStreaming}
-              className="px-6"
+              className="px-6 bg-gradient-to-r from-cyan-500 to-purple-500 hover:from-cyan-600 hover:to-purple-600"
             >
               {isStreaming ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -337,8 +352,8 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           
           <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              AIMOS v2.0
+              <Sparkles className="w-3 h-3 text-cyan-400" />
+              LUCID v2.0
             </span>
             <span>•</span>
             <span>Streaming Mode</span>
