@@ -1,5 +1,5 @@
 // Left drawer panel for user tools
-import React from 'react';
+import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,8 +18,10 @@ import {
   Upload,
   ChevronRight,
   File,
-  Folder
+  Folder,
+  PenTool
 } from 'lucide-react';
+import { DocumentBuilder } from '@/components/Documents/DocumentBuilder';
 import { cn } from '@/lib/utils';
 import { LeftDrawerType } from './LeftIconBar';
 
@@ -51,6 +53,8 @@ export function LeftDrawerPanel({ activeDrawer, onClose, onNavigate, className }
         return <FavoritesPanel />;
       case 'settings':
         return <SettingsPanel />;
+      case 'builder':
+        return <BuilderPanel />;
       default:
         return null;
     }
@@ -336,6 +340,69 @@ function SettingsPanel() {
           </Button>
         </div>
       </ScrollArea>
+    </>
+  );
+}
+
+function BuilderPanel() {
+  const [showFullBuilder, setShowFullBuilder] = useState(false);
+
+  if (showFullBuilder) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background">
+        <DocumentBuilder onClose={() => setShowFullBuilder(false)} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="p-4 border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm">Document Builder</h3>
+          <Button variant="ghost" size="icon" className="w-7 h-7">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-4">
+          <div className="text-center py-6">
+            <PenTool className="w-12 h-12 mx-auto mb-3 text-primary/60" />
+            <h4 className="font-medium mb-1">Advanced Document Editor</h4>
+            <p className="text-xs text-muted-foreground mb-4">
+              Monaco editor with AI-powered organization, tagging, and automated document building.
+            </p>
+          </div>
+          
+          <Card className="p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+            <div className="flex items-center gap-2 mb-2">
+              <FileText className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm">New Document</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Start with a blank document</p>
+          </Card>
+          
+          <Card className="p-3 cursor-pointer hover:bg-accent/50 transition-colors">
+            <div className="flex items-center gap-2 mb-2">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <span className="font-medium text-sm">From Template</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Use a pre-built structure</p>
+          </Card>
+        </div>
+      </ScrollArea>
+      
+      <div className="p-3 border-t border-border/50">
+        <Button 
+          variant="default" 
+          className="w-full"
+          onClick={() => setShowFullBuilder(true)}
+        >
+          Open Full Builder
+          <ChevronRight className="w-4 h-4 ml-auto" />
+        </Button>
+      </div>
     </>
   );
 }

@@ -10,10 +10,11 @@ import { TopBar } from "@/components/layout/TopBar";
 import { LeftIconBar, LeftDrawerType } from "@/components/layout/LeftIconBar";
 import { RightIconBar, RightDrawerType } from "@/components/layout/RightIconBar";
 import { LeftDrawerPanel } from "@/components/layout/LeftDrawerPanel";
-import { RightDrawerPanel } from "@/components/layout/RightDrawerPanel";
+import { EnhancedRightDrawerPanel } from "@/components/layout/EnhancedRightDrawerPanel";
 import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
-import { NebulaBackground } from "@/components/ui/NebulaBackground";
+import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
+import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { cn } from "@/lib/utils";
 
@@ -29,6 +30,7 @@ const Index = () => {
   const [leftDrawer, setLeftDrawer] = useState<LeftDrawerType>(null);
   const [rightDrawer, setRightDrawer] = useState<RightDrawerType>(null);
   const [showFullDiscord, setShowFullDiscord] = useState(false);
+  const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
 
   // Get streaming data from AIMOS hook
   const {
@@ -130,8 +132,14 @@ const Index = () => {
           </Helmet>
 
           {/* Animated Background Layers */}
-          <NebulaBackground isProcessing={isStreaming} intensity={0.5} />
+          <StarfieldNebulaBackground isProcessing={isStreaming} />
           <NeuralParticles isProcessing={isStreaming} particleCount={60} connectionDistance={100} />
+          
+          {/* Background Settings Panel */}
+          <BackgroundSettingsPanel 
+            isOpen={showBackgroundSettings} 
+            onClose={() => setShowBackgroundSettings(false)} 
+          />
 
           {/* Top Bar */}
           <TopBar 
@@ -160,10 +168,11 @@ const Index = () => {
             isStreaming={isStreaming}
             newMessages={discordMessages?.length || 0}
             activeAgents={streamingAgents?.filter((a: any) => a.status === 'active').length || 0}
+            onOpenBackgroundSettings={() => setShowBackgroundSettings(true)}
           />
 
           {/* Right Drawer Panel */}
-          <RightDrawerPanel 
+          <EnhancedRightDrawerPanel 
             activeDrawer={rightDrawer}
             onClose={() => setRightDrawer(null)}
             onOpenFullscreen={handleOpenFullscreen}

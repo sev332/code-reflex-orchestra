@@ -11,11 +11,12 @@ import {
   Clock,
   Star,
   Settings,
-  MessageSquare
+  MessageSquare,
+  PenTool
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'library' | 'search' | 'history' | 'favorites' | 'settings' | null;
+export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'library' | 'search' | 'history' | 'favorites' | 'settings' | 'builder' | null;
 
 interface LeftIconBarProps {
   activeDrawer: LeftDrawerType;
@@ -26,9 +27,10 @@ interface LeftIconBarProps {
 const iconBarItems = [
   { id: 'chat' as const, icon: MessageSquare, label: 'AI Chat', shortcut: '⌘1' },
   { id: 'documents' as const, icon: FileText, label: 'Documents', shortcut: '⌘2' },
-  { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘3' },
-  { id: 'orchestration' as const, icon: Workflow, label: 'Orchestration', shortcut: '⌘4' },
-  { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘5' },
+  { id: 'builder' as const, icon: PenTool, label: 'Document Builder', shortcut: '⌘3' },
+  { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘4' },
+  { id: 'orchestration' as const, icon: Workflow, label: 'Orchestration', shortcut: '⌘5' },
+  { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘6' },
   { id: 'search' as const, icon: Search, label: 'Search', shortcut: '⌘K' },
   { id: 'history' as const, icon: Clock, label: 'History', shortcut: '⌘H' },
   { id: 'favorites' as const, icon: Star, label: 'Favorites', shortcut: '⌘F' },

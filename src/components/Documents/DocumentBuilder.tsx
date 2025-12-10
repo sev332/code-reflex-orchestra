@@ -67,7 +67,11 @@ interface DocumentProject {
   };
 }
 
-export function DocumentBuilder() {
+interface DocumentBuilderProps {
+  onClose?: () => void;
+}
+
+export function DocumentBuilder({ onClose }: DocumentBuilderProps) {
   const [activeTab, setActiveTab] = useState<'editor' | 'structure' | 'index' | 'map'>('editor');
   const [project, setProject] = useState<DocumentProject>({
     id: crypto.randomUUID(),
