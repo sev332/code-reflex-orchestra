@@ -21,7 +21,7 @@ import {
   Folder,
   PenTool
 } from 'lucide-react';
-import { DocumentBuilder } from '@/components/Documents/DocumentBuilder';
+import { DocumentIDE } from '@/components/Documents/DocumentIDE';
 import { cn } from '@/lib/utils';
 import { LeftDrawerType } from './LeftIconBar';
 
@@ -350,7 +350,7 @@ function BuilderPanel() {
   if (showFullBuilder) {
     return (
       <div className="fixed inset-0 z-50 bg-background">
-        <DocumentBuilder onClose={() => setShowFullBuilder(false)} />
+        <DocumentIDE onClose={() => setShowFullBuilder(false)} />
       </div>
     );
   }
