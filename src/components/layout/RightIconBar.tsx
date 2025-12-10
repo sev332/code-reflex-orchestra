@@ -12,7 +12,8 @@ import {
   GitBranch,
   Cpu,
   Network,
-  MessageCircle
+  MessageCircle,
+  Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,6 +25,7 @@ interface RightIconBarProps {
   isStreaming?: boolean;
   newMessages?: number;
   activeAgents?: number;
+  onOpenBackgroundSettings?: () => void;
   className?: string;
 }
 
@@ -51,6 +53,7 @@ export function RightIconBar({
   isStreaming,
   newMessages = 0,
   activeAgents = 0,
+  onOpenBackgroundSettings,
   className 
 }: RightIconBarProps) {
   const getBadgeValue = (badge?: string) => {
@@ -145,6 +148,26 @@ export function RightIconBar({
           </Tooltip>
         );
       })}
+      
+      {/* Spacer to push background settings to bottom */}
+      <div className="flex-1" />
+      
+      {/* Background Settings Button */}
+      <Tooltip delayDuration={300}>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onOpenBackgroundSettings}
+            className="w-10 h-10 rounded-xl transition-all duration-300 hover:bg-white/10"
+          >
+            <Palette className="w-5 h-5 text-muted-foreground hover:text-primary transition-colors" />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent side="left" className="bg-background/95 backdrop-blur-xl border-border/50">
+          Background Settings
+        </TooltipContent>
+      </Tooltip>
     </div>
   );
 }

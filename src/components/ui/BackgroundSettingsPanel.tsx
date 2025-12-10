@@ -1,5 +1,5 @@
 // Background Settings Panel
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -18,30 +18,41 @@ import {
 } from 'lucide-react';
 import { BackgroundSettings, DEFAULT_BACKGROUND_SETTINGS } from './StarfieldNebulaBackground';
 
-interface BackgroundSettingsPanelProps {
+export interface BackgroundSettingsPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  settings: BackgroundSettings;
-  onSettingsChange: (settings: BackgroundSettings) => void;
 }
+
+// Local storage key for persisting settings
+const STORAGE_KEY = 'lucid-background-settings';
 
 export function BackgroundSettingsPanel({
   isOpen,
   onClose,
-  settings,
-  onSettingsChange,
 }: BackgroundSettingsPanelProps) {
+  const [settings, setSettings] = useState<BackgroundSettings>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : DEFAULT_BACKGROUND_SETTINGS;
+  });
+
+  // Persist settings to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+    // Dispatch custom event so background component can listen
+    window.dispatchEvent(new CustomEvent('background-settings-changed', { detail: settings }));
+  }, [settings]);
+
   if (!isOpen) return null;
 
   const updateSetting = <K extends keyof BackgroundSettings>(
     key: K,
     value: BackgroundSettings[K]
   ) => {
-    onSettingsChange({ ...settings, [key]: value });
+    setSettings(prev => ({ ...prev, [key]: value }));
   };
 
   const resetToDefaults = () => {
-    onSettingsChange(DEFAULT_BACKGROUND_SETTINGS);
+    setSettings(DEFAULT_BACKGROUND_SETTINGS);
   };
 
   return (

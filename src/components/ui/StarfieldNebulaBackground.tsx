@@ -1,5 +1,5 @@
 // Starfield Night Sky with Nebula Clouds Background
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import * as THREE from 'three';
 
 export interface BackgroundSettings {
@@ -166,8 +166,14 @@ const NEBULA_FRAGMENT_SHADER = `
 
 export function StarfieldNebulaBackground({ 
   isProcessing = false, 
-  settings = DEFAULT_BACKGROUND_SETTINGS 
+  settings: propSettings
 }: StarfieldNebulaBackgroundProps) {
+  // Load settings from localStorage on mount, then listen for changes
+  const [settings, setSettings] = useState<BackgroundSettings>(() => {
+    const saved = localStorage.getItem('lucid-background-settings');
+    return saved ? JSON.parse(saved) : (propSettings || DEFAULT_BACKGROUND_SETTINGS);
+  });
+  
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const threeContainerRef = useRef<HTMLDivElement>(null);
   const starsRef = useRef<Star[]>([]);
@@ -176,6 +182,17 @@ export function StarfieldNebulaBackground({
   const animationRef = useRef<number>(0);
   const processingRef = useRef(isProcessing);
   const settingsRef = useRef(settings);
+
+  // Listen for settings changes from the settings panel
+  useEffect(() => {
+    const handleSettingsChange = (e: CustomEvent<BackgroundSettings>) => {
+      setSettings(e.detail);
+    };
+    window.addEventListener('background-settings-changed', handleSettingsChange as EventListener);
+    return () => {
+      window.removeEventListener('background-settings-changed', handleSettingsChange as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     processingRef.current = isProcessing;
