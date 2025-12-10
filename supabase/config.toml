@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.document-indexer]
 verify_jwt = false
+
+[functions.document-ai-orchestrator]
+verify_jwt = false
