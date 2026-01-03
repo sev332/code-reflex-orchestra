@@ -44,3 +44,6 @@ verify_jwt = false
 
 [functions.document-ai-orchestrator]
 verify_jwt = false
+
+[functions.dream-mode]
+verify_jwt = false

@@ -21,9 +21,10 @@ import { useDocumentAI, AIThoughtStep, DocumentChunk, DocumentProject } from '@/
 
 interface DocumentIDEProps {
   onClose?: () => void;
+  onDocumentChange?: (content: string) => void;
 }
 
-export function DocumentIDE({ onClose }: DocumentIDEProps) {
+export function DocumentIDE({ onClose, onDocumentChange }: DocumentIDEProps) {
   const {
     isProcessing,
     thoughtSteps,
@@ -97,7 +98,10 @@ export function DocumentIDE({ onClose }: DocumentIDEProps) {
       content: value,
       metrics: { ...currentProject.metrics, wordCount },
     });
-  }, [currentProject, setCurrentProject]);
+    
+    // Notify parent of content change
+    onDocumentChange?.(value);
+  }, [currentProject, setCurrentProject, onDocumentChange]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

@@ -12,29 +12,33 @@ import {
   Star,
   Settings,
   MessageSquare,
-  PenTool
+  PenTool,
+  Brain,
+  Code2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'library' | 'search' | 'history' | 'favorites' | 'settings' | 'builder' | null;
+export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'library' | 'search' | 'history' | 'favorites' | 'settings' | 'builder' | 'dream' | 'code-builder' | null;
+
+const iconBarItems = [
+  { id: 'chat' as const, icon: MessageSquare, label: 'AI Chat', shortcut: '⌘1' },
+  { id: 'documents' as const, icon: FileText, label: 'Documents', shortcut: '⌘2' },
+  { id: 'builder' as const, icon: PenTool, label: 'Document IDE', shortcut: '⌘3' },
+  { id: 'code-builder' as const, icon: Code2, label: 'Code Builder', shortcut: '⌘4' },
+  { id: 'dream' as const, icon: Brain, label: 'Dream Mode', shortcut: '⌘D' },
+  { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘5' },
+  { id: 'orchestration' as const, icon: Workflow, label: 'Orchestration', shortcut: '⌘6' },
+  { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘7' },
+  { id: 'search' as const, icon: Search, label: 'Search', shortcut: '⌘K' },
+  { id: 'history' as const, icon: Clock, label: 'History', shortcut: '⌘H' },
+  { id: 'favorites' as const, icon: Star, label: 'Favorites', shortcut: '⌘F' },
+];
 
 interface LeftIconBarProps {
   activeDrawer: LeftDrawerType;
   onDrawerChange: (drawer: LeftDrawerType) => void;
   className?: string;
 }
-
-const iconBarItems = [
-  { id: 'chat' as const, icon: MessageSquare, label: 'AI Chat', shortcut: '⌘1' },
-  { id: 'documents' as const, icon: FileText, label: 'Documents', shortcut: '⌘2' },
-  { id: 'builder' as const, icon: PenTool, label: 'Document Builder', shortcut: '⌘3' },
-  { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘4' },
-  { id: 'orchestration' as const, icon: Workflow, label: 'Orchestration', shortcut: '⌘5' },
-  { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘6' },
-  { id: 'search' as const, icon: Search, label: 'Search', shortcut: '⌘K' },
-  { id: 'history' as const, icon: Clock, label: 'History', shortcut: '⌘H' },
-  { id: 'favorites' as const, icon: Star, label: 'Favorites', shortcut: '⌘F' },
-];
 
 export function LeftIconBar({ activeDrawer, onDrawerChange, className }: LeftIconBarProps) {
   return (
