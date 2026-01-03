@@ -15,10 +15,13 @@ import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
 import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
+import { DocumentIDEWorkspace } from "@/components/Documents/DocumentIDEWorkspace";
+import { DreamModeWorkspace } from "@/components/DreamMode/DreamModeWorkspace";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { cn } from "@/lib/utils";
 
 type ViewMode = 'chat' | 'documents' | 'memory' | 'orchestration' | 'dev-legacy' | 'dev-production';
+type WorkspaceMode = 'document-ide' | 'code-builder' | 'dream-mode' | null;
 
 // Lazy load heavy dashboards
 const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
@@ -31,6 +34,7 @@ const Index = () => {
   const [rightDrawer, setRightDrawer] = useState<RightDrawerType>(null);
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
+  const [activeWorkspace, setActiveWorkspace] = useState<WorkspaceMode>(null);
 
   // Get streaming data from AIMOS hook
   const {
@@ -44,6 +48,23 @@ const Index = () => {
   } = useAIMOSStreaming();
 
   const handleLeftDrawerChange = useCallback((drawer: LeftDrawerType) => {
+    // Handle special workspace modes that open as central overlays
+    if (drawer === 'builder') {
+      setActiveWorkspace('document-ide');
+      setLeftDrawer(null);
+      return;
+    }
+    if (drawer === 'dream') {
+      setActiveWorkspace('dream-mode');
+      setLeftDrawer(null);
+      return;
+    }
+    if (drawer === 'code-builder') {
+      setActiveWorkspace('code-builder');
+      setLeftDrawer(null);
+      return;
+    }
+    
     setLeftDrawer(drawer);
     // Navigate to specific views for some items
     if (drawer === 'documents') {
@@ -67,6 +88,10 @@ const Index = () => {
       setShowFullDiscord(true);
       setRightDrawer(null);
     }
+  }, []);
+
+  const closeWorkspace = useCallback(() => {
+    setActiveWorkspace(null);
   }, []);
 
   // Calculate main content margin based on open drawers
@@ -200,6 +225,18 @@ const Index = () => {
               onClose={() => setShowFullDiscord(false)}
             />
           )}
+
+          {/* Document IDE Workspace */}
+          <DocumentIDEWorkspace
+            isOpen={activeWorkspace === 'document-ide'}
+            onClose={closeWorkspace}
+          />
+
+          {/* Dream Mode Workspace */}
+          <DreamModeWorkspace
+            isOpen={activeWorkspace === 'dream-mode'}
+            onClose={closeWorkspace}
+          />
         </div>
       </TooltipProvider>
     </WisdomNETProvider>
