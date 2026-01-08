@@ -704,6 +704,341 @@ export type Database = {
         }
         Relationships: []
       }
+      dream_execution_history: {
+        Row: {
+          created_at: string
+          execution_time_ms: number | null
+          id: string
+          input_hash: string
+          input_preview: string | null
+          is_loop: boolean | null
+          loop_count: number | null
+          node_type: string
+          output_hash: string
+          output_preview: string | null
+          session_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          execution_time_ms?: number | null
+          id?: string
+          input_hash: string
+          input_preview?: string | null
+          is_loop?: boolean | null
+          loop_count?: number | null
+          node_type: string
+          output_hash: string
+          output_preview?: string | null
+          session_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          execution_time_ms?: number | null
+          id?: string
+          input_hash?: string
+          input_preview?: string | null
+          is_loop?: boolean | null
+          loop_count?: number | null
+          node_type?: string
+          output_hash?: string
+          output_preview?: string | null
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dream_execution_history_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dream_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dream_hierarchical_index: {
+        Row: {
+          children_count: number | null
+          content_id: string | null
+          created_at: string
+          depth: number | null
+          id: string
+          metadata: Json | null
+          node_type: string | null
+          parent_path: string | null
+          path: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          children_count?: number | null
+          content_id?: string | null
+          created_at?: string
+          depth?: number | null
+          id?: string
+          metadata?: Json | null
+          node_type?: string | null
+          parent_path?: string | null
+          path: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          children_count?: number | null
+          content_id?: string | null
+          created_at?: string
+          depth?: number | null
+          id?: string
+          metadata?: Json | null
+          node_type?: string | null
+          parent_path?: string | null
+          path?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      dream_insights: {
+        Row: {
+          confidence: number | null
+          content: string
+          created_at: string
+          frequency: number | null
+          id: string
+          insight_type: string | null
+          last_occurred_at: string | null
+          linked_insights: string[] | null
+          reasoning_style: string | null
+          session_id: string | null
+          source_prompt: string | null
+          tags: string[] | null
+        }
+        Insert: {
+          confidence?: number | null
+          content: string
+          created_at?: string
+          frequency?: number | null
+          id?: string
+          insight_type?: string | null
+          last_occurred_at?: string | null
+          linked_insights?: string[] | null
+          reasoning_style?: string | null
+          session_id?: string | null
+          source_prompt?: string | null
+          tags?: string[] | null
+        }
+        Update: {
+          confidence?: number | null
+          content?: string
+          created_at?: string
+          frequency?: number | null
+          id?: string
+          insight_type?: string | null
+          last_occurred_at?: string | null
+          linked_insights?: string[] | null
+          reasoning_style?: string | null
+          session_id?: string | null
+          source_prompt?: string | null
+          tags?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dream_insights_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dream_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dream_journal: {
+        Row: {
+          content: string
+          created_at: string
+          entry_type: string
+          id: string
+          linked_docs: string[] | null
+          linked_insights: string[] | null
+          reasoning_path_id: string | null
+          session_id: string | null
+          tags: string[] | null
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          entry_type: string
+          id?: string
+          linked_docs?: string[] | null
+          linked_insights?: string[] | null
+          reasoning_path_id?: string | null
+          session_id?: string | null
+          tags?: string[] | null
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          entry_type?: string
+          id?: string
+          linked_docs?: string[] | null
+          linked_insights?: string[] | null
+          reasoning_path_id?: string | null
+          session_id?: string | null
+          tags?: string[] | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dream_journal_reasoning_path_id_fkey"
+            columns: ["reasoning_path_id"]
+            isOneToOne: false
+            referencedRelation: "dream_reasoning_paths"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dream_journal_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dream_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dream_prompt_usage: {
+        Row: {
+          created_at: string
+          decay_factor: number | null
+          decayed_score: number | null
+          id: string
+          last_selected_at: string | null
+          prompt_hash: string
+          prompt_text: string
+          session_id: string | null
+          times_selected: number | null
+          utility_score: number | null
+        }
+        Insert: {
+          created_at?: string
+          decay_factor?: number | null
+          decayed_score?: number | null
+          id?: string
+          last_selected_at?: string | null
+          prompt_hash: string
+          prompt_text: string
+          session_id?: string | null
+          times_selected?: number | null
+          utility_score?: number | null
+        }
+        Update: {
+          created_at?: string
+          decay_factor?: number | null
+          decayed_score?: number | null
+          id?: string
+          last_selected_at?: string | null
+          prompt_hash?: string
+          prompt_text?: string
+          session_id?: string | null
+          times_selected?: number | null
+          utility_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dream_prompt_usage_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dream_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dream_reasoning_paths: {
+        Row: {
+          best_score: number | null
+          best_style: string | null
+          branches: Json
+          context: string | null
+          created_at: string
+          id: string
+          insights_extracted: string[] | null
+          prompt: string
+          session_id: string | null
+          status: string | null
+        }
+        Insert: {
+          best_score?: number | null
+          best_style?: string | null
+          branches?: Json
+          context?: string | null
+          created_at?: string
+          id?: string
+          insights_extracted?: string[] | null
+          prompt: string
+          session_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          best_score?: number | null
+          best_style?: string | null
+          branches?: Json
+          context?: string | null
+          created_at?: string
+          id?: string
+          insights_extracted?: string[] | null
+          prompt?: string
+          session_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dream_reasoning_paths_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "dream_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dream_sessions: {
+        Row: {
+          created_at: string
+          documents: string[] | null
+          ended_at: string | null
+          focus: string
+          id: string
+          metadata: Json | null
+          started_at: string
+          status: string
+          total_explorations: number | null
+          total_insights: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          documents?: string[] | null
+          ended_at?: string | null
+          focus?: string
+          id?: string
+          metadata?: Json | null
+          started_at?: string
+          status?: string
+          total_explorations?: number | null
+          total_insights?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          documents?: string[] | null
+          ended_at?: string | null
+          focus?: string
+          id?: string
+          metadata?: Json | null
+          started_at?: string
+          status?: string
+          total_explorations?: number | null
+          total_insights?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       hil_interventions: {
         Row: {
           agent_id: string | null
