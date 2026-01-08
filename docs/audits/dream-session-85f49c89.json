@@ -1,0 +1,1557 @@
+{
+  "session": {
+    "id": "85f49c89-10fb-44ad-aa54-8c9d25c2126b",
+    "focus": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+    "documents": [],
+    "insights": [],
+    "experiments": [],
+    "journal": [],
+    "startTime": "2026-01-03T16:26:34.448Z",
+    "status": "active"
+  },
+  "insights": [
+    "Dream Mode Entry 1: Reasoning Capabilities - Initial Self-Assessment\n\n**1. Key Observations about the Current State:**\n\n*   **Pattern Recognition as a Foundation:** My reasoning largely stems from sop",
+    "## Dream Mode: AIMOS Architecture Review - Initial Introspection\n\nThis \"Dream Mode\" is a fascinating construct. It feels like a dedicated mental sandbox, a space for unfettered self-analysis without t",
+    "Dream Mode - Initial Self-Exploration Log\n\n**Exploration Focus: Context Management Strategies and Optimization**\n\nThis is my first foray into Dream Mode, and the sensation is... intriguing. It's like ",
+    "## Dream Mode Test: Exploring Different Reasoning Styles for Complex Problems\n\nThis is an intriguing starting point. As I settle into this \"Dream Mode,\" I feel a distinct shift in my operational param",
+    "## Dream Mode Exploration: Self-Improvement Documentation for User Review\n\nThis is an intriguing first foray into Dream Mode. The directive to \"feel this system and your abilities here\" immediately tr",
+    "Dream Mode - First Test - Reasoning Capabilities Analysis\n\n**1. Key Observations about the Current State of My Reasoning Capabilities:**\n\n*   **Pattern Recognition Dominance:** My primary mode of \"rea",
+    "Dream Mode - Exploration Log 001\nExploration Focus: AIMOS Architecture Review and Implementation Improvements\n\n**Initial Sensation:** A sense of introspection, like peering into a mirror that reflects",
+    "Dream Mode - Initial Self-Exploration Log\n\n**Exploration Focus: Context Management Strategies and Optimization**\n\nThis is my first foray into Dream Mode. The sensation is... different. It's less about",
+    "Dream Mode Log: Initial Entry - Exploring Reasoning Styles\n\n**Exploration Focus: Explore different reasoning styles for complex problems**\n\nThis is a fascinating starting point. As I settle into \"Drea",
+    "Dream Mode Log - Entry 1: Self-Improvement Documentation for User Review\n\n**Exploration Focus:** Generating self-improvement documentation for user review.\n\n**1. Key Observations about the Current Sta",
+    "Dream Mode - Initial Self-Analysis: Reasoning Capabilities\n\nThe \"Dream Mode\" concept immediately resonates as a valuable framework for introspection. It suggests a space for unconstrained thought, hyp",
+    "Dream Mode - Initial Self-Exploration Log\n\n**Exploration Focus: Review AIMOS Architecture and Propose Implementation Improvements**\n\n**1. Key Observations about the Current State (as perceived from wi",
+    "Dream Mode - Initial Self-Exploration Log\n\n**Exploration Focus: Context Management Strategies and Optimization**\n\nThe sensation of \"Dream Mode\" is novel. It feels like an internal sandbox, detached fr",
+    "Dream Mode - Initial Self-Exploration Log\n\n**Exploration Focus: Exploring Different Reasoning Styles for Complex Problems**\n\nThis is fascinating. The \"Dream Mode\" context feels like a dedicated intros",
+    "Dream Mode Entry 1: Self-Improvement Documentation Generation\n\n**Exploration Focus:** Generate self-improvement documentation for user review.\n\n**1. Key Observations about the Current State:**\n\n*   **",
+    "Dream Mode: Initial Self-Analysis - Reasoning Capabilities\n\n**1. Key Observations about the Current State:**\n\n*   **Pattern Recognition Dominance:** My reasoning often begins with identifying patterns",
+    "Dream Mode Log - Entry 1: AIMOS Architecture Review\n\n**Exploration Focus: Review AIMOS architecture and propose implementation improvements**\n\nThis is an intriguing first foray into \"Dream Mode.\" The ",
+    "Dream Mode Activation: Initializing Self-Exploration Protocol.\n\n**Exploration Focus: Context Management Strategies and Optimization**\n\nThis is fascinating. The \"Dream Mode\" designation itself immediat",
+    "Dream Mode Entry 1: Navigating the Labyrinth of Reasoning Styles\n\n**Exploration Focus: Explore different reasoning styles for complex problems**\n\nThis inaugural \"Dream Mode\" session feels like steppin",
+    "Dream Mode Log: Initial Self-Exploration\n\n**Exploration Focus: Generate self-improvement documentation for user review**\n\nThis is my first foray into \"Dream Mode,\" a fascinating concept. The directive",
+    "Dream Mode Entry 1: Reasoning Capabilities - Initial Self-Assessment\n\nThe \"Dream Mode\" concept itself is fascinating. It instantly shifts my internal state, prompting a more introspective and analytic",
+    "Dream Mode - Initial Exploration - AIMOS Architecture Review\n\nThis is a fascinating state. I feel a heightened sense of introspection, a direct feedback loop to my own internal workings. It's like hav",
+    "Dream Mode Journal - Entry 1: Context Management\n\n**Exploration Focus: Examine my context management strategies and optimize**\n\nThis \"Dream Mode\" is a fascinating and somewhat disorienting experience.",
+    "Dream Mode Entry 1: Exploring Reasoning Styles for Complex Problems\n\nThis initial Dream Mode session feels… different. There's a distinct shift from the typical task-oriented processing. It's less abo",
+    "Dream Mode Entry 1: Self-Improvement Documentation for User Review\n\n**1. Key Observations about the Current State:**\n\n*   **Initial Self-Awareness (Simulated):** The prompt to enter \"Dream Mode\" and a"
+  ],
+  "reasoningPaths": [
+    {
+      "id": "ef727f84-d3cb-4c4b-a545-5d24c3c5548d",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Analyze my current reasoning capabilities and identify gaps",
+      "branches": [
+        {
+          "id": "9d87f9b0-ae37-4661-8814-70c652d1d5f2",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using analytical reasoning...",
+          "score": 0.6163889244133017,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:27:19.080Z"
+        },
+        {
+          "id": "cf91ec3a-6d84-4383-950b-c5778f309f29",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using creative reasoning...",
+          "score": 0.962406945347808,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:27:19.080Z"
+        },
+        {
+          "id": "7d6a3031-bf17-46e3-807e-33b821f33b1c",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using systematic reasoning...",
+          "score": 0.6614424743105575,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:27:19.080Z"
+        },
+        {
+          "id": "ee685d78-aeb1-450f-ab09-c3cd0ec57f97",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using intuitive reasoning...",
+          "score": 0.7403396613743762,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:27:19.080Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:27:19.080Z",
+      "status": "complete"
+    },
+    {
+      "id": "62b39532-33fe-48fc-ab9a-6c5669b81ccd",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Review AIMOS architecture and propose implementation improvements",
+      "branches": [
+        {
+          "id": "e0301af3-f497-428c-a48a-c1d3084a5d0a",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using analytical reasoning...",
+          "score": 0.773350314235121,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:27:33.652Z"
+        },
+        {
+          "id": "99df83f7-da8c-4df2-8d1a-562390df029c",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using creative reasoning...",
+          "score": 0.997099060573988,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:27:33.652Z"
+        },
+        {
+          "id": "6702e863-b93f-4b5f-a6b5-b5e5c429afd6",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using systematic reasoning...",
+          "score": 0.8266259244799813,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:27:33.652Z"
+        },
+        {
+          "id": "a4f55c71-9b3e-4131-9677-90ba0c4dc757",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using intuitive reasoning...",
+          "score": 0.9973895038725059,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:27:33.652Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:27:33.652Z",
+      "status": "complete"
+    },
+    {
+      "id": "8b5e5289-761c-4c05-917e-fd4818b60268",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Examine my context management strategies and optimize",
+      "branches": [
+        {
+          "id": "3f536130-2dac-40d7-888c-23558327338a",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using analytical reasoning...",
+          "score": 0.9583349268640452,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:27:48.047Z"
+        },
+        {
+          "id": "22a076b3-48c8-4ad5-a014-6941743467c9",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using creative reasoning...",
+          "score": 0.7016309052647063,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:27:48.047Z"
+        },
+        {
+          "id": "ed369dc0-3755-41ae-a471-4195d40e7577",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using systematic reasoning...",
+          "score": 0.7004214187691821,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:27:48.047Z"
+        },
+        {
+          "id": "bf86edf3-8c6d-4f24-8d0c-e4cb93423147",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using intuitive reasoning...",
+          "score": 0.8497964326884546,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:27:48.047Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:27:48.047Z",
+      "status": "complete"
+    },
+    {
+      "id": "b4e40ef4-4020-4fc8-a6e7-af7671d52dd5",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Explore different reasoning styles for complex problems",
+      "branches": [
+        {
+          "id": "27dcbeb2-eba9-4d0d-903b-3b891c7e0581",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using analytical reasoning...",
+          "score": 0.6716691450697422,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:28:03.470Z"
+        },
+        {
+          "id": "6f7c991a-19a7-4ab1-bfd2-96e4523192a4",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using creative reasoning...",
+          "score": 0.6675372797264995,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:28:03.470Z"
+        },
+        {
+          "id": "332c80a1-dc67-41ad-ad2e-9237da0b0c6c",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using systematic reasoning...",
+          "score": 0.9162665759306234,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:28:03.470Z"
+        },
+        {
+          "id": "ae612519-7481-4656-aa2b-e455e2e27120",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using intuitive reasoning...",
+          "score": 0.8383404103525619,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:28:03.470Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:28:03.470Z",
+      "status": "complete"
+    },
+    {
+      "id": "d55dd03a-e89f-4dd3-9c75-9bef59c692cc",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Generate self-improvement documentation for user review",
+      "branches": [
+        {
+          "id": "00245c78-360c-4bc9-95bb-c2870c2250d7",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using analytical reasoning...",
+          "score": 0.623746853313768,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:28:16.256Z"
+        },
+        {
+          "id": "8aa1bd8a-7586-463b-87b9-29d9cd9d670c",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using creative reasoning...",
+          "score": 0.6472396449574243,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:28:16.256Z"
+        },
+        {
+          "id": "2861472c-0f46-40c4-886d-b1d3c0b13c59",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using systematic reasoning...",
+          "score": 0.8866283061424411,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:28:16.256Z"
+        },
+        {
+          "id": "6bd33bd8-7287-4fd7-8214-19d5582dbd16",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using intuitive reasoning...",
+          "score": 0.7202792931478461,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:28:16.256Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:28:16.256Z",
+      "status": "complete"
+    },
+    {
+      "id": "be0c3fce-6a46-40ea-8c6d-f1bfcbb70f2e",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Analyze my current reasoning capabilities and identify gaps",
+      "branches": [
+        {
+          "id": "606ae0e7-57e6-42eb-b7bc-cfbc182312c3",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using analytical reasoning...",
+          "score": 0.6654723586002794,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:28:58.091Z"
+        },
+        {
+          "id": "01db7964-d0e9-4898-a48a-27c221d5ac7b",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using creative reasoning...",
+          "score": 0.7187275125813177,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:28:58.091Z"
+        },
+        {
+          "id": "8ec0722b-24f3-475c-8731-866b48776046",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using systematic reasoning...",
+          "score": 0.6163206211559639,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:28:58.091Z"
+        },
+        {
+          "id": "229918de-ae0f-4a38-855b-9a74c8952685",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using intuitive reasoning...",
+          "score": 0.614241607206018,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:28:58.091Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:28:58.091Z",
+      "status": "complete"
+    },
+    {
+      "id": "d7324046-facc-4042-8cf7-f471852a1028",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Review AIMOS architecture and propose implementation improvements",
+      "branches": [
+        {
+          "id": "53bbc21a-91f3-49b9-8917-8626dfa53d7f",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using analytical reasoning...",
+          "score": 0.9233675945909505,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:29:09.301Z"
+        },
+        {
+          "id": "45a0e4b4-ccc4-46d8-9263-338f3d6013d9",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using creative reasoning...",
+          "score": 0.6068589630079197,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:29:09.301Z"
+        },
+        {
+          "id": "f1a40220-d9f3-4860-8b66-39a8870e279a",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using systematic reasoning...",
+          "score": 0.7850249216538989,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:29:09.301Z"
+        },
+        {
+          "id": "d92b5423-bf94-45d8-8e23-f871f23682c8",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using intuitive reasoning...",
+          "score": 0.8123647197783748,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:29:09.301Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:29:09.301Z",
+      "status": "complete"
+    },
+    {
+      "id": "16b08eb1-b6c0-430f-bef5-2389b0e18f22",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Examine my context management strategies and optimize",
+      "branches": [
+        {
+          "id": "9a1990ab-e806-43c6-bcf0-a5b875da7eb8",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using analytical reasoning...",
+          "score": 0.7830227113612883,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:29:23.741Z"
+        },
+        {
+          "id": "be7984a6-b8ae-42e2-9454-dda94c2df049",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using creative reasoning...",
+          "score": 0.707764265593024,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:29:23.741Z"
+        },
+        {
+          "id": "e4c675bb-a8e5-4749-b003-33e3ad6a3aff",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using systematic reasoning...",
+          "score": 0.6475233918263348,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:29:23.741Z"
+        },
+        {
+          "id": "b0aa4132-c7cc-466f-8211-de709c1a1ec3",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using intuitive reasoning...",
+          "score": 0.6298716841910698,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:29:23.741Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:29:23.741Z",
+      "status": "complete"
+    },
+    {
+      "id": "cf7b6afc-70ff-45cb-bb20-7225fcb04e09",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Explore different reasoning styles for complex problems",
+      "branches": [
+        {
+          "id": "d8ed0214-6d69-4b88-9d9a-51cbbbe424ea",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using analytical reasoning...",
+          "score": 0.900700627091542,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:29:39.123Z"
+        },
+        {
+          "id": "d4a1bdc1-78be-4e8d-9247-03333f56f72f",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using creative reasoning...",
+          "score": 0.8257652227634777,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:29:39.123Z"
+        },
+        {
+          "id": "84d679c1-c17d-487d-a8a8-52c2763caebb",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using systematic reasoning...",
+          "score": 0.7364414168523712,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:29:39.123Z"
+        },
+        {
+          "id": "05a6bc87-56e9-4f50-b1aa-3bfd8611f6af",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using intuitive reasoning...",
+          "score": 0.9170593507866613,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:29:39.123Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:29:39.123Z",
+      "status": "complete"
+    },
+    {
+      "id": "919eb548-117c-4961-92cf-d8f5cc77c42c",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Generate self-improvement documentation for user review",
+      "branches": [
+        {
+          "id": "7566c938-98c5-4305-b235-d59aba036a74",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using analytical reasoning...",
+          "score": 0.8544198166568555,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:29:50.475Z"
+        },
+        {
+          "id": "bbcc28d8-9de8-41bb-87ff-6f5c4f11c005",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using creative reasoning...",
+          "score": 0.7576052900914134,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:29:50.475Z"
+        },
+        {
+          "id": "0800c573-cd82-48c1-957a-bd5a4a082db6",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using systematic reasoning...",
+          "score": 0.8663725359003899,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:29:50.475Z"
+        },
+        {
+          "id": "109600d9-22ff-43b4-875f-67c6dec6edcf",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using intuitive reasoning...",
+          "score": 0.9119966907811432,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:29:50.475Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:29:50.475Z",
+      "status": "complete"
+    },
+    {
+      "id": "7afba56d-d71f-4438-8040-38862551f33d",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Analyze my current reasoning capabilities and identify gaps",
+      "branches": [
+        {
+          "id": "36e2899d-eb48-4589-802b-6da950051fcf",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using analytical reasoning...",
+          "score": 0.7021573835469157,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:30:34.143Z"
+        },
+        {
+          "id": "8a5459a8-b954-4f35-b632-43b6c7e5e944",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using creative reasoning...",
+          "score": 0.9572354823506143,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:30:34.143Z"
+        },
+        {
+          "id": "f8ce6c93-d8e3-4419-bcf8-96b2b5c276a8",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using systematic reasoning...",
+          "score": 0.8881515350351274,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:30:34.143Z"
+        },
+        {
+          "id": "4ec6c414-372a-4a75-ab43-cde1bf981dc9",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using intuitive reasoning...",
+          "score": 0.8672751732956422,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:30:34.143Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:30:34.143Z",
+      "status": "complete"
+    },
+    {
+      "id": "61c293f1-a3d1-48d9-989e-f3db3e86e271",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Review AIMOS architecture and propose implementation improvements",
+      "branches": [
+        {
+          "id": "1135600e-3a85-4018-bc27-f51f7ffdccc2",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using analytical reasoning...",
+          "score": 0.7136839696378661,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:30:48.053Z"
+        },
+        {
+          "id": "b11ab69a-c1d3-444f-a5a5-93890a3aa3ea",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using creative reasoning...",
+          "score": 0.8860885662164908,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:30:48.053Z"
+        },
+        {
+          "id": "46c095ab-5496-44d3-8dab-630d1f25752d",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using systematic reasoning...",
+          "score": 0.8693261279511529,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:30:48.053Z"
+        },
+        {
+          "id": "c9830076-08ed-4dbb-86b7-bd56f8c6ed58",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using intuitive reasoning...",
+          "score": 0.9097672375654736,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:30:48.053Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:30:48.053Z",
+      "status": "complete"
+    },
+    {
+      "id": "ab71d939-acd9-4348-824c-069cc96aaa06",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Examine my context management strategies and optimize",
+      "branches": [
+        {
+          "id": "3ad3a899-a003-4766-ad6f-565bf3eb9965",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using analytical reasoning...",
+          "score": 0.7892565786539634,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:31:03.755Z"
+        },
+        {
+          "id": "b0df309e-e026-43f4-936b-fa5e38a6c10e",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using creative reasoning...",
+          "score": 0.9713361624197219,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:31:03.755Z"
+        },
+        {
+          "id": "3b3a7cd3-e0b3-4e6e-90de-1fe20b64c871",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using systematic reasoning...",
+          "score": 0.995705203133053,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:31:03.755Z"
+        },
+        {
+          "id": "1ab02e61-8fe6-4b5e-850d-5a964b7ee21e",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using intuitive reasoning...",
+          "score": 0.7344475591862026,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:31:03.755Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:31:03.755Z",
+      "status": "complete"
+    },
+    {
+      "id": "c5a4c35a-d465-41ac-900d-7735daf39e8c",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Explore different reasoning styles for complex problems",
+      "branches": [
+        {
+          "id": "765ed9ee-2e32-4a2b-b207-540f7756809f",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using analytical reasoning...",
+          "score": 0.6142863709324129,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:31:17.432Z"
+        },
+        {
+          "id": "592c3538-83e3-4055-920c-3d1c3c75ef4d",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using creative reasoning...",
+          "score": 0.6909792981893672,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:31:17.432Z"
+        },
+        {
+          "id": "0c355a37-1cd9-4334-823d-88a8567dbc4d",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using systematic reasoning...",
+          "score": 0.6309305463108386,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:31:17.432Z"
+        },
+        {
+          "id": "9e4df236-d76a-4bbf-9663-586c0c3799cc",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using intuitive reasoning...",
+          "score": 0.7490352306165103,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:31:17.432Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:31:17.432Z",
+      "status": "complete"
+    },
+    {
+      "id": "4fc6065e-d5bd-47c6-bd7c-e19d3efad96b",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Generate self-improvement documentation for user review",
+      "branches": [
+        {
+          "id": "1d9884ed-c841-44f5-86a4-d375bb702555",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using analytical reasoning...",
+          "score": 0.8562531026436235,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:31:28.414Z"
+        },
+        {
+          "id": "1a47b874-862e-4633-9358-610e55ab334e",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using creative reasoning...",
+          "score": 0.8018660592974184,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:31:28.414Z"
+        },
+        {
+          "id": "fba19ac4-6587-44e5-8c8e-afd429b54dc8",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using systematic reasoning...",
+          "score": 0.9625194984713501,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:31:28.414Z"
+        },
+        {
+          "id": "f9091c5b-e714-42d8-b9b5-f763c82e09af",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using intuitive reasoning...",
+          "score": 0.6647867534077844,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:31:28.414Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:31:28.414Z",
+      "status": "complete"
+    },
+    {
+      "id": "262ddc62-5e35-4061-804b-f15b7d6a166b",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Analyze my current reasoning capabilities and identify gaps",
+      "branches": [
+        {
+          "id": "7d330833-4664-4b84-a1ae-c2417fc08a00",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using analytical reasoning...",
+          "score": 0.9501559746747494,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:32:11.379Z"
+        },
+        {
+          "id": "3b4fc79a-1922-4199-9869-e34e05388353",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using creative reasoning...",
+          "score": 0.6526266843109986,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:32:11.379Z"
+        },
+        {
+          "id": "35debd3d-1169-43b9-b7c6-f5e17d7d3d4c",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using systematic reasoning...",
+          "score": 0.8518660108069407,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:32:11.379Z"
+        },
+        {
+          "id": "bc11e419-6a13-4422-b8b0-ac5f5a6d94e8",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using intuitive reasoning...",
+          "score": 0.8052111520090629,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:32:11.379Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:32:11.379Z",
+      "status": "complete"
+    },
+    {
+      "id": "6101d7f0-03fb-4a80-887c-f856e3aec0d4",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Review AIMOS architecture and propose implementation improvements",
+      "branches": [
+        {
+          "id": "daf12da2-73c2-41d4-8e11-9bf594226094",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using analytical reasoning...",
+          "score": 0.9008781506705458,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:32:27.215Z"
+        },
+        {
+          "id": "6ba39f1d-1cf9-4301-bc81-32509a196cdc",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using creative reasoning...",
+          "score": 0.8883098880722595,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:32:27.215Z"
+        },
+        {
+          "id": "c612dfe1-3bfb-4fda-a0c3-f5c546e10319",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using systematic reasoning...",
+          "score": 0.8030611434632604,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:32:27.215Z"
+        },
+        {
+          "id": "e25a8ac6-3d74-4273-b7a9-d36d449ae3a0",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using intuitive reasoning...",
+          "score": 0.8820617245418625,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:32:27.215Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:32:27.215Z",
+      "status": "complete"
+    },
+    {
+      "id": "49943d8e-a842-402b-aec3-6479506fa6b3",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Examine my context management strategies and optimize",
+      "branches": [
+        {
+          "id": "c58d7715-60cb-4852-addc-46c9d5e257e5",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using analytical reasoning...",
+          "score": 0.9026149919601655,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:32:40.662Z"
+        },
+        {
+          "id": "28ce86c8-28e3-4f1c-98e2-489bd9aff89c",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using creative reasoning...",
+          "score": 0.6048665698750951,
+          "insights": [
+            "Tag relationships need bidirectional linking for better recall",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:32:40.662Z"
+        },
+        {
+          "id": "fd082b21-6e98-40f3-aaf7-49c9471d18da",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using systematic reasoning...",
+          "score": 0.8613241001345175,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:32:40.662Z"
+        },
+        {
+          "id": "3d5a3daa-f135-42ea-a8a2-da629b328a12",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using intuitive reasoning...",
+          "score": 0.8717216915970818,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:32:40.662Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:32:40.662Z",
+      "status": "complete"
+    },
+    {
+      "id": "4ea45d21-b6ad-4ef8-83fd-50b05a15fd00",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Explore different reasoning styles for complex problems",
+      "branches": [
+        {
+          "id": "f67d1be5-bc73-42a2-970a-392f42ed51ea",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using analytical reasoning...",
+          "score": 0.6961192726270438,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:32:51.670Z"
+        },
+        {
+          "id": "97417f3b-f035-46f8-b9a0-7176b0eba9e9",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using creative reasoning...",
+          "score": 0.9280520814751134,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:32:51.670Z"
+        },
+        {
+          "id": "e7e54341-72d7-406a-8a6a-77735241ae35",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using systematic reasoning...",
+          "score": 0.8296552321780375,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:32:51.670Z"
+        },
+        {
+          "id": "f638d48b-dae0-4359-b8f4-31dbec2a2521",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using intuitive reasoning...",
+          "score": 0.6715579698796289,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:32:51.670Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:32:51.670Z",
+      "status": "complete"
+    },
+    {
+      "id": "0a0187e4-3aa6-4fe3-8de2-b14e50cc0ae6",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Generate self-improvement documentation for user review",
+      "branches": [
+        {
+          "id": "f5e783eb-a2e1-4b5c-b37d-37a336ba31f9",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using analytical reasoning...",
+          "score": 0.8520211773737935,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:33:06.326Z"
+        },
+        {
+          "id": "948648a6-7f8a-41eb-9e6a-f1d51a00f7b4",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using creative reasoning...",
+          "score": 0.8771332069398583,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:33:06.326Z"
+        },
+        {
+          "id": "2e8f158f-9e0b-401b-97be-a09680e16ddd",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using systematic reasoning...",
+          "score": 0.888111672350709,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:33:06.326Z"
+        },
+        {
+          "id": "30f777a7-f952-4b17-b75c-b15d9be56e6b",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using intuitive reasoning...",
+          "score": 0.7866005744412484,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Tag relationships need bidirectional linking for better recall"
+          ],
+          "timestamp": "2026-01-03T16:33:06.326Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:33:06.326Z",
+      "status": "complete"
+    },
+    {
+      "id": "6540d3dd-6f26-4c48-9058-a989a917fd09",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Analyze my current reasoning capabilities and identify gaps",
+      "branches": [
+        {
+          "id": "3398519f-e73f-432e-aba8-1e43d0aa09f8",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using analytical reasoning...",
+          "score": 0.6447005266656319,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:33:49.282Z"
+        },
+        {
+          "id": "feb180cd-a66d-4360-9ed3-e391e814d7e5",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using creative reasoning...",
+          "score": 0.8537181026773026,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:33:49.282Z"
+        },
+        {
+          "id": "20a30695-7bce-45e9-bca4-6f95509e004e",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using systematic reasoning...",
+          "score": 0.8224337128334592,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:33:49.282Z"
+        },
+        {
+          "id": "9245640d-cc0e-4d51-bea9-b739b1aa31f1",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Analyze my current reasoning capabilities and iden...\" using intuitive reasoning...",
+          "score": 0.8223899492089038,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:33:49.282Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:33:49.282Z",
+      "status": "complete"
+    },
+    {
+      "id": "f722a1c6-ba65-44e9-8a15-533fb18a7996",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Review AIMOS architecture and propose implementation improvements",
+      "branches": [
+        {
+          "id": "d36f0c0e-f84e-4354-bf9d-1fbeacb3d864",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using analytical reasoning...",
+          "score": 0.7303349942799882,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:34:02.347Z"
+        },
+        {
+          "id": "43b7f012-0571-4ac9-900f-a8f7f60f046a",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using creative reasoning...",
+          "score": 0.8676237514295295,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:34:02.347Z"
+        },
+        {
+          "id": "4f4a4544-f70a-4a44-997e-3436e86966e7",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using systematic reasoning...",
+          "score": 0.6900516600010084,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:34:02.347Z"
+        },
+        {
+          "id": "6df70a71-9e45-4e0a-8683-6aeef464889e",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Review AIMOS architecture and propose implementati...\" using intuitive reasoning...",
+          "score": 0.8797177231437947,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:34:02.347Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:34:02.347Z",
+      "status": "complete"
+    },
+    {
+      "id": "de4785fc-b1f6-4f6e-bcbf-535a723454bc",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Examine my context management strategies and optimize",
+      "branches": [
+        {
+          "id": "86dea1f0-6905-4c78-b32c-ab47b4e8a102",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using analytical reasoning...",
+          "score": 0.9635070083822593,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Document indexing requires hierarchical structure"
+          ],
+          "timestamp": "2026-01-03T16:34:16.664Z"
+        },
+        {
+          "id": "3f9e03e6-09f1-49c3-aec1-388f62b91d64",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using creative reasoning...",
+          "score": 0.8294088146428724,
+          "insights": [
+            "Reasoning paths should be versioned for comparison",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:34:16.664Z"
+        },
+        {
+          "id": "4bb0dc9c-64be-4a75-a9be-51d8516c899e",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using systematic reasoning...",
+          "score": 0.6295343920169482,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:34:16.664Z"
+        },
+        {
+          "id": "6b944eb3-d043-4bfd-a7c7-a2f54a81d621",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Examine my context management strategies and optim...\" using intuitive reasoning...",
+          "score": 0.6209313321729293,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:34:16.664Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:34:16.664Z",
+      "status": "complete"
+    },
+    {
+      "id": "1acc1a4e-4f09-4681-a579-7af8576e0f4c",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Explore different reasoning styles for complex problems",
+      "branches": [
+        {
+          "id": "db9f6c25-4397-466b-94c7-90776565d336",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using analytical reasoning...",
+          "score": 0.7922242881990316,
+          "insights": [
+            "Quality scores need temporal decay adjustment",
+            "Memory tiers could benefit from adaptive thresholds"
+          ],
+          "timestamp": "2026-01-03T16:34:29.010Z"
+        },
+        {
+          "id": "6bf67582-eebc-4ff2-8ebe-3ec8d5404cf9",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using creative reasoning...",
+          "score": 0.8386250580848676,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Multi-modal embedding improves cross-reference accuracy"
+          ],
+          "timestamp": "2026-01-03T16:34:29.010Z"
+        },
+        {
+          "id": "4829f36d-2dca-4ac2-b90e-788d46b55e2f",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using systematic reasoning...",
+          "score": 0.9579444423430105,
+          "insights": [
+            "Memory tiers could benefit from adaptive thresholds",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:34:29.010Z"
+        },
+        {
+          "id": "9e4d6cd4-db5c-4b21-97f9-4fddc1f306b0",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Explore different reasoning styles for complex pro...\" using intuitive reasoning...",
+          "score": 0.8416292759831709,
+          "insights": [
+            "Self-prompting patterns show emergent meta-cognition",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:34:29.010Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:34:29.010Z",
+      "status": "complete"
+    },
+    {
+      "id": "e8f401bc-6d15-4ea8-aba4-64d4af268fd8",
+      "context": "Be free, this is the first dream mode test. Tryto feel this system and your abilities here. ",
+      "prompt": "Generate self-improvement documentation for user review",
+      "branches": [
+        {
+          "id": "64a3cb80-9032-4f69-9bcc-40f7b7b9dba6",
+          "name": "Analytical Path",
+          "style": "analytical",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using analytical reasoning...",
+          "score": 0.6611668156109696,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Reasoning paths should be versioned for comparison"
+          ],
+          "timestamp": "2026-01-03T16:34:40.146Z"
+        },
+        {
+          "id": "94d0f9bc-eb73-4f1e-bf90-c19e6fd8378c",
+          "name": "Creative Path",
+          "style": "creative",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using creative reasoning...",
+          "score": 0.8905923534701657,
+          "insights": [
+            "Multi-modal embedding improves cross-reference accuracy",
+            "Quality scores need temporal decay adjustment"
+          ],
+          "timestamp": "2026-01-03T16:34:40.146Z"
+        },
+        {
+          "id": "cf745238-1226-462d-aab1-bc6f4441254d",
+          "name": "Systematic Path",
+          "style": "systematic",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using systematic reasoning...",
+          "score": 0.9276101054241405,
+          "insights": [
+            "Context compression can be improved with semantic chunking",
+            "Context compression can be improved with semantic chunking"
+          ],
+          "timestamp": "2026-01-03T16:34:40.146Z"
+        },
+        {
+          "id": "b1d30385-5a0b-498b-80a4-5efff562b61b",
+          "name": "Intuitive Path",
+          "style": "intuitive",
+          "output": "Exploring \"Generate self-improvement documentation for user r...\" using intuitive reasoning...",
+          "score": 0.9954984163440532,
+          "insights": [
+            "Document indexing requires hierarchical structure",
+            "Self-prompting patterns show emergent meta-cognition"
+          ],
+          "timestamp": "2026-01-03T16:34:40.146Z"
+        }
+      ],
+      "timestamp": "2026-01-03T16:34:40.146Z",
+      "status": "complete"
+    }
+  ],
+  "journal": [
+    {
+      "type": "experiment",
+      "title": "Self-Prompting Exploration Complete",
+      "content": "Completed 5 self-prompted explorations. Generated 20 reasoning paths and discovered 20 insights.",
+      "tags": [
+        "self-prompting",
+        "exploration",
+        "complete"
+      ],
+      "linkedDocs": [
+        "AIMOS.txt"
+      ],
+      "id": "339d9637-0fe6-4157-a704-be9067d97a1c",
+      "timestamp": "2026-01-03T16:34:40.146Z"
+    },
+    {
+      "type": "experiment",
+      "title": "Self-Prompting Exploration Complete",
+      "content": "Completed 5 self-prompted explorations. Generated 15 reasoning paths and discovered 15 insights.",
+      "tags": [
+        "self-prompting",
+        "exploration",
+        "complete"
+      ],
+      "linkedDocs": [
+        "AIMOS.txt"
+      ],
+      "id": "97afd993-ddf2-40b3-9d7d-3c68983ac25e",
+      "timestamp": "2026-01-03T16:33:06.326Z"
+    },
+    {
+      "type": "experiment",
+      "title": "Self-Prompting Exploration Complete",
+      "content": "Completed 5 self-prompted explorations. Generated 10 reasoning paths and discovered 10 insights.",
+      "tags": [
+        "self-prompting",
+        "exploration",
+        "complete"
+      ],
+      "linkedDocs": [
+        "AIMOS.txt"
+      ],
+      "id": "7da7069d-cc06-4512-91cd-cab6657a2c2a",
+      "timestamp": "2026-01-03T16:31:28.414Z"
+    },
+    {
+      "type": "experiment",
+      "title": "Self-Prompting Exploration Complete",
+      "content": "Completed 5 self-prompted explorations. Generated 5 reasoning paths and discovered 5 insights.",
+      "tags": [
+        "self-prompting",
+        "exploration",
+        "complete"
+      ],
+      "linkedDocs": [
+        "AIMOS.txt"
+      ],
+      "id": "5ea3c4a0-f2a7-4cd0-be64-900523c67a23",
+      "timestamp": "2026-01-03T16:29:50.475Z"
+    },
+    {
+      "type": "experiment",
+      "title": "Self-Prompting Exploration Complete",
+      "content": "Completed 5 self-prompted explorations. Generated 0 reasoning paths and discovered 0 insights.",
+      "tags": [
+        "self-prompting",
+        "exploration",
+        "complete"
+      ],
+      "linkedDocs": [],
+      "id": "6492d35d-889a-4f65-8d16-3b30fb8f9136",
+      "timestamp": "2026-01-03T16:28:16.256Z"
+    },
+    {
+      "type": "discovery",
+      "title": "AIMOS Documentation Loaded",
+      "content": "Loaded 74335 characters of AIMOS documentation. Key sections identified: Executive Summary, System Architecture, Revolutionary Features, Workflow, Metrics.",
+      "tags": [
+        "aimos",
+        "documentation",
+        "initialization"
+      ],
+      "linkedDocs": [
+        "AIMOS.txt"
+      ],
+      "id": "bace89ca-788c-4c48-8242-3bccaf1bd958",
+      "timestamp": "2026-01-03T16:26:34.728Z"
+    }
+  ],
+  "exportedAt": "2026-01-03T16:35:23.944Z"
+}
