@@ -17,6 +17,7 @@ import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
 import { DocumentIDEWorkspace } from "@/components/Documents/DocumentIDEWorkspace";
 import { DreamModeWorkspace } from "@/components/DreamMode/DreamModeWorkspace";
+import { CodeBuilderWorkspace } from "@/components/CodeBuilder/CodeBuilderWorkspace";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { cn } from "@/lib/utils";
 
@@ -235,6 +236,12 @@ const Index = () => {
           {/* Dream Mode Workspace */}
           <DreamModeWorkspace
             isOpen={activeWorkspace === 'dream-mode'}
+            onClose={closeWorkspace}
+          />
+
+          {/* Code Builder Workspace */}
+          <CodeBuilderWorkspace
+            isOpen={activeWorkspace === 'code-builder'}
             onClose={closeWorkspace}
           />
         </div>
