@@ -43,6 +43,7 @@ const {
     reasoningPaths,
     journal,
     loopDetected,
+    loopCount,
     startSession,
     endSession,
     explore
@@ -310,6 +311,8 @@ const {
                 <NeuralVisualization
                   isActive={isExploring}
                   currentThought={currentThought}
+                  explorationProgress={explorationProgress}
+                  loopDetected={loopDetected}
                 />
               </div>
             </TabsContent>
