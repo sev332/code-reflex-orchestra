@@ -1,4 +1,4 @@
-// Streamlined AI Chat component without embedded toolbars
+// Streamlined AI Chat component with Dream Mode insights integration
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,10 +15,12 @@ import {
   Bot,
   ChevronDown,
   ChevronRight,
-  CheckCircle
+  CheckCircle,
+  Lightbulb
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAIMOSStreaming } from '@/hooks/useAIMOSStreaming';
+import { useDreamInsights } from '@/hooks/useDreamInsights';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +33,7 @@ interface ChatMessage {
   metadata?: {
     model?: string;
     orchestration?: any;
+    dreamInsights?: string[];
   };
 }
 
@@ -43,9 +46,18 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [expandedOrchestration, setExpandedOrchestration] = useState<string | null>(null);
+  const [showDreamInsights, setShowDreamInsights] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const sessionIdRef = useRef(crypto.randomUUID());
+  
+  // Dream insights integration
+  const { 
+    insights: dreamInsights, 
+    getRelevantInsights, 
+    formatForChatContext,
+    getSystemPromptInsights 
+  } = useDreamInsights();
   
   const { 
     startStreaming, 
@@ -136,8 +148,19 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     setIsProcessing(true);
 
     try {
+      // Get relevant Dream Mode insights for this query
+      const relevantInsights = getRelevantInsights(userMessage.content, 3);
+      const insightContext = relevantInsights.length > 0 
+        ? formatForChatContext(userMessage.content)
+        : '';
+      
+      // Enhanced message with dream insights
+      const enhancedQuery = insightContext 
+        ? `${userMessage.content}\n${insightContext}`
+        : userMessage.content;
+
       const response = await startStreaming(
-        userMessage.content,
+        enhancedQuery,
         sessionIdRef.current,
         'user-' + crypto.randomUUID()
       );
@@ -153,6 +176,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           confidence: response.verification?.confidence,
           metadata: {
             model: 'LUCID-Stream',
+            dreamInsights: relevantInsights.map(i => i.content),
             orchestration: {
               thinkingSteps: thinkingSteps,
               agents: streamingAgents,
@@ -237,25 +261,55 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                     </Badge>
                   )}
                   
-                  {/* Expandable Orchestration */}
-                  {message.metadata?.orchestration && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-5 px-1 text-xs text-muted-foreground hover:text-cyan-400"
-                      onClick={() => setExpandedOrchestration(
-                        expandedOrchestration === message.id ? null : message.id
-                      )}
-                    >
-                      {expandedOrchestration === message.id ? (
-                        <ChevronDown className="w-3 h-3 mr-1" />
-                      ) : (
-                        <ChevronRight className="w-3 h-3 mr-1" />
-                      )}
-                      View reasoning
-                    </Button>
-                  )}
-                </div>
+                    {/* Show Dream Insights used */}
+                    {message.metadata?.dreamInsights && message.metadata.dreamInsights.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1 text-xs text-muted-foreground hover:text-purple-400"
+                        onClick={() => setShowDreamInsights(!showDreamInsights)}
+                      >
+                        <Lightbulb className="w-3 h-3 mr-1 text-purple-400" />
+                        {message.metadata.dreamInsights.length} insights used
+                      </Button>
+                    )}
+                    
+                    {/* Expandable Orchestration */}
+                    {message.metadata?.orchestration && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 px-1 text-xs text-muted-foreground hover:text-cyan-400"
+                        onClick={() => setExpandedOrchestration(
+                          expandedOrchestration === message.id ? null : message.id
+                        )}
+                      >
+                        {expandedOrchestration === message.id ? (
+                          <ChevronDown className="w-3 h-3 mr-1" />
+                        ) : (
+                          <ChevronRight className="w-3 h-3 mr-1" />
+                        )}
+                        View reasoning
+                      </Button>
+                    )}
+                  </div>
+
+                {/* Show Dream Insights Details */}
+                {showDreamInsights && message.metadata?.dreamInsights && message.metadata.dreamInsights.length > 0 && (
+                  <Card className="mt-2 p-3 bg-purple-500/5 backdrop-blur-sm w-full max-w-lg border-purple-500/30">
+                    <p className="text-xs font-medium mb-2 text-purple-400 flex items-center gap-1">
+                      <Lightbulb className="w-3 h-3" />
+                      Dream Mode Insights Applied
+                    </p>
+                    <div className="space-y-1">
+                      {message.metadata.dreamInsights.map((insight: string, i: number) => (
+                        <p key={i} className="text-xs text-muted-foreground">
+                          • {insight.length > 100 ? insight.substring(0, 100) + '...' : insight}
+                        </p>
+                      ))}
+                    </div>
+                  </Card>
+                )}
 
                 {/* Expanded Orchestration Details */}
                 {expandedOrchestration === message.id && message.metadata?.orchestration && (

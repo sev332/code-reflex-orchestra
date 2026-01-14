@@ -619,7 +619,7 @@ export function useDreamMode() {
     }
   }, []);
 
-  // Explore function for triggering exploration
+  // Explore function that calls the actual dream-mode edge function
   const explore = useCallback(async (prompt: string) => {
     if (!currentSession || isExploring) return;
     
@@ -628,26 +628,103 @@ export function useDreamMode() {
     setExplorationProgress(0);
     
     try {
-      // Simulate exploration with progress updates
-      for (let i = 0; i <= 100; i += 10) {
-        setExplorationProgress(i);
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
+      // Get previous insights to avoid repetition
+      const previousInsights = insights.slice(0, 10).map(i => i.content);
       
+      // Get prompt usage history for boredom mechanic
+      const promptUsageHistory = Array.from(promptUsage.values())
+        .filter(p => p.times_selected >= 2)
+        .map(p => ({ prompt: p.prompt_text, timesUsed: p.times_selected }));
+
+      setExplorationProgress(20);
+      
+      // Call the real dream-mode edge function
+      const { data, error } = await supabase.functions.invoke('dream-mode', {
+        body: {
+          action: 'explore',
+          sessionId: currentSession.id,
+          explorationFocus: prompt,
+          context: `Dream session: ${currentSession.focus}`,
+          previousInsights,
+          promptUsageHistory
+        }
+      });
+
+      if (error) throw error;
+
+      setExplorationProgress(60);
+      setCurrentThought('Processing exploration results...');
+
       // Check for loops
-      const loopResult = await detectLoop('exploration', prompt, `Result for: ${prompt}`);
+      const loopResult = await detectLoop('exploration', prompt, data.exploration || data.raw);
       
-      if (!loopResult.isLoop) {
-        // Add a journal entry for this exploration
-        await addJournalEntry(currentSession.id, {
-          entry_type: 'experiment',
-          title: `Exploration: ${prompt.substring(0, 50)}...`,
-          content: `Completed exploration of: ${prompt}`,
-          tags: ['exploration', 'automated']
+      setExplorationProgress(80);
+
+      // Extract and save insights from the exploration
+      if (data.exploration || data.raw) {
+        const explorationContent = data.exploration || data.raw;
+        
+        // Generate insight from exploration
+        const { data: insightData } = await supabase.functions.invoke('dream-mode', {
+          body: {
+            action: 'generate-insight',
+            sessionId: currentSession.id,
+            context: explorationContent,
+            previousInsights: [...previousInsights, explorationContent]
+          }
         });
+
+        if (insightData?.insight) {
+          await addInsight(insightData.insight, {
+            insight_type: 'discovery',
+            source_prompt: prompt,
+            confidence: loopResult.isLoop ? 0.3 : 0.7,
+            tags: ['exploration', 'automated', currentSession.focus.split(' ')[0].toLowerCase()]
+          });
+        }
+
+        // Add journal entry
+        const { data: journalData } = await supabase.functions.invoke('dream-mode', {
+          body: {
+            action: 'journal',
+            sessionId: currentSession.id,
+            context: `Exploration: ${prompt}\n\nResult: ${explorationContent.substring(0, 500)}`
+          }
+        });
+
+        if (journalData?.entry) {
+          await addJournalEntry(currentSession.id, {
+            entry_type: journalData.entry.type || 'experiment',
+            title: journalData.entry.title || `Exploration: ${prompt.substring(0, 30)}...`,
+            content: journalData.entry.content || explorationContent.substring(0, 300),
+            tags: journalData.entry.tags || ['exploration', 'automated']
+          });
+        }
       }
+
+      setExplorationProgress(100);
       
-      toast.success('Exploration complete');
+      if (loopResult.isLoop) {
+        toast.warning('Loop pattern detected - diversifying next exploration');
+      } else {
+        toast.success('Exploration complete');
+      }
+
+      // Update session stats
+      await supabase
+        .from('dream_sessions')
+        .update({ 
+          total_explorations: (currentSession.total_explorations || 0) + 1,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentSession.id);
+
+      // Update local session state
+      setCurrentSession(prev => prev ? {
+        ...prev,
+        total_explorations: (prev.total_explorations || 0) + 1
+      } : null);
+
     } catch (error) {
       console.error('Exploration failed:', error);
       toast.error('Exploration failed');
@@ -655,7 +732,7 @@ export function useDreamMode() {
       setIsExploring(false);
       setCurrentThought('');
     }
-  }, [currentSession, isExploring, detectLoop, addJournalEntry]);
+  }, [currentSession, isExploring, insights, promptUsage, detectLoop, addInsight, addJournalEntry]);
 
   return {
     // Session management
