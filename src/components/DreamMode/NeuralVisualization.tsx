@@ -1,7 +1,7 @@
 // Real-time WebGL Neural Network Visualization
 import React, { useRef, useMemo, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, Line } from '@react-three/drei';
+import { OrbitControls, Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 
 interface NeuralNode {
@@ -86,7 +86,7 @@ const NeuralNodeMesh: React.FC<{
   );
 };
 
-// Neural connection (synapse)
+// Neural connection (synapse) - using native Three.js line
 const NeuralSynapse: React.FC<{
   from: [number, number, number];
   to: [number, number, number];
@@ -94,15 +94,25 @@ const NeuralSynapse: React.FC<{
   active: boolean;
   isExploring: boolean;
 }> = ({ from, to, weight, active, isExploring }) => {
-  return (
-    <Line
-      points={[from, to]}
-      color={active && isExploring ? '#00ff88' : '#8888ff'}
-      lineWidth={weight * 2}
-      transparent
-      opacity={active && isExploring ? 0.7 : weight * 0.3}
-    />
-  );
+  const lineRef = useRef<THREE.Line>(null);
+
+  const { geometry, material } = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array([...from, ...to]);
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    
+    const color = active && isExploring ? '#00ff88' : '#8888ff';
+    const opacity = active && isExploring ? 0.7 : weight * 0.3;
+    const mat = new THREE.LineBasicMaterial({ 
+      color, 
+      transparent: true, 
+      opacity 
+    });
+    
+    return { geometry: geo, material: mat };
+  }, [from, to, weight, active, isExploring]);
+
+  return <primitive ref={lineRef} object={new THREE.Line(geometry, material)} />;
 };
 
 // Particle system for activity
