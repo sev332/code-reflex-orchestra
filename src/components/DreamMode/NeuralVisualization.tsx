@@ -18,10 +18,10 @@ interface NeuralConnection {
   active: boolean;
 }
 
-interface NeuralVisualizationProps {
+export interface NeuralVisualizationProps {
   isActive: boolean;
   currentThought?: string;
-  explorationProgress: number;
+  explorationProgress?: number;
   reasoningStyle?: 'analytical' | 'creative' | 'systematic' | 'intuitive';
   loopDetected?: boolean;
 }
@@ -301,7 +301,7 @@ const NeuralNetwork: React.FC<NeuralVisualizationProps> = ({
   const animatedNodes = useMemo(() => {
     return nodes.map(node => ({
       ...node,
-      activation: node.activation * (0.5 + explorationProgress / 200)
+      activation: node.activation * (0.5 + (explorationProgress || 0) / 200)
     }));
   }, [nodes, explorationProgress]);
 

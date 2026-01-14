@@ -96,6 +96,7 @@ export function useDreamMode() {
   const [promptUsage, setPromptUsage] = useState<Map<string, PromptUsage>>(new Map());
   const [isExploring, setIsExploring] = useState(false);
   const [loopDetected, setLoopDetected] = useState(false);
+  const [loopCount, setLoopCount] = useState(0);
   const [explorationProgress, setExplorationProgress] = useState(0);
   const [currentThought, setCurrentThought] = useState('');
   
@@ -204,6 +205,7 @@ export function useDreamMode() {
 
     if (isLoop) {
       setLoopDetected(true);
+      setLoopCount(loopCount);
       await addJournalEntry(currentSession.id, {
         entry_type: 'loop_break',
         title: `Loop Detected in ${nodeType}`,
@@ -617,6 +619,44 @@ export function useDreamMode() {
     }
   }, []);
 
+  // Explore function for triggering exploration
+  const explore = useCallback(async (prompt: string) => {
+    if (!currentSession || isExploring) return;
+    
+    setIsExploring(true);
+    setCurrentThought(`Exploring: ${prompt}`);
+    setExplorationProgress(0);
+    
+    try {
+      // Simulate exploration with progress updates
+      for (let i = 0; i <= 100; i += 10) {
+        setExplorationProgress(i);
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+      
+      // Check for loops
+      const loopResult = await detectLoop('exploration', prompt, `Result for: ${prompt}`);
+      
+      if (!loopResult.isLoop) {
+        // Add a journal entry for this exploration
+        await addJournalEntry(currentSession.id, {
+          entry_type: 'experiment',
+          title: `Exploration: ${prompt.substring(0, 50)}...`,
+          content: `Completed exploration of: ${prompt}`,
+          tags: ['exploration', 'automated']
+        });
+      }
+      
+      toast.success('Exploration complete');
+    } catch (error) {
+      console.error('Exploration failed:', error);
+      toast.error('Exploration failed');
+    } finally {
+      setIsExploring(false);
+      setCurrentThought('');
+    }
+  }, [currentSession, isExploring, detectLoop, addJournalEntry]);
+
   return {
     // Session management
     currentSession,
@@ -635,6 +675,7 @@ export function useDreamMode() {
     selectBestPrompt,
     calculatePromptScore,
     loopDetected,
+    loopCount,
     setLoopDetected,
     
     // Data creation
@@ -650,6 +691,9 @@ export function useDreamMode() {
     setExplorationProgress,
     currentThought,
     setCurrentThought,
+    
+    // Exploration
+    explore,
     
     // Chat integration
     getInsightsForChat
