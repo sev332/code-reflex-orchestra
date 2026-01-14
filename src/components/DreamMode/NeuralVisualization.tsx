@@ -123,10 +123,18 @@ const ActivityParticles: React.FC<{
     return pos;
   }, []);
 
+  const geometry = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    return geo;
+  }, [positions]);
+
   useFrame((state) => {
     if (!particlesRef.current || !isExploring) return;
 
-    const positions = particlesRef.current.geometry.attributes.position.array as Float32Array;
+    const posAttr = particlesRef.current.geometry.attributes.position;
+    if (!posAttr) return;
+    const posArray = posAttr.array as Float32Array;
     const time = state.clock.elapsedTime;
 
     for (let i = 0; i < particleCount; i++) {
@@ -135,27 +143,27 @@ const ActivityParticles: React.FC<{
       // Different movement patterns based on reasoning style
       switch (reasoningStyle) {
         case 'analytical':
-          positions[i3 + 1] += Math.sin(time + i) * 0.01;
+          posArray[i3 + 1] += Math.sin(time + i) * 0.01;
           break;
         case 'creative':
-          positions[i3] += Math.cos(time * 2 + i) * 0.02;
-          positions[i3 + 2] += Math.sin(time * 2 + i) * 0.02;
+          posArray[i3] += Math.cos(time * 2 + i) * 0.02;
+          posArray[i3 + 2] += Math.sin(time * 2 + i) * 0.02;
           break;
         case 'systematic':
-          positions[i3 + 1] += 0.01;
-          if (positions[i3 + 1] > 5) positions[i3 + 1] = -5;
+          posArray[i3 + 1] += 0.01;
+          if (posArray[i3 + 1] > 5) posArray[i3 + 1] = -5;
           break;
         case 'intuitive':
           const angle = time + i * 0.1;
-          positions[i3] += Math.cos(angle) * 0.015;
-          positions[i3 + 1] += Math.sin(angle) * 0.015;
+          posArray[i3] += Math.cos(angle) * 0.015;
+          posArray[i3 + 1] += Math.sin(angle) * 0.015;
           break;
         default:
-          positions[i3 + 1] += Math.sin(time + i) * 0.005;
+          posArray[i3 + 1] += Math.sin(time + i) * 0.005;
       }
     }
 
-    particlesRef.current.geometry.attributes.position.needsUpdate = true;
+    posAttr.needsUpdate = true;
   });
 
   const getParticleColor = () => {
@@ -169,13 +177,7 @@ const ActivityParticles: React.FC<{
   };
 
   return (
-    <points ref={particlesRef}>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          args={[positions, 3]}
-        />
-      </bufferGeometry>
+    <points ref={particlesRef} geometry={geometry}>
       <pointsMaterial
         size={0.05}
         color={getParticleColor()}
