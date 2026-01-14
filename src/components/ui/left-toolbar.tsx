@@ -20,11 +20,16 @@ import {
   GitBranch,
   Search,
   FileText,
-  BookOpen
+  BookOpen,
+  Sparkles,
+  BarChart3
 } from 'lucide-react';
 import { AISelfManagementDashboard } from '@/components/AISelfManagement/AISelfManagementDashboard';
 import { ContextAnalysisPanel } from '@/components/AIChat/ContextAnalysisPanel';
 import { AdvancedDeepSearchPanel } from '@/components/AIChat/AdvancedDeepSearchPanel';
+import { DreamSessionBrowser } from '@/components/DreamMode/DreamSessionBrowser';
+import { DreamAnalyticsDashboard } from '@/components/DreamMode/DreamAnalyticsDashboard';
+import { AutoExplorationPanel } from '@/components/DreamMode/AutoExplorationPanel';
 import { cn } from '@/lib/utils';
 
 interface ToolbarItem {
@@ -44,8 +49,28 @@ export function LeftToolbar({ className }: LeftToolbarProps) {
 
   const toolbarItems: ToolbarItem[] = [
     {
-      id: 'context-analysis',
+      id: 'dream-sessions',
       icon: Brain,
+      label: 'Dream Sessions',
+      badge: 'Dream',
+      content: <DreamSessionBrowser />
+    },
+    {
+      id: 'auto-exploration',
+      icon: Sparkles,
+      label: 'Auto-Explore',
+      badge: 'AI',
+      content: <AutoExplorationPanel />
+    },
+    {
+      id: 'dream-analytics',
+      icon: BarChart3,
+      label: 'Dream Analytics',
+      content: <DreamAnalyticsDashboard />
+    },
+    {
+      id: 'context-analysis',
+      icon: Eye,
       label: 'Context',
       badge: 'AI-MOS',
       content: <ContextAnalysisPanel />
