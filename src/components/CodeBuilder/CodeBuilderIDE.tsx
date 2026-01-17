@@ -1,4 +1,4 @@
-// Code Builder IDE - Full-featured code editor with folder structure and AI assistance
+// Code Builder IDE - Full-featured code editor with folder structure, AI assistance, and SAM Analysis
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,11 +13,12 @@ import {
   FolderTree, Folder, FolderOpen, File, ChevronRight,
   ChevronDown, Search, Sparkles, Play, Terminal, GitBranch,
   Brain, Eye, Zap, RefreshCw, Check, X, Settings,
-  Code2, FileJson, FileType, Loader2
+  Code2, FileJson, FileType, Loader2, Map
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { SAMAnalysisPanel } from '@/components/SAM/SAMAnalysisPanel';
 
 interface FileNode {
   id: string;
@@ -156,7 +157,7 @@ p {
   const [aiInstruction, setAiInstruction] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [terminalOutput, setTerminalOutput] = useState<string[]>(['> Code Builder IDE initialized...']);
-  const [activeTab, setActiveTab] = useState<'files' | 'ai' | 'terminal'>('files');
+  const [activeTab, setActiveTab] = useState<'files' | 'ai' | 'sam' | 'terminal'>('files');
   const [newItemName, setNewItemName] = useState('');
   const [newItemType, setNewItemType] = useState<'file' | 'folder'>('file');
   const [showNewItem, setShowNewItem] = useState(false);
@@ -443,6 +444,7 @@ p {
             <TabsList className="mx-2 mt-2 justify-start w-auto bg-muted/30 flex-shrink-0">
               <TabsTrigger value="files" className="text-xs"><FolderTree className="w-3 h-3" /></TabsTrigger>
               <TabsTrigger value="ai" className="text-xs"><Brain className="w-3 h-3" /></TabsTrigger>
+              <TabsTrigger value="sam" className="text-xs"><Map className="w-3 h-3" /></TabsTrigger>
               <TabsTrigger value="terminal" className="text-xs"><Terminal className="w-3 h-3" /></TabsTrigger>
             </TabsList>
 
@@ -494,6 +496,29 @@ p {
                   </p>
                 </Card>
               </div>
+            </TabsContent>
+
+            <TabsContent value="sam" className="flex-1 m-0 overflow-hidden">
+              <SAMAnalysisPanel
+                content={selectedFile?.content || ''}
+                contentType="code"
+                fileName={selectedFile?.name || 'untitled'}
+                language={selectedFile?.language || 'typescript'}
+                onApplySAM={(samContent) => {
+                  // Create a new SAM documentation file
+                  const samFile: FileNode = {
+                    id: crypto.randomUUID(),
+                    name: `${selectedFile?.name?.replace(/\.[^/.]+$/, '') || 'untitled'}_SAM.md`,
+                    type: 'file',
+                    content: samContent,
+                    language: 'markdown',
+                  };
+                  setFileTree(prev => [...prev, samFile]);
+                  selectFile(samFile);
+                  setTerminalOutput(prev => [...prev, `> SAM documentation generated: ${samFile.name}`]);
+                  toast.success('SAM documentation created!');
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="terminal" className="flex-1 m-0 overflow-hidden">

@@ -1,4 +1,4 @@
-// Full-featured Document IDE with AI Orchestration
+// Full-featured Document IDE with AI Orchestration and SAM Analysis
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,7 @@ import {
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { useDocumentAI, AIThoughtStep, DocumentChunk, DocumentProject } from '@/hooks/useDocumentAI';
+import { SAMAnalysisPanel } from '@/components/SAM/SAMAnalysisPanel';
 
 interface DocumentIDEProps {
   onClose?: () => void;
@@ -42,7 +43,8 @@ export function DocumentIDE({ onClose, onDocumentChange }: DocumentIDEProps) {
     setStreamingContent,
   } = useDocumentAI();
 
-  const [activeTab, setActiveTab] = useState<'editor' | 'structure' | 'index' | 'map' | 'versions' | 'ai'>('editor');
+  const [activeTab, setActiveTab] = useState<'editor' | 'structure' | 'ai' | 'sam' | 'versions'>('editor');
+  const [showSAMPanel, setShowSAMPanel] = useState(false);
   const [selectedChunk, setSelectedChunk] = useState<DocumentChunk | null>(null);
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
   const [aiInstruction, setAiInstruction] = useState('');
@@ -366,6 +368,7 @@ export function DocumentIDE({ onClose, onDocumentChange }: DocumentIDEProps) {
               <TabsTrigger value="editor" className="text-xs"><FileText className="w-3 h-3" /></TabsTrigger>
               <TabsTrigger value="structure" className="text-xs"><FolderTree className="w-3 h-3" /></TabsTrigger>
               <TabsTrigger value="ai" className="text-xs"><Brain className="w-3 h-3" /></TabsTrigger>
+              <TabsTrigger value="sam" className="text-xs"><Map className="w-3 h-3" /></TabsTrigger>
               <TabsTrigger value="versions" className="text-xs"><History className="w-3 h-3" /></TabsTrigger>
             </TabsList>
 
@@ -480,6 +483,21 @@ export function DocumentIDE({ onClose, onDocumentChange }: DocumentIDEProps) {
                   </Card>
                 </div>
               </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="sam" className="flex-1 m-0 overflow-hidden">
+              <SAMAnalysisPanel
+                content={currentProject.content}
+                contentType="document"
+                fileName={currentProject.name}
+                onApplySAM={(samContent) => {
+                  setCurrentProject({
+                    ...currentProject,
+                    content: samContent,
+                  });
+                  toast.success('SAM documentation applied!');
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="versions" className="flex-1 m-0 overflow-hidden">
