@@ -1,20 +1,16 @@
-// Left icon bar for user-focused tools (Documents, Projects, Orchestration)
+// Left icon bar for user-focused tools
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   FileText, 
   FolderKanban, 
-  Workflow, 
   BookOpen,
   Search,
   Clock,
   Star,
   Settings,
-  MessageSquare,
-  PenTool,
-  Brain,
-  Code2
+  MessageSquare
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,13 +18,9 @@ export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'libra
 
 const iconBarItems = [
   { id: 'chat' as const, icon: MessageSquare, label: 'AI Chat', shortcut: '⌘1' },
-  { id: 'documents' as const, icon: FileText, label: 'Documents', shortcut: '⌘2' },
-  { id: 'builder' as const, icon: PenTool, label: 'Document IDE', shortcut: '⌘3' },
-  { id: 'code-builder' as const, icon: Code2, label: 'Code Builder', shortcut: '⌘4' },
-  { id: 'dream' as const, icon: Brain, label: 'Dream Mode', shortcut: '⌘D' },
-  { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘5' },
-  { id: 'orchestration' as const, icon: Workflow, label: 'Orchestration', shortcut: '⌘6' },
-  { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘7' },
+  { id: 'documents' as const, icon: FileText, label: 'Document Storage', shortcut: '⌘2' },
+  { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘3' },
+  { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘4' },
   { id: 'search' as const, icon: Search, label: 'Search', shortcut: '⌘K' },
   { id: 'history' as const, icon: Clock, label: 'History', shortcut: '⌘H' },
   { id: 'favorites' as const, icon: Star, label: 'Favorites', shortcut: '⌘F' },
