@@ -23,7 +23,10 @@ import {
   Sparkles,
   Target,
   Timer,
-  Shuffle
+  Shuffle,
+  Map,
+  CheckCircle,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAutoExploration, ExplorationStrategy, AutoExplorationConfig } from '@/hooks/useAutoExploration';
@@ -219,6 +222,61 @@ export const AutoExplorationPanel: React.FC = () => {
                   </div>
                 )}
 
+                {/* SAM Validation Status */}
+                {config.enableSAMValidation && (
+                  <div className="p-2 bg-card/50 rounded-lg border border-border/30">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Map className="w-4 h-4 text-primary" />
+                      <span className="text-xs font-medium">SAM Validation</span>
+                    </div>
+                    
+                    {state.samValidation ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] text-muted-foreground">Quality Score</span>
+                          <div className="flex items-center gap-2">
+                            <Progress value={state.samQualityScore} className="w-16 h-1.5" />
+                            <span className={cn(
+                              "text-xs font-medium",
+                              state.samQualityScore >= config.samQualityThreshold 
+                                ? "text-green-400" 
+                                : "text-amber-400"
+                            )}>
+                              {state.samQualityScore.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          {state.samValidation.isValid ? (
+                            <>
+                              <CheckCircle className="w-3 h-3 text-green-400" />
+                              <span className="text-[10px] text-green-400">SAM Compliant</span>
+                            </>
+                          ) : (
+                            <>
+                              <X className="w-3 h-3 text-red-400" />
+                              <span className="text-[10px] text-red-400">
+                                {state.samValidation.errors.length} errors
+                              </span>
+                            </>
+                          )}
+                        </div>
+                        
+                        {state.samImprovementSuggestions.length > 0 && (
+                          <div className="text-[10px] text-muted-foreground">
+                            💡 {state.samImprovementSuggestions[0]}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-muted-foreground">
+                        Validating after next 5 iterations...
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {state.lastInsight && (
                   <div className="p-2 bg-amber-500/10 border border-amber-500/30 rounded-lg">
                     <p className="text-[10px] text-amber-400 mb-1">Latest Insight</p>
@@ -321,7 +379,34 @@ export const AutoExplorationPanel: React.FC = () => {
                     onCheckedChange={(v) => updateConfig({ enablePSR: v })}
                   />
                 </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Map className="w-3 h-3" /> SAM Validation
+                  </Label>
+                  <Switch
+                    checked={config.enableSAMValidation}
+                    onCheckedChange={(v) => updateConfig({ enableSAMValidation: v })}
+                  />
+                </div>
               </div>
+
+              {/* SAM Quality Threshold */}
+              {config.enableSAMValidation && (
+                <div>
+                  <div className="flex justify-between text-xs mb-2">
+                    <Label className="text-muted-foreground">SAM Quality Threshold</Label>
+                    <span>{config.samQualityThreshold}%</span>
+                  </div>
+                  <Slider
+                    value={[config.samQualityThreshold]}
+                    onValueChange={([v]) => updateConfig({ samQualityThreshold: v })}
+                    min={30}
+                    max={90}
+                    step={5}
+                    className="w-full"
+                  />
+                </div>
+              )}
 
               {/* Strategies */}
               <div>

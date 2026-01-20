@@ -1,8 +1,9 @@
-// Auto-exploration mode with configurable intervals and diversity controls
+// Auto-exploration mode with configurable intervals, diversity controls, and SAM validation
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useDreamMode, DreamInsight, ReasoningBranch } from './useDreamMode';
+import { useSAMAnalysis, SAMValidationResult, SAMQualityMetrics } from './useSAMAnalysis';
 
 export interface AutoExplorationConfig {
   intervalMs: number;           // Time between explorations (default: 30s)
@@ -13,6 +14,8 @@ export interface AutoExplorationConfig {
   minConfidenceThreshold: number; // Minimum insight confidence to record
   explorationStrategies: ExplorationStrategy[];
   enablePSR: boolean;           // Predictive Shortcut Refinement
+  enableSAMValidation: boolean; // Enable SAM compliance checking
+  samQualityThreshold: number;  // Minimum SAM quality score (0-100)
 }
 
 export type ExplorationStrategy = 
@@ -33,6 +36,10 @@ export interface ExplorationState {
   loopsDetected: number;
   diversityScore: number;
   predictedNextStates: string[];
+  // SAM validation state
+  samValidation: SAMValidationResult | null;
+  samQualityScore: number;
+  samImprovementSuggestions: string[];
 }
 
 interface PromptCandidate {
@@ -50,7 +57,9 @@ const DEFAULT_CONFIG: AutoExplorationConfig = {
   pauseOnLoop: true,
   minConfidenceThreshold: 0.4,
   explorationStrategies: ['breadth_first', 'depth_first', 'insight_guided'],
-  enablePSR: true
+  enablePSR: true,
+  enableSAMValidation: true,
+  samQualityThreshold: 60
 };
 
 // Seed prompts for different strategies
@@ -101,6 +110,7 @@ const STRATEGY_PROMPTS: Record<ExplorationStrategy, string[]> = {
 
 export function useAutoExploration() {
   const dreamMode = useDreamMode();
+  const samAnalysis = useSAMAnalysis();
   const [config, setConfig] = useState<AutoExplorationConfig>(DEFAULT_CONFIG);
   const [state, setState] = useState<ExplorationState>({
     isActive: false,
@@ -111,12 +121,16 @@ export function useAutoExploration() {
     lastInsight: null,
     loopsDetected: 0,
     diversityScore: 1.0,
-    predictedNextStates: []
+    predictedNextStates: [],
+    samValidation: null,
+    samQualityScore: 0,
+    samImprovementSuggestions: []
   });
   
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const promptHistoryRef = useRef<string[]>([]);
   const strategyIndexRef = useRef(0);
+  const generatedContentRef = useRef<string>('');
 
   // Predictive Utility Estimator (PUE) - implements the PSR concept
   const estimatePredictiveUtility = useCallback(async (
@@ -244,6 +258,37 @@ export function useAutoExploration() {
     return recentStrategies.length / 10;
   };
 
+  // Run SAM validation on generated content
+  const runSAMValidation = useCallback(async (content: string) => {
+    if (!config.enableSAMValidation || !content) return;
+
+    try {
+      const analysisResult = await samAnalysis.analyzeWithAI(content, 'document');
+      
+      setState(prev => ({
+        ...prev,
+        samValidation: analysisResult.validation,
+        samQualityScore: analysisResult.qualityMetrics.perfectionScore,
+        samImprovementSuggestions: analysisResult.validation.suggestions
+      }));
+
+      // Check if quality meets threshold
+      if (analysisResult.qualityMetrics.perfectionScore < config.samQualityThreshold) {
+        toast.warning(
+          `SAM Quality: ${analysisResult.qualityMetrics.perfectionScore.toFixed(0)}% (below ${config.samQualityThreshold}% threshold)`,
+          { description: 'Content may need improvement for SAM compliance' }
+        );
+      } else {
+        toast.success(`SAM Quality: ${analysisResult.qualityMetrics.perfectionScore.toFixed(0)}%`);
+      }
+
+      return analysisResult;
+    } catch (error) {
+      console.error('SAM validation error:', error);
+      return null;
+    }
+  }, [config.enableSAMValidation, config.samQualityThreshold, samAnalysis]);
+
   // Execute one exploration iteration
   const executeExploration = useCallback(async () => {
     if (!dreamMode.currentSession) {
@@ -279,7 +324,15 @@ export function useAutoExploration() {
       const latestInsight = dreamMode.insights[0];
       if (latestInsight && latestInsight.confidence >= config.minConfidenceThreshold) {
         setState(prev => ({ ...prev, lastInsight: latestInsight }));
+        
+        // Accumulate content for SAM validation
+        generatedContentRef.current += `\n\n## Insight: ${latestInsight.insight_type || 'discovery'}\n\n${latestInsight.content}\n`;
       }
+    }
+
+    // Run SAM validation every 5 iterations or on significant content generation
+    if (config.enableSAMValidation && state.currentIteration % 5 === 0 && generatedContentRef.current.length > 500) {
+      await runSAMValidation(generatedContentRef.current);
     }
 
     // Update diversity score
@@ -288,10 +341,14 @@ export function useAutoExploration() {
 
     // Check if we've hit max iterations
     if (state.currentIteration >= config.maxIterations) {
+      // Final SAM validation
+      if (config.enableSAMValidation && generatedContentRef.current.length > 100) {
+        await runSAMValidation(generatedContentRef.current);
+      }
       stop();
       toast.success('Auto-exploration completed maximum iterations');
     }
-  }, [dreamMode, selectNextPrompt, config, state]);
+  }, [dreamMode, selectNextPrompt, config, state, runSAMValidation]);
 
   // Start auto-exploration
   const start = useCallback(async (focus?: string) => {
@@ -337,9 +394,13 @@ export function useAutoExploration() {
       lastInsight: null,
       loopsDetected: 0,
       diversityScore: 1.0,
-      predictedNextStates: []
+      predictedNextStates: [],
+      samValidation: null,
+      samQualityScore: 0,
+      samImprovementSuggestions: []
     });
     promptHistoryRef.current = [];
+    generatedContentRef.current = '';
     toast.info('Auto-exploration stopped');
   }, [pause]);
 
@@ -368,12 +429,14 @@ export function useAutoExploration() {
     state,
     config,
     dreamMode,
+    samAnalysis,
     
     // Actions
     start,
     pause,
     stop,
     updateConfig,
+    runSAMValidation,
     
     // Manual exploration
     executeExploration
