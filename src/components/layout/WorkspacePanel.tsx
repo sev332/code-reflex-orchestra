@@ -28,11 +28,13 @@ import {
   ChevronDown,
   File,
   Folder,
-  Map
+  Map,
+  Monitor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSAMAnalysis } from '@/hooks/useSAMAnalysis';
 import { SAMAnalysisPanel } from '@/components/SAM/SAMAnalysisPanel';
+import { CodePreviewPane } from './CodePreviewPane';
 
 export type WorkspacePanelType = 'document' | 'code' | 'orchestration' | null;
 
@@ -136,12 +138,23 @@ const DocumentWorkspace: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   );
 };
 
-// Code Workspace Panel  
+// Code Workspace Panel with Live Preview
 const CodeWorkspace: React.FC<{ onClose: () => void }> = ({ onClose }) => {
-  const [code, setCode] = useState('// Your code here\nfunction hello() {\n  console.log("Hello World");\n}');
-  const [activeTab, setActiveTab] = useState('editor');
-  const [showPreview, setShowPreview] = useState(false);
+  const [code, setCode] = useState(`// Your code here
+import React from 'react';
+
+export function App() {
+  return (
+    <div className="p-8">
+      <h1 className="text-2xl font-bold mb-4">Hello World</h1>
+      <p className="text-gray-600">Edit the code to see live updates!</p>
+    </div>
+  );
+}`);
+  const [activeTab, setActiveTab] = useState<'editor' | 'preview' | 'sam'>('editor');
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set(['src']));
+  const [selectedFile, setSelectedFile] = useState('app');
+  const [previewHtml, setPreviewHtml] = useState('');
 
   const fileTree = [
     { id: 'src', name: 'src', type: 'folder', children: [
@@ -167,15 +180,55 @@ const CodeWorkspace: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     setExpandedFolders(newExpanded);
   };
 
+  // Generate preview HTML from code
+  const generatePreview = useCallback(() => {
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    .p-8 { padding: 2rem; }
+    .text-2xl { font-size: 1.5rem; }
+    .font-bold { font-weight: 700; }
+    .mb-4 { margin-bottom: 1rem; }
+    .text-gray-600 { color: #4b5563; }
+  </style>
+</head>
+<body>
+  <div class="p-8">
+    <h1 class="text-2xl font-bold mb-4">Hello World</h1>
+    <p class="text-gray-600">Edit the code to see live updates!</p>
+  </div>
+</body>
+</html>`;
+    setPreviewHtml(html);
+  }, [code]);
+
+  // Update preview when code changes
+  React.useEffect(() => {
+    generatePreview();
+  }, [code, generatePreview]);
+
   const renderFileTree = (items: any[], depth = 0) => {
     return items.map(item => (
       <div key={item.id}>
         <Button
           variant="ghost"
           size="sm"
-          className="w-full justify-start h-7 px-2 text-xs hover:bg-accent/50"
+          className={cn(
+            "w-full justify-start h-7 px-2 text-xs hover:bg-accent/50",
+            selectedFile === item.id && item.type === 'file' && "bg-primary/10 text-primary"
+          )}
           style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          onClick={() => item.type === 'folder' && toggleFolder(item.id)}
+          onClick={() => {
+            if (item.type === 'folder') {
+              toggleFolder(item.id);
+            } else {
+              setSelectedFile(item.id);
+            }
+          }}
         >
           {item.type === 'folder' ? (
             <>
@@ -202,8 +255,11 @@ const CodeWorkspace: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     <div className="flex h-full">
       {/* File Tree Sidebar */}
       <div className="w-48 border-r border-border/30 bg-background/20 flex flex-col">
-        <div className="px-3 py-2 border-b border-border/30">
+        <div className="px-3 py-2 border-b border-border/30 flex items-center justify-between">
           <span className="text-xs font-medium text-muted-foreground">FILES</span>
+          <Button variant="ghost" size="icon" className="w-5 h-5">
+            <Plus className="w-3 h-3" />
+          </Button>
         </div>
         <ScrollArea className="flex-1">
           <div className="py-1">
@@ -212,33 +268,40 @@ const CodeWorkspace: React.FC<{ onClose: () => void }> = ({ onClose }) => {
         </ScrollArea>
       </div>
 
-      {/* Main Editor Area */}
+      {/* Main Editor/Preview Area */}
       <div className="flex-1 flex flex-col">
         {/* Toolbar */}
         <div className="flex items-center gap-2 px-3 py-2 border-b border-border/30 bg-background/40">
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-            <Play className="w-3.5 h-3.5" /> Run
+            <Play className="w-3.5 h-3.5 text-emerald-400" /> Run
           </Button>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
             <Save className="w-3.5 h-3.5" /> Save
           </Button>
           <div className="h-4 w-px bg-border/50" />
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="gap-1.5 text-xs"
-            onClick={() => setShowPreview(!showPreview)}
-          >
-            <Eye className="w-3.5 h-3.5" /> Preview
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
+            <Wand2 className="w-3.5 h-3.5 text-purple-400" /> AI Assist
           </Button>
           <Button variant="ghost" size="sm" className="gap-1.5 text-xs">
-            <GitBranch className="w-3.5 h-3.5" /> Branch
+            <Map className="w-3.5 h-3.5" /> SAM
           </Button>
         </div>
 
-        {/* Editor/Preview Split */}
-        <div className="flex-1 flex">
-          <div className={cn("flex-1", showPreview && "w-1/2")}>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex-1 flex flex-col">
+          <TabsList className="w-full justify-start rounded-none border-b border-border/30 bg-transparent px-3">
+            <TabsTrigger value="editor" className="text-xs data-[state=active]:bg-primary/10">
+              <Code2 className="w-3.5 h-3.5 mr-1.5" /> Editor
+            </TabsTrigger>
+            <TabsTrigger value="preview" className="text-xs data-[state=active]:bg-primary/10">
+              <Monitor className="w-3.5 h-3.5 mr-1.5" /> Live Preview
+            </TabsTrigger>
+            <TabsTrigger value="sam" className="text-xs data-[state=active]:bg-primary/10">
+              <Map className="w-3.5 h-3.5 mr-1.5" /> SAM
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="editor" className="flex-1 m-0 p-0">
             <Editor
               height="100%"
               defaultLanguage="typescript"
@@ -253,21 +316,25 @@ const CodeWorkspace: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                 scrollBeyondLastLine: false,
               }}
             />
-          </div>
-          
-          {showPreview && (
-            <div className="w-1/2 border-l border-border/30 bg-white">
-              <div className="p-2 border-b border-border/30 bg-background/60 flex items-center gap-2">
-                <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">Preview</span>
-              </div>
-              <iframe 
-                className="w-full h-full bg-white" 
-                srcDoc="<html><body><h1>Preview</h1><p>App preview would render here</p></body></html>"
-              />
-            </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="preview" className="flex-1 m-0 p-2">
+            <CodePreviewPane 
+              code={code}
+              html={previewHtml}
+              isBuilding={false}
+              onRefresh={generatePreview}
+            />
+          </TabsContent>
+
+          <TabsContent value="sam" className="flex-1 m-0 p-0">
+            <SAMAnalysisPanel
+              content={code}
+              contentType="code"
+              onApplySAM={(doc) => setCode(doc)}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
