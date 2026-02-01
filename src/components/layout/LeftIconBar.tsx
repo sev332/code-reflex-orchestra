@@ -10,17 +10,19 @@ import {
   Clock,
   Star,
   Settings,
-  MessageSquare
+  MessageSquare,
+  GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'library' | 'search' | 'history' | 'favorites' | 'settings' | 'builder' | 'dream' | 'code-builder' | null;
+export type LeftDrawerType = 'documents' | 'projects' | 'orchestration' | 'library' | 'search' | 'history' | 'favorites' | 'settings' | 'builder' | 'dream' | 'code-builder' | 'git' | null;
 
 const iconBarItems = [
   { id: 'chat' as const, icon: MessageSquare, label: 'AI Chat', shortcut: '⌘1' },
   { id: 'documents' as const, icon: FileText, label: 'Document Storage', shortcut: '⌘2' },
   { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘3' },
   { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘4' },
+  { id: 'git' as const, icon: GitBranch, label: 'Git History & Branches', shortcut: '⌘G' },
   { id: 'search' as const, icon: Search, label: 'Search', shortcut: '⌘K' },
   { id: 'history' as const, icon: Clock, label: 'History', shortcut: '⌘H' },
   { id: 'favorites' as const, icon: Star, label: 'Favorites', shortcut: '⌘F' },

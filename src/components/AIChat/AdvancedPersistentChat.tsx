@@ -1,5 +1,5 @@
-// Streamlined AI Chat component with inline workspace panels
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+// Streamlined AI Chat component with inline workspace panels and persistent messages
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,32 +23,18 @@ import {
   Workflow,
   X
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useAIMOSStreaming } from '@/hooks/useAIMOSStreaming';
 import { useDreamInsights } from '@/hooks/useDreamInsights';
+import { useChatPersistence, ChatMessage } from '@/hooks/useChatPersistence';
 import { WorkspacePanel, WorkspacePanelType } from '@/components/layout/WorkspacePanel';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-
-interface ChatMessage {
-  id: string;
-  role: 'user' | 'assistant' | 'system';
-  content: string;
-  timestamp: string;
-  confidence?: number;
-  metadata?: {
-    model?: string;
-    orchestration?: any;
-    dreamInsights?: string[];
-  };
-}
 
 interface AdvancedPersistentChatProps {
   onDocumentsClick?: () => void;
 }
 
 export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ onDocumentsClick }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [expandedOrchestration, setExpandedOrchestration] = useState<string | null>(null);
@@ -56,7 +42,14 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspacePanelType>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const sessionIdRef = useRef(crypto.randomUUID());
+  
+  // Use persistent chat hook for message storage
+  const { 
+    messages, 
+    isLoading: messagesLoading, 
+    addMessage, 
+    getSessionId 
+  } = useChatPersistence();
   
   // Dream insights integration
   const { 
@@ -87,57 +80,6 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
-  // Initialize conversation
-  useEffect(() => {
-    initializeConversation();
-  }, []);
-
-  const initializeConversation = async () => {
-    try {
-      const { data: latestMessages } = await supabase
-        .from('messages')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      if (latestMessages && latestMessages.length > 0) {
-        const formattedMessages: ChatMessage[] = latestMessages.reverse().map(msg => ({
-          id: msg.id,
-          role: msg.role as any,
-          content: msg.content,
-          timestamp: msg.created_at,
-          metadata: msg.metadata as any
-        }));
-        setMessages(formattedMessages);
-      } else {
-        const systemMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          role: 'system',
-          content: 'LUCID AGI initialized. I have persistent memory and full reasoning capabilities.',
-          timestamp: new Date().toISOString(),
-          confidence: 1.0
-        };
-        setMessages([systemMessage]);
-        await saveMessage(systemMessage);
-      }
-    } catch (error) {
-      console.error('Failed to initialize conversation:', error);
-    }
-  };
-
-  const saveMessage = async (message: ChatMessage) => {
-    try {
-      await supabase.from('messages').insert({
-        id: message.id,
-        role: message.role,
-        content: message.content,
-        metadata: message.metadata || {},
-        message_type: 'persistent_chat'
-      });
-    } catch (error) {
-      console.error('Failed to save message:', error);
-    }
-  };
 
   const handleSend = async () => {
     if (!input.trim() || isProcessing || isStreaming) return;
@@ -149,8 +91,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
       timestamp: new Date().toISOString()
     };
 
-    setMessages(prev => [...prev, userMessage]);
-    await saveMessage(userMessage);
+    await addMessage(userMessage);
     setInput('');
     setIsProcessing(true);
 
@@ -168,7 +109,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
 
       const response = await startStreaming(
         enhancedQuery,
-        sessionIdRef.current,
+        getSessionId(),
         'user-' + crypto.randomUUID()
       );
       
@@ -197,8 +138,7 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
           }
         };
         
-        setMessages(prev => [...prev, aiMessage]);
-        await saveMessage(aiMessage);
+        await addMessage(aiMessage);
       } else {
         console.error('No response received from AIMOS');
         toast.error('No response received. Check the edge function logs.');

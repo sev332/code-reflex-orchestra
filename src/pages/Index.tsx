@@ -30,6 +30,10 @@ const Index = () => {
   const [rightDrawer, setRightDrawer] = useState<RightDrawerType>(null);
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
+  
+  // Resizable drawer widths
+  const [leftDrawerWidth, setLeftDrawerWidth] = useState(320);
+  const [rightDrawerWidth, setRightDrawerWidth] = useState(384);
 
   // Get streaming data from AIMOS hook
   const {
@@ -74,9 +78,15 @@ const Index = () => {
   // Calculate main content margin based on open drawers
   const mainContentClass = cn(
     "transition-all duration-300 pt-12 relative z-10 h-[calc(100vh-3rem)]",
-    leftDrawer ? "ml-[21rem]" : "ml-12",
-    rightDrawer ? "mr-[22rem]" : "mr-12"
+    leftDrawer ? `ml-[${leftDrawerWidth + 48}px]` : "ml-12",
+    rightDrawer ? `mr-[${rightDrawerWidth + 48}px]` : "mr-12"
   );
+
+  // Dynamic style for main content margins
+  const mainContentStyle = {
+    marginLeft: leftDrawer ? leftDrawerWidth + 48 : 48,
+    marginRight: rightDrawer ? rightDrawerWidth + 48 : 48,
+  };
 
   const renderMainContent = () => {
     switch (viewMode) {
@@ -151,6 +161,8 @@ const Index = () => {
             activeDrawer={leftDrawer}
             onClose={() => setLeftDrawer(null)}
             onNavigate={handleNavigate}
+            width={leftDrawerWidth}
+            onWidthChange={setLeftDrawerWidth}
           />
 
           {/* Right Icon Bar */}
@@ -175,10 +187,15 @@ const Index = () => {
             discordMessages={discordMessages}
             discordThreads={discordThreads}
             currentMode={currentMode}
+            width={rightDrawerWidth}
+            onWidthChange={setRightDrawerWidth}
           />
 
           {/* Main Content */}
-          <main className={mainContentClass}>
+          <main 
+            className="transition-all duration-300 pt-12 relative z-10 h-[calc(100vh-3rem)]"
+            style={mainContentStyle}
+          >
             {renderMainContent()}
           </main>
 

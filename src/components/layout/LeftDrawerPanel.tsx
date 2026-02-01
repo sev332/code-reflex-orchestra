@@ -1,5 +1,5 @@
-// Left drawer panel for utilities (storage, library, search, history)
-import React from 'react';
+// Left drawer panel for utilities (storage, library, search, history, git)
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,19 +21,75 @@ import {
   Database,
   HardDrive,
   Cloud,
-  Tag
+  Tag,
+  GitBranch
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LeftDrawerType } from './LeftIconBar';
+import { GitPanel } from './GitPanel';
 
 interface LeftDrawerPanelProps {
   activeDrawer: LeftDrawerType;
   onClose: () => void;
   onNavigate?: (view: string) => void;
   className?: string;
+  width?: number;
+  onWidthChange?: (width: number) => void;
+  minWidth?: number;
+  maxWidth?: number;
 }
 
-export function LeftDrawerPanel({ activeDrawer, onClose, onNavigate, className }: LeftDrawerPanelProps) {
+export function LeftDrawerPanel({ 
+  activeDrawer, 
+  onClose, 
+  onNavigate, 
+  className,
+  width = 320,
+  onWidthChange,
+  minWidth = 240,
+  maxWidth = 600
+}: LeftDrawerPanelProps) {
+  const [isResizing, setIsResizing] = useState(false);
+  const drawerRef = useRef<HTMLDivElement>(null);
+
+  // Handle resize
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing || !onWidthChange) return;
+    const newWidth = e.clientX - 48; // Account for icon bar
+    const clampedWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+    onWidthChange(clampedWidth);
+  }, [isResizing, onWidthChange, minWidth, maxWidth]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    } else {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    }
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
   if (!activeDrawer) return null;
 
   // Skip drawer types that are now inline workspace panels
@@ -57,17 +113,40 @@ export function LeftDrawerPanel({ activeDrawer, onClose, onNavigate, className }
         return <FavoritesPanel />;
       case 'settings':
         return <SettingsPanel />;
+      case 'git':
+        return <GitPanel />;
       default:
         return null;
     }
   };
 
   return (
-    <div className={cn(
-      "fixed left-12 top-12 bottom-0 w-80 bg-background/95 backdrop-blur-xl border-r border-border/50 z-30 flex flex-col animate-slide-in-right",
-      className
-    )}>
-      {renderContent()}
+    <div 
+      ref={drawerRef}
+      className={cn(
+        "fixed left-12 top-12 bottom-0 bg-background/95 backdrop-blur-xl border-r border-border/50 z-30 flex animate-slide-in-right",
+        className
+      )}
+      style={{ width }}
+    >
+      {/* Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {renderContent()}
+      </div>
+
+      {/* Resize Handle */}
+      <div
+        onMouseDown={handleMouseDown}
+        className={cn(
+          "absolute top-0 bottom-0 right-0 w-1 cursor-col-resize transition-colors hover:bg-primary/50",
+          isResizing && "bg-primary/50"
+        )}
+      />
+      
+      {/* Resize indicator line */}
+      {isResizing && (
+        <div className="absolute top-0 bottom-0 right-0 w-0.5 bg-primary" />
+      )}
     </div>
   );
 }
