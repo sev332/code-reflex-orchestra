@@ -11,7 +11,8 @@ import {
   Star,
   Settings,
   MessageSquare,
-  GitBranch
+  GitBranch,
+  Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -21,6 +22,7 @@ const iconBarItems = [
   { id: 'chat' as const, icon: MessageSquare, label: 'AI Chat', shortcut: '⌘1' },
   { id: 'documents' as const, icon: FileText, label: 'Document Storage', shortcut: '⌘2' },
   { id: 'projects' as const, icon: FolderKanban, label: 'Projects', shortcut: '⌘3' },
+  { id: 'orchestration' as const, icon: Zap, label: 'Orchestration Kernel', shortcut: '⌘O' },
   { id: 'library' as const, icon: BookOpen, label: 'Knowledge Library', shortcut: '⌘4' },
   { id: 'git' as const, icon: GitBranch, label: 'Git History & Branches', shortcut: '⌘G' },
   { id: 'search' as const, icon: Search, label: 'Search', shortcut: '⌘K' },

@@ -8,3 +8,4 @@ export { Verifier, Auditor } from './verifier';
 export { AutonomyGovernor } from './autonomy-governor';
 export { OrchestrationKernel, type KernelCallbacks } from './kernel';
 export { TestRunner, TEST_CASES, runTestCLI } from './test-harness';
+export type { TestResult } from './types';
