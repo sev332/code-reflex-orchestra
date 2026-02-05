@@ -18,11 +18,12 @@ import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { cn } from "@/lib/utils";
 
-type ViewMode = 'chat' | 'documents' | 'memory' | 'dev-legacy' | 'dev-production';
+type ViewMode = 'chat' | 'documents' | 'memory' | 'orchestration' | 'dev-legacy' | 'dev-production';
 
 // Lazy load heavy dashboards
 const WisdomNETDashboard = lazy(() => import("@/components/WisdomNET/Dashboard").then(m => ({ default: m.WisdomNETDashboard })));
 const ProductionDashboard = lazy(() => import("@/components/ProductionDashboard/ProductionDashboard").then(m => ({ default: m.ProductionDashboard })));
+const OrchestrationWorkspace = lazy(() => import("@/components/Orchestration/OrchestrationWorkspace").then(m => ({ default: m.OrchestrationWorkspace })));
 
 const Index = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('chat');
@@ -49,6 +50,13 @@ const Index = () => {
   const handleLeftDrawerChange = useCallback((drawer: LeftDrawerType) => {
     // Toggle drawer
     if (drawer === leftDrawer) {
+      setLeftDrawer(null);
+      return;
+    }
+    
+    // Orchestration opens as a full workspace panel
+    if (drawer === 'orchestration') {
+      setViewMode('orchestration');
       setLeftDrawer(null);
       return;
     }
@@ -103,6 +111,12 @@ const Index = () => {
           <div className="p-4 h-full overflow-auto">
             <RealMemoryDashboard />
           </div>
+        );
+      case 'orchestration':
+        return (
+          <Suspense fallback={<LoadingFallback />}>
+            <OrchestrationWorkspace />
+          </Suspense>
         );
       case 'dev-legacy':
         return (
