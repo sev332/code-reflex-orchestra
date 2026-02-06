@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.dream-mode]
 verify_jwt = false
+
+[functions.orchestration-llm]
+verify_jwt = false

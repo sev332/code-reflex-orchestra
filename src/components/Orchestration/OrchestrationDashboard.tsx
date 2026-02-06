@@ -13,6 +13,7 @@ import {
   GitBranch, List, Activity, FileText, Settings
 } from 'lucide-react';
 import { OrchestrationKernel, OrchestrationTask, Snapshot, BudgetStatus } from '@/lib/orchestration';
+import { OrchestrationDAG } from './OrchestrationDAG';
 
 interface OrchestrationDashboardProps {
   kernel?: OrchestrationKernel;
@@ -232,9 +233,7 @@ export const OrchestrationDashboard: React.FC<OrchestrationDashboardProps> = ({
           </TabsContent>
 
           <TabsContent value="dag" className="flex-1 p-4">
-            <div className="h-full flex items-center justify-center text-muted-foreground">
-              <p>DAG visualization - tasks flow from dependencies to dependents</p>
-            </div>
+            <OrchestrationDAG tasks={tasks} />
           </TabsContent>
 
           <TabsContent value="artifacts" className="flex-1 p-4">
