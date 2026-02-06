@@ -8,4 +8,5 @@ export { Verifier, Auditor } from './verifier';
 export { AutonomyGovernor } from './autonomy-governor';
 export { OrchestrationKernel, type KernelCallbacks } from './kernel';
 export { TestRunner, TEST_CASES, runTestCLI } from './test-harness';
+export { runLogStore, RunLogStore, type RunLogEntry, type RunTrace, type RunLogSummary } from './run-log-store';
 export type { TestResult } from './types';
