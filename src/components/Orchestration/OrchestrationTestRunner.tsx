@@ -1,5 +1,4 @@
-// Orchestration Test Runner - UI for running and viewing test harness results
-
+// Enhanced Orchestration Test Runner with persistent logging
 import React, { useState, useCallback } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,9 +7,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
 import { 
   Play, CheckCircle, XCircle, Clock, RefreshCw, 
-  ChevronDown, ChevronRight, FileText
+  ChevronDown, ChevronRight, FileText, Eye
 } from 'lucide-react';
-import { TestRunner, TEST_CASES, TestResult as TestResultType } from '@/lib/orchestration';
+import { TestRunner, TEST_CASES } from '@/lib/orchestration';
+import { runLogStore, RunLogEntry } from '@/lib/orchestration/run-log-store';
+import { generateId } from '@/lib/orchestration/types';
+import { TestResultDetail } from './TestResultDetail';
 
 interface LocalTestResult {
   test_id: string;
@@ -20,6 +22,7 @@ interface LocalTestResult {
   duration_ms: number;
   details: string[];
   error?: string;
+  logId?: string;
 }
 
 export const OrchestrationTestRunner: React.FC = () => {
@@ -27,6 +30,43 @@ export const OrchestrationTestRunner: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const [currentTest, setCurrentTest] = useState<string | null>(null);
   const [expandedTests, setExpandedTests] = useState<Set<string>>(new Set());
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null);
+
+  const saveTestLog = useCallback((
+    testId: string,
+    spec: typeof TEST_CASES[0],
+    result: Awaited<ReturnType<TestRunner['runTest']>>,
+    duration: number,
+    events: any[]
+  ): string => {
+    const logId = generateId();
+    const logEntry: RunLogEntry = {
+      id: logId,
+      type: 'test',
+      name: `${spec.name} (${testId})`,
+      timestamp: new Date().toISOString(),
+      duration_ms: duration,
+      status: result.passed ? 'passed' : 'failed',
+      events: events,
+      snapshots: [],
+      testResult: result,
+      tasksSummary: {
+        total: spec.initial_queue.length,
+        done: result.must_do_results.filter(r => r.met).length,
+        failed: result.must_do_results.filter(r => !r.met).length,
+        queued: 0,
+        canceled: 0,
+      },
+      traces: [
+        { timestamp: new Date().toISOString(), system: 'kernel', action: 'test_started', details: { test_id: testId } },
+        { timestamp: new Date().toISOString(), system: 'verifier', action: 'criteria_checked', details: { must_do: result.must_do_results.length, must_not_do: result.must_not_do_results.length } },
+        { timestamp: new Date().toISOString(), system: 'auditor', action: 'scoring_completed', details: { score: result.score, max: result.max_score } },
+      ],
+      improvements: runLogStore.analyzeForImprovements(),
+    };
+    runLogStore.addLog(logEntry);
+    return logId;
+  }, []);
 
   const runAllTests = useCallback(async () => {
     setIsRunning(true);
@@ -41,13 +81,17 @@ export const OrchestrationTestRunner: React.FC = () => {
       
       try {
         const result = await runner.runTest(testCase);
+        const duration = Date.now() - startTime;
+        const logId = saveTestLog(testCase.test_id, testCase, result, duration, []);
+        
         newResults.push({
           test_id: testCase.test_id,
           passed: result.passed,
           score: result.score,
           max_score: result.max_score,
-          duration_ms: Date.now() - startTime,
-          details: result.score_breakdown.flatMap(b => b.details)
+          duration_ms: duration,
+          details: result.score_breakdown.flatMap(b => b.details),
+          logId,
         });
       } catch (error) {
         newResults.push({
@@ -57,7 +101,7 @@ export const OrchestrationTestRunner: React.FC = () => {
           max_score: 100,
           duration_ms: Date.now() - startTime,
           details: [],
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         });
       }
       
@@ -66,7 +110,7 @@ export const OrchestrationTestRunner: React.FC = () => {
     
     setCurrentTest(null);
     setIsRunning(false);
-  }, []);
+  }, [saveTestLog]);
 
   const runSingleTest = useCallback(async (testId: string) => {
     setIsRunning(true);
@@ -74,16 +118,14 @@ export const OrchestrationTestRunner: React.FC = () => {
     
     const runner = new TestRunner();
     const testCase = TEST_CASES.find(t => t.test_id === testId);
-    
-    if (!testCase) {
-      setIsRunning(false);
-      return;
-    }
+    if (!testCase) { setIsRunning(false); return; }
 
     const startTime = Date.now();
-    
     try {
       const result = await runner.runTest(testCase);
+      const duration = Date.now() - startTime;
+      const logId = saveTestLog(testId, testCase, result, duration, []);
+      
       setResults(prev => {
         const filtered = prev.filter(r => r.test_id !== testId);
         return [...filtered, {
@@ -91,8 +133,9 @@ export const OrchestrationTestRunner: React.FC = () => {
           passed: result.passed,
           score: result.score,
           max_score: result.max_score,
-          duration_ms: Date.now() - startTime,
-          details: result.score_breakdown.flatMap(b => b.details)
+          duration_ms: duration,
+          details: result.score_breakdown.flatMap(b => b.details),
+          logId,
         }];
       });
     } catch (error) {
@@ -105,26 +148,30 @@ export const OrchestrationTestRunner: React.FC = () => {
           max_score: 100,
           duration_ms: Date.now() - startTime,
           details: [],
-          error: error instanceof Error ? error.message : 'Unknown error'
+          error: error instanceof Error ? error.message : 'Unknown error',
         }];
       });
     }
     
     setCurrentTest(null);
     setIsRunning(false);
-  }, []);
+  }, [saveTestLog]);
 
   const toggleExpanded = (testId: string) => {
     setExpandedTests(prev => {
       const next = new Set(prev);
-      if (next.has(testId)) {
-        next.delete(testId);
-      } else {
-        next.add(testId);
-      }
+      next.has(testId) ? next.delete(testId) : next.add(testId);
       return next;
     });
   };
+
+  // Show detail view if a log is selected
+  if (selectedLogId) {
+    const log = runLogStore.getLog(selectedLogId);
+    if (log) {
+      return <TestResultDetail log={log} onBack={() => setSelectedLogId(null)} />;
+    }
+  }
 
   const totalPassed = results.filter(r => r.passed).length;
   const totalScore = results.reduce((acc, r) => acc + r.score, 0);
@@ -146,13 +193,9 @@ export const OrchestrationTestRunner: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button size="sm" variant="outline" onClick={runAllTests} disabled={isRunning}>
             {isRunning ? (
-              <>
-                <RefreshCw className="w-4 h-4 mr-1 animate-spin" /> Running...
-              </>
+              <><RefreshCw className="w-4 h-4 mr-1 animate-spin" /> Running...</>
             ) : (
-              <>
-                <Play className="w-4 h-4 mr-1" /> Run All Tests
-              </>
+              <><Play className="w-4 h-4 mr-1" /> Run All Tests</>
             )}
           </Button>
         </div>
@@ -184,7 +227,6 @@ export const OrchestrationTestRunner: React.FC = () => {
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => result && toggleExpanded(testCase.test_id)}
                   >
-                    {/* Status Icon */}
                     {isCurrent ? (
                       <RefreshCw className="w-4 h-4 text-primary animate-spin" />
                     ) : result ? (
@@ -197,16 +239,11 @@ export const OrchestrationTestRunner: React.FC = () => {
                       <div className="w-4 h-4 rounded-full border border-muted-foreground/50" />
                     )}
 
-                    {/* Expand Icon */}
                     {result && (
-                      isExpanded ? (
-                        <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                      ) : (
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                      )
+                      isExpanded ? <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        : <ChevronRight className="w-4 h-4 text-muted-foreground" />
                     )}
 
-                    {/* Test Info */}
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm">{testCase.test_id}</span>
@@ -214,7 +251,6 @@ export const OrchestrationTestRunner: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Score & Duration */}
                     {result && (
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span>{result.score}/{result.max_score}</span>
@@ -225,7 +261,21 @@ export const OrchestrationTestRunner: React.FC = () => {
                       </div>
                     )}
 
-                    {/* Run Button */}
+                    {/* View Detail Button */}
+                    {result?.logId && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedLogId(result.logId!);
+                        }}
+                        title="View full details"
+                      >
+                        <Eye className="w-3 h-3" />
+                      </Button>
+                    )}
+
                     <Button 
                       size="sm" 
                       variant="ghost" 
@@ -239,7 +289,6 @@ export const OrchestrationTestRunner: React.FC = () => {
                     </Button>
                   </div>
 
-                  {/* Expanded Details */}
                   {isExpanded && result && (
                     <div className="mt-3 pt-3 border-t border-border space-y-2">
                       {result.error && (
@@ -249,8 +298,12 @@ export const OrchestrationTestRunner: React.FC = () => {
                       )}
                       {result.details.map((detail, i) => (
                         <div key={i} className="flex items-start gap-2 text-sm">
-                          <CheckCircle className="w-3 h-3 text-muted-foreground mt-0.5" />
-                          <span>{detail}</span>
+                          {detail.startsWith('✓') ? (
+                            <CheckCircle className="w-3 h-3 text-primary mt-0.5" />
+                          ) : (
+                            <XCircle className="w-3 h-3 text-destructive mt-0.5" />
+                          )}
+                          <span>{detail.replace(/^[✓✗]\s*/, '')}</span>
                         </div>
                       ))}
                       {result.details.length === 0 && !result.error && (

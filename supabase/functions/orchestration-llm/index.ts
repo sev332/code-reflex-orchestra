@@ -11,7 +11,7 @@ serve(async (req) => {
   }
 
   try {
-    const { task_title, task_prompt, context, acceptance_criteria } = await req.json();
+    const { task_title, task_prompt, context, acceptance_criteria, stream } = await req.json();
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
@@ -34,21 +34,24 @@ ${context || 'No additional context.'}
 Acceptance criteria:
 ${acceptance_criteria?.map((c: any) => `- ${c.description} (${c.type})`).join('\n') || 'None specified.'}`;
 
+    const requestBody = {
+      model: 'google/gemini-3-flash-preview',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: `Task: ${task_title}\n\n${task_prompt}` },
+      ],
+      temperature: 0.4,
+      max_tokens: 2048,
+      stream: !!stream,
+    };
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-3-flash-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Task: ${task_title}\n\n${task_prompt}` },
-        ],
-        temperature: 0.4,
-        max_tokens: 2048,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -69,6 +72,19 @@ ${acceptance_criteria?.map((c: any) => `- ${c.description} (${c.type})`).join('\
       throw new Error(`AI gateway error: ${response.status}`);
     }
 
+    // Streaming response
+    if (stream && response.body) {
+      return new Response(response.body, {
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+          'Connection': 'keep-alive',
+        },
+      });
+    }
+
+    // Non-streaming response
     const data = await response.json();
     const content = data.choices[0].message.content;
     const usage = data.usage;
