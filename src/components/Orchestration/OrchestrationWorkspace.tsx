@@ -1,6 +1,7 @@
 // Orchestration Workspace - Combined Dashboard + Test Runner + Demo
 
 import React, { useState, useCallback } from 'react';
+import { useOrchestrationLLM } from '@/hooks/useOrchestrationLLM';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,8 @@ interface DemoTask {
 export const OrchestrationWorkspace: React.FC = () => {
   const [activeTab, setActiveTab] = useState('demo');
   const [kernel, setKernel] = useState<OrchestrationKernel | null>(null);
+  const [useLLM, setUseLLM] = useState(true);
+  const { executeTask: llmExecuteTask } = useOrchestrationLLM();
   const [demoTasks, setDemoTasks] = useState<DemoTask[]>([
     {
       title: 'Analyze user requirements',
@@ -77,6 +80,7 @@ export const OrchestrationWorkspace: React.FC = () => {
       onEvent: (event) => console.log('Event:', event.type),
       onTaskComplete: (task) => console.log('Task complete:', task.title),
       onCheckpoint: (snapshot) => console.log('Checkpoint created'),
+      ...(useLLM ? { executeTask: llmExecuteTask } : {}),
     });
 
     // Add pinned context
@@ -259,6 +263,17 @@ export const OrchestrationWorkspace: React.FC = () => {
                     <div>
                       <span className="text-muted-foreground text-xs">Mode</span>
                       <p className="font-medium">Supervised</p>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={useLLM}
+                          onChange={(e) => setUseLLM(e.target.checked)}
+                          className="rounded"
+                        />
+                        <span className="text-xs text-muted-foreground">Use Real LLM (Gemini 3 Flash)</span>
+                      </label>
                     </div>
                   </div>
                   
