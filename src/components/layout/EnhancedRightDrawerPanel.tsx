@@ -169,33 +169,16 @@ export function EnhancedRightDrawerPanel({
     }
   };
 
+  // When used inline (no fixed positioning needed), render just the content
   return (
     <div 
       ref={drawerRef}
       className={cn(
-        "fixed right-12 top-12 bottom-0 bg-background/95 backdrop-blur-xl border-l border-border/30 z-30 flex animate-slide-in-right",
+        "flex-1 flex flex-col overflow-hidden h-full",
         className
       )}
-      style={{ width }}
     >
-      {/* Resize Handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        className={cn(
-          "absolute top-0 bottom-0 left-0 w-1 cursor-col-resize transition-colors hover:bg-primary/50",
-          isResizing && "bg-primary/50"
-        )}
-      />
-      
-      {/* Resize indicator line */}
-      {isResizing && (
-        <div className="absolute top-0 bottom-0 left-0 w-0.5 bg-primary" />
-      )}
-
-      {/* Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {renderContent()}
-      </div>
+      {renderContent()}
     </div>
   );
 }
