@@ -1,4 +1,4 @@
-// Per-page left drawer with icon tab bar at top for subgroups
+// Per-page left drawer: Side icon bar (always visible) + expandable drawer panel with sub-tabs
 import React, { useState, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -7,8 +7,6 @@ import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import {
-  PanelLeftClose,
-  PanelLeftOpen,
   Clock,
   Star,
   Settings,
@@ -30,81 +28,178 @@ import {
   Play,
   BarChart3,
   History,
-  Workflow,
   Image,
   Music,
   Video,
   Map,
-  Palette,
   Sliders,
   Wand2,
   Scissors,
   Volume2,
   Film,
-  Globe,
   Navigation,
   MapPin,
+  MessageSquare,
+  Zap,
+  Code2,
+  Palette,
+  Globe,
+  PenTool,
+  FolderTree,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PageId } from './PageTopBar';
 
+// Each page gets its own set of icon bar items for the side
+interface SideIcon {
+  id: string;
+  icon: React.ComponentType<any>;
+  label: string;
+  shortcut?: string;
+}
+
+// Sub-tabs shown at the top of the opened drawer panel
 interface SubTab {
   id: string;
   icon: React.ComponentType<any>;
   label: string;
 }
 
-// Define sub-tabs per page
-const pageSubTabs: Record<PageId, SubTab[]> = {
-  chat: [
-    { id: 'history', icon: Clock, label: 'History' },
-    { id: 'favorites', icon: Star, label: 'Favorites' },
-    { id: 'library', icon: BookOpen, label: 'Library' },
-    { id: 'search', icon: Search, label: 'Search' },
-    { id: 'settings', icon: Settings, label: 'Settings' },
-  ],
-  orchestration: [
-    { id: 'tasks', icon: Layers, label: 'Tasks' },
-    { id: 'runs', icon: Play, label: 'Runs' },
-    { id: 'analytics', icon: BarChart3, label: 'Analytics' },
-    { id: 'history', icon: History, label: 'History' },
-  ],
-  documents: [
-    { id: 'storage', icon: HardDrive, label: 'Storage' },
-    { id: 'projects', icon: FolderKanban, label: 'Projects' },
-    { id: 'tags', icon: Tag, label: 'Tags' },
-    { id: 'search', icon: Search, label: 'Search' },
-  ],
-  ide: [
-    { id: 'files', icon: File, label: 'Files' },
-    { id: 'git', icon: GitBranch, label: 'Git' },
-    { id: 'search', icon: Search, label: 'Search' },
-    { id: 'extensions', icon: Layers, label: 'Extensions' },
-  ],
-  image: [
-    { id: 'gallery', icon: Image, label: 'Gallery' },
-    { id: 'layers', icon: Layers, label: 'Layers' },
-    { id: 'adjustments', icon: Sliders, label: 'Adjust' },
-    { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
-  ],
-  audio: [
-    { id: 'tracks', icon: Music, label: 'Tracks' },
-    { id: 'effects', icon: Volume2, label: 'Effects' },
-    { id: 'library', icon: BookOpen, label: 'Library' },
-    { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
-  ],
-  video: [
-    { id: 'timeline', icon: Film, label: 'Timeline' },
-    { id: 'clips', icon: Scissors, label: 'Clips' },
-    { id: 'effects', icon: Palette, label: 'Effects' },
-    { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
-  ],
-  map: [
-    { id: 'layers', icon: Layers, label: 'Layers' },
-    { id: 'places', icon: MapPin, label: 'Places' },
-    { id: 'navigate', icon: Navigation, label: 'Navigate' },
-    { id: 'search', icon: Search, label: 'Search' },
-  ],
+interface PageDrawerConfig {
+  sideIcons: SideIcon[];
+  subTabs: Record<string, SubTab[]>;
+}
+
+const pageConfigs: Record<PageId, PageDrawerConfig> = {
+  chat: {
+    sideIcons: [
+      { id: 'chat', icon: MessageSquare, label: 'Chat', shortcut: '⌘1' },
+      { id: 'history', icon: Clock, label: 'History', shortcut: '⌘H' },
+      { id: 'library', icon: BookOpen, label: 'Library', shortcut: '⌘L' },
+      { id: 'search', icon: Search, label: 'Search', shortcut: '⌘K' },
+      { id: 'favorites', icon: Star, label: 'Favorites' },
+      { id: 'settings', icon: Settings, label: 'Settings' },
+    ],
+    subTabs: {
+      chat: [
+        { id: 'recent', icon: Clock, label: 'Recent' },
+        { id: 'pinned', icon: Star, label: 'Pinned' },
+      ],
+      history: [
+        { id: 'conversations', icon: MessageSquare, label: 'Conversations' },
+        { id: 'timeline', icon: History, label: 'Timeline' },
+      ],
+      library: [
+        { id: 'docs', icon: FileText, label: 'Docs' },
+        { id: 'knowledge', icon: Database, label: 'Knowledge' },
+        { id: 'tags', icon: Tag, label: 'Tags' },
+      ],
+      settings: [
+        { id: 'general', icon: Settings, label: 'General' },
+        { id: 'appearance', icon: Palette, label: 'Appearance' },
+        { id: 'ai', icon: Wand2, label: 'AI Prefs' },
+      ],
+    },
+  },
+  orchestration: {
+    sideIcons: [
+      { id: 'tasks', icon: Layers, label: 'Tasks' },
+      { id: 'runs', icon: Play, label: 'Runs' },
+      { id: 'workflows', icon: Workflow, label: 'Workflows' },
+      { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+      { id: 'history', icon: History, label: 'History' },
+      { id: 'search', icon: Search, label: 'Search' },
+    ],
+    subTabs: {
+      tasks: [
+        { id: 'active', icon: Play, label: 'Active' },
+        { id: 'queue', icon: Layers, label: 'Queue' },
+        { id: 'completed', icon: Star, label: 'Done' },
+      ],
+      runs: [
+        { id: 'live', icon: Play, label: 'Live' },
+        { id: 'past', icon: History, label: 'Past' },
+      ],
+    },
+  },
+  documents: {
+    sideIcons: [
+      { id: 'storage', icon: HardDrive, label: 'Storage' },
+      { id: 'projects', icon: FolderKanban, label: 'Projects' },
+      { id: 'structure', icon: FolderTree, label: 'Structure' },
+      { id: 'tags', icon: Tag, label: 'Tags' },
+      { id: 'search', icon: Search, label: 'Search' },
+      { id: 'upload', icon: Upload, label: 'Upload' },
+    ],
+    subTabs: {
+      storage: [
+        { id: 'local', icon: Folder, label: 'Local' },
+        { id: 'cloud', icon: Cloud, label: 'Cloud' },
+        { id: 'recent', icon: Clock, label: 'Recent' },
+      ],
+      structure: [
+        { id: 'index', icon: Layers, label: 'Index' },
+        { id: 'map', icon: Map, label: 'Map' },
+      ],
+    },
+  },
+  ide: {
+    sideIcons: [
+      { id: 'files', icon: File, label: 'Files' },
+      { id: 'git', icon: GitBranch, label: 'Git' },
+      { id: 'search', icon: Search, label: 'Search' },
+      { id: 'extensions', icon: Layers, label: 'Extensions' },
+      { id: 'settings', icon: Settings, label: 'Settings' },
+    ],
+    subTabs: {
+      files: [
+        { id: 'explorer', icon: FolderTree, label: 'Explorer' },
+        { id: 'open', icon: FileText, label: 'Open Files' },
+      ],
+      git: [
+        { id: 'branches', icon: GitBranch, label: 'Branches' },
+        { id: 'history', icon: History, label: 'History' },
+        { id: 'changes', icon: FileText, label: 'Changes' },
+      ],
+    },
+  },
+  image: {
+    sideIcons: [
+      { id: 'gallery', icon: Image, label: 'Gallery' },
+      { id: 'layers', icon: Layers, label: 'Layers' },
+      { id: 'adjustments', icon: Sliders, label: 'Adjust' },
+      { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
+    ],
+    subTabs: {},
+  },
+  audio: {
+    sideIcons: [
+      { id: 'tracks', icon: Music, label: 'Tracks' },
+      { id: 'effects', icon: Volume2, label: 'Effects' },
+      { id: 'library', icon: BookOpen, label: 'Library' },
+      { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
+    ],
+    subTabs: {},
+  },
+  video: {
+    sideIcons: [
+      { id: 'timeline', icon: Film, label: 'Timeline' },
+      { id: 'clips', icon: Scissors, label: 'Clips' },
+      { id: 'effects', icon: Palette, label: 'Effects' },
+      { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
+    ],
+    subTabs: {},
+  },
+  map: {
+    sideIcons: [
+      { id: 'layers', icon: Layers, label: 'Layers' },
+      { id: 'places', icon: MapPin, label: 'Places' },
+      { id: 'navigate', icon: Navigation, label: 'Navigate' },
+      { id: 'search', icon: Search, label: 'Search' },
+    ],
+    subTabs: {},
+  },
 };
 
 interface PageLeftDrawerProps {
@@ -115,17 +210,43 @@ interface PageLeftDrawerProps {
 }
 
 export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: PageLeftDrawerProps) {
-  const tabs = pageSubTabs[activePage] || [];
-  const [activeSubTab, setActiveSubTab] = useState(tabs[0]?.id || '');
-  const [width, setWidth] = useState(300);
+  const config = pageConfigs[activePage];
+  const [activeIcon, setActiveIcon] = useState<string | null>(config.sideIcons[0]?.id || null);
+  const [activeSubTab, setActiveSubTab] = useState<string>('');
+  const [drawerWidth, setDrawerWidth] = useState(260);
   const [isResizing, setIsResizing] = useState(false);
 
-  // Reset sub-tab when page changes
+  // Reset when page changes
   useEffect(() => {
-    const newTabs = pageSubTabs[activePage] || [];
-    setActiveSubTab(newTabs[0]?.id || '');
+    const newConfig = pageConfigs[activePage];
+    const firstIcon = newConfig.sideIcons[0]?.id || null;
+    setActiveIcon(firstIcon);
+    if (firstIcon && newConfig.subTabs[firstIcon]) {
+      setActiveSubTab(newConfig.subTabs[firstIcon][0]?.id || '');
+    } else {
+      setActiveSubTab('');
+    }
   }, [activePage]);
 
+  // Update sub-tab when active icon changes
+  useEffect(() => {
+    if (activeIcon && config.subTabs[activeIcon]) {
+      setActiveSubTab(config.subTabs[activeIcon][0]?.id || '');
+    } else {
+      setActiveSubTab('');
+    }
+  }, [activeIcon, config.subTabs]);
+
+  const handleIconClick = (iconId: string) => {
+    if (activeIcon === iconId && isOpen) {
+      onToggle(); // collapse
+    } else {
+      setActiveIcon(iconId);
+      if (!isOpen) onToggle(); // expand
+    }
+  };
+
+  // Resize logic
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsResizing(true);
@@ -134,7 +255,8 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
   useEffect(() => {
     if (!isResizing) return;
     const move = (e: MouseEvent) => {
-      setWidth(Math.max(240, Math.min(500, e.clientX)));
+      const newW = e.clientX - 48; // subtract icon bar width
+      setDrawerWidth(Math.max(200, Math.min(450, newW)));
     };
     const up = () => setIsResizing(false);
     document.addEventListener('mousemove', move);
@@ -149,118 +271,168 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
     };
   }, [isResizing]);
 
-  if (!isOpen) {
-    return (
-      <div className="fixed left-0 top-12 bottom-0 w-10 bg-background/60 backdrop-blur-xl border-r border-border/30 z-40 flex flex-col items-center py-3">
-        <Tooltip delayDuration={200}>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" className="w-8 h-8" onClick={onToggle}>
-              <PanelLeftOpen className="w-4 h-4" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Open Panel</TooltipContent>
-        </Tooltip>
-      </div>
-    );
-  }
+  const subTabs = activeIcon ? config.subTabs[activeIcon] || [] : [];
 
   return (
-    <div
-      className="fixed left-0 top-12 bottom-0 z-40 flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/30"
-      style={{ width }}
-    >
-      {/* Icon tab bar at top */}
-      <div className="flex items-center border-b border-border/30 px-1 py-1 gap-0.5 shrink-0">
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeSubTab === tab.id;
+    <>
+      {/* Side Icon Bar — always visible */}
+      <div className="fixed left-0 top-12 bottom-0 w-12 bg-background/80 backdrop-blur-xl border-r border-border/50 z-40 flex flex-col items-center py-3 gap-1">
+        {config.sideIcons.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeIcon === item.id && isOpen;
           return (
-            <Tooltip key={tab.id} delayDuration={300}>
+            <Tooltip key={item.id} delayDuration={300}>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setActiveSubTab(tab.id)}
+                  onClick={() => handleIconClick(item.id)}
                   className={cn(
-                    'w-8 h-8 rounded-lg transition-all shrink-0',
-                    isActive && 'bg-primary/15 text-primary shadow-sm'
+                    'w-10 h-10 rounded-xl transition-all duration-200',
+                    isActive && 'bg-primary/10 text-primary shadow-sm'
                   )}
                 >
-                  <Icon className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-muted-foreground')} />
+                  <Icon className={cn('w-5 h-5', isActive && 'scale-110')} />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">{tab.label}</TooltipContent>
+              <TooltipContent side="right" className="flex items-center gap-2">
+                <span>{item.label}</span>
+                {item.shortcut && (
+                  <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded">{item.shortcut}</kbd>
+                )}
+              </TooltipContent>
             </Tooltip>
           );
         })}
 
         <div className="flex-1" />
 
-        <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0" onClick={onToggle}>
-          <PanelLeftClose className="w-4 h-4 text-muted-foreground" />
-        </Button>
-      </div>
-
-      {/* Sub-tab content */}
-      <div className="flex-1 overflow-hidden">
-        <LeftDrawerContent page={activePage} subTab={activeSubTab} onNavigate={onNavigate} />
-      </div>
-
-      {/* Resize handle */}
-      <div
-        onMouseDown={handleMouseDown}
-        className={cn(
-          'absolute top-0 bottom-0 right-0 w-1 cursor-col-resize transition-colors hover:bg-primary/50',
-          isResizing && 'bg-primary/50'
+        {/* Settings at bottom if not already in side icons */}
+        {!config.sideIcons.find(s => s.id === 'settings') && (
+          <Tooltip delayDuration={300}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleIconClick('settings')}
+                className={cn(
+                  'w-10 h-10 rounded-xl transition-all duration-200',
+                  activeIcon === 'settings' && isOpen && 'bg-primary/10 text-primary'
+                )}
+              >
+                <Settings className="w-5 h-5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right">Settings</TooltipContent>
+          </Tooltip>
         )}
-      />
-    </div>
+      </div>
+
+      {/* Expandable Drawer Panel — opens beside icon bar */}
+      {isOpen && activeIcon && (
+        <div
+          className="fixed top-12 bottom-0 z-30 flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/30"
+          style={{ left: 48, width: drawerWidth }}
+        >
+          {/* Sub-tab bar at top of drawer */}
+          {subTabs.length > 0 && (
+            <div className="flex items-center border-b border-border/30 px-2 py-1 gap-0.5 shrink-0">
+              {subTabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeSubTab === tab.id;
+                return (
+                  <Tooltip key={tab.id} delayDuration={300}>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setActiveSubTab(tab.id)}
+                        className={cn(
+                          'h-7 px-2 gap-1 rounded-md text-xs transition-all shrink-0',
+                          isActive && 'bg-primary/15 text-primary shadow-sm'
+                        )}
+                      >
+                        <Icon className={cn('w-3.5 h-3.5', isActive ? 'text-primary' : 'text-muted-foreground')} />
+                        <span>{tab.label}</span>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs">{tab.label}</TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Drawer title */}
+          <div className="px-3 py-2 border-b border-border/20 shrink-0">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {config.sideIcons.find(s => s.id === activeIcon)?.label || activeIcon}
+            </p>
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 overflow-hidden">
+            <LeftDrawerContent page={activePage} sideTab={activeIcon} subTab={activeSubTab} onNavigate={onNavigate} />
+          </div>
+
+          {/* Resize handle */}
+          <div
+            onMouseDown={handleMouseDown}
+            className={cn(
+              'absolute top-0 bottom-0 right-0 w-1 cursor-col-resize transition-colors hover:bg-primary/50',
+              isResizing && 'bg-primary/50'
+            )}
+          />
+        </div>
+      )}
+    </>
   );
 }
 
-// Sub-tab content renderer — shows relevant panels per page+tab combo
-function LeftDrawerContent({ page, subTab, onNavigate }: { page: PageId; subTab: string; onNavigate?: (v: string) => void }) {
-  // Common panels used across pages
-  if (subTab === 'search') return <SearchSubPanel />;
-  if (subTab === 'settings') return <SettingsSubPanel />;
+// Drawer content renderer
+function LeftDrawerContent({ page, sideTab, subTab, onNavigate }: { page: PageId; sideTab: string; subTab: string; onNavigate?: (v: string) => void }) {
+  if (sideTab === 'search') return <SearchSubPanel />;
+  if (sideTab === 'settings') return <SettingsSubPanel />;
 
-  // Page-specific content
   switch (page) {
     case 'chat':
-      if (subTab === 'history') return <ChatHistoryPanel />;
-      if (subTab === 'favorites') return <FavoritesPanel />;
-      if (subTab === 'library') return <LibraryPanel />;
+      if (sideTab === 'chat') return <ChatRecentPanel />;
+      if (sideTab === 'history') return <ChatHistoryPanel />;
+      if (sideTab === 'favorites') return <FavoritesPanel />;
+      if (sideTab === 'library') return <LibraryPanel />;
       break;
     case 'orchestration':
-      return <OrchestrationSubPanel subTab={subTab} />;
+      return <OrchestrationSubPanel subTab={sideTab} />;
     case 'documents':
-      if (subTab === 'storage') return <DocumentStoragePanel onNavigate={onNavigate} />;
-      if (subTab === 'projects') return <ProjectsPanel />;
-      if (subTab === 'tags') return <TagsPanel />;
+      if (sideTab === 'storage') return <DocumentStoragePanel onNavigate={onNavigate} />;
+      if (sideTab === 'projects') return <ProjectsPanel />;
+      if (sideTab === 'structure') return <StructurePanel />;
+      if (sideTab === 'tags') return <TagsPanel />;
+      if (sideTab === 'upload') return <UploadPanel />;
       break;
     case 'ide':
-      if (subTab === 'files') return <FilesPanel />;
-      if (subTab === 'git') return <GitSubPanel />;
-      if (subTab === 'extensions') return <ExtensionsPanel />;
+      if (sideTab === 'files') return <FilesPanel />;
+      if (sideTab === 'git') return <GitSubPanel />;
+      if (sideTab === 'extensions') return <ExtensionsPanel />;
       break;
     default:
-      return <PlaceholderSubPanel page={page} subTab={subTab} />;
+      return <PlaceholderSubPanel page={page} subTab={sideTab} />;
   }
 
-  return <PlaceholderSubPanel page={page} subTab={subTab} />;
+  return <PlaceholderSubPanel page={page} subTab={sideTab} />;
 }
 
-// ─── Reusable sub-panels ────────────────────────────────────────
+// ─── Sub-panels ────────────────────────────────────────
 
 function SearchSubPanel() {
   return (
-    <div className="p-4">
+    <div className="p-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input placeholder="Search everything..." className="pl-9 bg-muted/30 border-none" autoFocus />
       </div>
       <p className="text-xs text-muted-foreground mt-3">Search across documents, conversations, memory, and code.</p>
-      <div className="mt-4 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap gap-1.5">
         <Badge variant="outline" className="cursor-pointer hover:bg-accent/50 text-xs">Documents</Badge>
         <Badge variant="outline" className="cursor-pointer hover:bg-accent/50 text-xs">Messages</Badge>
         <Badge variant="outline" className="cursor-pointer hover:bg-accent/50 text-xs">Memory</Badge>
@@ -294,6 +466,31 @@ function SettingsSubPanel() {
   );
 }
 
+function ChatRecentPanel() {
+  const chats = [
+    { title: 'Document Builder Architecture', time: '2m ago', messages: 12 },
+    { title: 'APOE Orchestration', time: '1h ago', messages: 45 },
+    { title: 'Memory System Design', time: '3h ago', messages: 23 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1">
+          <Plus className="w-3.5 h-3.5" /> New Chat
+        </Button>
+        {chats.map((c, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{c.title}</p>
+              <p className="text-xs text-muted-foreground">{c.time} • {c.messages} msgs</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
 function ChatHistoryPanel() {
   const history = [
     { query: 'APOE orchestration architecture', time: '10m ago' },
@@ -304,7 +501,6 @@ function ChatHistoryPanel() {
   return (
     <ScrollArea className="h-full">
       <div className="p-3 space-y-1">
-        <p className="text-xs text-muted-foreground px-2 py-1 uppercase tracking-wide">Recent Chats</p>
         {history.map((item, i) => (
           <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
             <Clock className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
@@ -344,11 +540,11 @@ function LibraryPanel() {
           return (
             <Card key={i} className="p-3 cursor-pointer hover:bg-accent/50 transition-colors border-border/30">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <Icon className="w-4 h-4 text-primary" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-sm">{cat.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm truncate">{cat.name}</p>
                   <p className="text-xs text-muted-foreground">{cat.count} items</p>
                 </div>
               </div>
@@ -378,7 +574,7 @@ function DocumentStoragePanel({ onNavigate }: { onNavigate?: (v: string) => void
     { name: 'Starred', count: 3, icon: Star },
   ];
   return (
-    <>
+    <ScrollArea className="h-full">
       <div className="p-3">
         <div className="relative mb-3">
           <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -389,21 +585,40 @@ function DocumentStoragePanel({ onNavigate }: { onNavigate?: (v: string) => void
             const Icon = f.icon;
             return (
               <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
-                <Icon className="w-4 h-4 mr-2 text-cyan-400" />
+                <Icon className="w-4 h-4 mr-2 text-primary" />
                 <span className="flex-1 text-left text-sm">{f.name}</span>
                 <Badge variant="secondary" className="text-[10px]">{f.count}</Badge>
               </Button>
             );
           })}
         </div>
+        <div className="mt-4 space-y-2">
+          <Button variant="outline" className="w-full text-sm"><Upload className="w-4 h-4 mr-2" />Upload</Button>
+        </div>
       </div>
-      <div className="mt-auto p-3 border-t border-border/30 space-y-2">
-        <Button variant="outline" className="w-full text-sm"><Upload className="w-4 h-4 mr-2" />Upload</Button>
-        <Button variant="default" className="w-full text-sm" onClick={() => onNavigate?.('documents')}>
-          Open Library <ChevronRight className="w-4 h-4 ml-auto" />
-        </Button>
+    </ScrollArea>
+  );
+}
+
+function StructurePanel() {
+  return (
+    <div className="p-4 text-center text-muted-foreground">
+      <FolderTree className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <p className="text-sm">Document Structure</p>
+      <p className="text-xs">Hierarchical index and system map</p>
+    </div>
+  );
+}
+
+function UploadPanel() {
+  return (
+    <div className="p-4 flex flex-col items-center gap-3">
+      <div className="w-full border-2 border-dashed border-border/50 rounded-xl p-6 text-center hover:border-primary/50 transition-colors cursor-pointer">
+        <Upload className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">Drop files here or click to upload</p>
+        <p className="text-xs text-muted-foreground/60 mt-1">PDF, DOCX, TXT, MD and more</p>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -419,7 +634,7 @@ function ProjectsPanel() {
         {projects.map((p, i) => (
           <Card key={i} className="p-3 cursor-pointer hover:bg-accent/50 border-border/30">
             <div className="flex items-center gap-2 mb-2">
-              <Folder className="w-4 h-4 text-cyan-400" />
+              <Folder className="w-4 h-4 text-primary" />
               <span className="font-medium text-sm">{p.name}</span>
             </div>
             <div className="h-1.5 bg-muted/30 rounded-full mb-1">
@@ -479,7 +694,6 @@ function PlaceholderSubPanel({ page, subTab }: { page: string; subTab: string })
       <Wand2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
       <p className="text-sm capitalize">{subTab}</p>
       <p className="text-xs">{page} — {subTab} panel</p>
-      <p className="text-xs mt-2 text-muted-foreground/60">Coming soon</p>
     </div>
   );
 }
