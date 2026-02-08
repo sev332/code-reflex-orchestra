@@ -7,7 +7,7 @@ import { PageTopBar, PageId } from "@/components/layout/PageTopBar";
 import { PersistentRightDrawer } from "@/components/layout/PersistentRightDrawer";
 import { PageLeftDrawer } from "@/components/layout/PageLeftDrawer";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
-import { DocumentLibrary } from "@/components/Documents/DocumentLibrary";
+import { DocumentBuilderPage } from '@/components/Documents/DocumentBuilderPage';
 import { RealMemoryDashboard } from "@/components/AIChat/RealMemoryDashboard";
 import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
 import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
@@ -50,9 +50,9 @@ const Index = () => {
   // On other pages: chat moves to right drawer
   const isChatPage = activePage === 'chat';
 
-  // Calculate main content margins based on drawer states
-  const leftWidth = leftDrawerOpen ? 300 : 40; // drawer width or collapsed
-  const rightWidth = rightDrawerOpen ? 400 : 40;
+  // Side icon bars are always 48px (w-12). Drawer panels expand beside them.
+  const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
+  const rightWidth = rightDrawerOpen ? 48 + 380 : 48;
 
   const renderMainContent = () => {
     switch (activePage) {
@@ -65,11 +65,7 @@ const Index = () => {
           </Suspense>
         );
       case 'documents':
-        return (
-          <div className="p-4 h-full overflow-auto">
-            <DocumentLibrary />
-          </div>
-        );
+        return <DocumentBuilderPage />;
       case 'ide':
         return (
           <Suspense fallback={<LoadingFallback />}>
