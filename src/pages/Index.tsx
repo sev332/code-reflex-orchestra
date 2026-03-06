@@ -13,7 +13,6 @@ import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
 import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
-import { PlaceholderPage } from "@/components/pages/PlaceholderPage";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { cn } from "@/lib/utils";
 
@@ -23,6 +22,18 @@ const OrchestrationWorkspace = lazy(() =>
 );
 const CodeBuilderIDE = lazy(() =>
   import("@/components/CodeBuilder/CodeBuilderIDE").then((m) => ({ default: m.CodeBuilderIDE }))
+);
+const GlassMapPage = lazy(() =>
+  import("@/components/Map/GlassMapPage").then((m) => ({ default: m.GlassMapPage }))
+);
+const ImageEditor = lazy(() =>
+  import("@/components/MediaEditors/ImageEditor").then((m) => ({ default: m.ImageEditor }))
+);
+const AudioEditor = lazy(() =>
+  import("@/components/MediaEditors/AudioEditor").then((m) => ({ default: m.AudioEditor }))
+);
+const VideoEditor = lazy(() =>
+  import("@/components/MediaEditors/VideoEditor").then((m) => ({ default: m.VideoEditor }))
 );
 
 const Index = () => {
@@ -73,10 +84,13 @@ const Index = () => {
           </Suspense>
         );
       case 'image':
+        return <Suspense fallback={<LoadingFallback />}><ImageEditor /></Suspense>;
       case 'audio':
+        return <Suspense fallback={<LoadingFallback />}><AudioEditor /></Suspense>;
       case 'video':
+        return <Suspense fallback={<LoadingFallback />}><VideoEditor /></Suspense>;
       case 'map':
-        return <PlaceholderPage pageId={activePage} />;
+        return <Suspense fallback={<LoadingFallback />}><GlassMapPage /></Suspense>;
       default:
         return null;
     }

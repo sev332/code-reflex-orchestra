@@ -38,7 +38,7 @@ export function GlassMapPage() {
     // Check for mapbox token
     const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
 
-    if (mapboxToken && window.mapboxgl) {
+    if (mapboxToken && (window as any).mapboxgl) {
       // Use Mapbox
       try {
         (window as any).mapboxgl.accessToken = mapboxToken;
