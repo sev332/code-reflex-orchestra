@@ -1,4 +1,4 @@
-// Code Builder IDE - Full-featured code editor with folder structure, AI assistance, and SAM Analysis
+// Code Builder IDE - Restructured: Monaco as main content, bottom drawer for terminal/console/debug/git
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import Editor, { Monaco } from '@monaco-editor/react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -6,21 +6,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { 
   FileCode, Plus, Save, Download, Upload, Trash2, Copy,
   FolderTree, Folder, FolderOpen, File, ChevronRight,
   ChevronDown, Search, Sparkles, Play, Terminal, GitBranch,
   Brain, Eye, Zap, RefreshCw, Check, X, Settings,
-  Code2, FileJson, FileType, Loader2, Map
+  Code2, FileJson, FileType, Loader2, Map, Bug,
+  ChevronUp, Maximize2, Minimize2, LayoutGrid, Monitor
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { SAMAnalysisPanel } from '@/components/SAM/SAMAnalysisPanel';
 
-interface FileNode {
+export interface FileNode {
   id: string;
   name: string;
   type: 'file' | 'folder';
@@ -38,7 +37,7 @@ const getFileIcon = (name: string) => {
   if (name.endsWith('.tsx') || name.endsWith('.ts')) return <FileCode className="w-4 h-4 text-blue-400" />;
   if (name.endsWith('.json')) return <FileJson className="w-4 h-4 text-yellow-400" />;
   if (name.endsWith('.css') || name.endsWith('.scss')) return <FileType className="w-4 h-4 text-pink-400" />;
-  if (name.endsWith('.md')) return <FileType className="w-4 h-4 text-gray-400" />;
+  if (name.endsWith('.md')) return <FileType className="w-4 h-4 text-muted-foreground" />;
   return <File className="w-4 h-4 text-muted-foreground" />;
 };
 
@@ -48,187 +47,107 @@ const getLanguage = (name: string): string => {
   if (name.endsWith('.js') || name.endsWith('.jsx')) return 'javascript';
   if (name.endsWith('.json')) return 'json';
   if (name.endsWith('.css')) return 'css';
-  if (name.endsWith('.scss')) return 'scss';
   if (name.endsWith('.html')) return 'html';
   if (name.endsWith('.md')) return 'markdown';
   return 'plaintext';
 };
 
+type BottomTab = 'terminal' | 'console' | 'debug' | 'git-map' | 'problems';
+
+// Git commit node for subway map
+interface GitCommit {
+  id: string;
+  message: string;
+  branch: string;
+  timestamp: string;
+  author: string;
+  parents: string[];
+  color: string;
+}
+
 export function CodeBuilderIDE({ onClose }: CodeBuilderIDEProps) {
   const [fileTree, setFileTree] = useState<FileNode[]>([
     {
-      id: 'src',
-      name: 'src',
-      type: 'folder',
-      isOpen: true,
+      id: 'src', name: 'src', type: 'folder', isOpen: true,
       children: [
         {
-          id: 'components',
-          name: 'components',
-          type: 'folder',
-          isOpen: true,
+          id: 'components', name: 'components', type: 'folder', isOpen: true,
           children: [
-            {
-              id: 'app-tsx',
-              name: 'App.tsx',
-              type: 'file',
-              language: 'typescript',
-              content: `import React from 'react';
-
-function App() {
-  return (
-    <div className="app">
-      <h1>Welcome to Code Builder</h1>
-      <p>Start building your application here.</p>
-    </div>
-  );
-}
-
-export default App;`
-            }
+            { id: 'app-tsx', name: 'App.tsx', type: 'file', language: 'typescript',
+              content: `import React from 'react';\n\nfunction App() {\n  return (\n    <div className="app">\n      <h1>Welcome to Code Builder</h1>\n    </div>\n  );\n}\n\nexport default App;` }
           ]
         },
-        {
-          id: 'index-tsx',
-          name: 'index.tsx',
-          type: 'file',
-          language: 'typescript',
-          content: `import React from 'react';
-import ReactDOM from 'react-dom/client';
-import App from './components/App';
-import './index.css';
-
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);`
-        },
-        {
-          id: 'index-css',
-          name: 'index.css',
-          type: 'file',
-          language: 'css',
-          content: `* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: white;
-}
-
-h1 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-}
-
-p {
-  color: rgba(255, 255, 255, 0.7);
-}`
-        }
+        { id: 'index-tsx', name: 'index.tsx', type: 'file', language: 'typescript',
+          content: `import React from 'react';\nimport ReactDOM from 'react-dom/client';\nimport App from './components/App';\n\nReactDOM.createRoot(document.getElementById('root')!).render(\n  <React.StrictMode><App /></React.StrictMode>\n);` },
+        { id: 'index-css', name: 'index.css', type: 'file', language: 'css',
+          content: `* { margin: 0; padding: 0; box-sizing: border-box; }\n.app { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: #1a1a2e; color: white; }` }
       ]
     },
-    {
-      id: 'package-json',
-      name: 'package.json',
-      type: 'file',
-      language: 'json',
-      content: `{
-  "name": "my-app",
-  "version": "1.0.0",
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  }
-}`
-    }
+    { id: 'package-json', name: 'package.json', type: 'file', language: 'json',
+      content: `{\n  "name": "my-app",\n  "version": "1.0.0",\n  "dependencies": { "react": "^18.2.0" }\n}` }
   ]);
 
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [openFiles, setOpenFiles] = useState<FileNode[]>([]);
-  const [aiInstruction, setAiInstruction] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [terminalOutput, setTerminalOutput] = useState<string[]>(['> Code Builder IDE initialized...']);
-  const [activeTab, setActiveTab] = useState<'files' | 'ai' | 'sam' | 'terminal'>('files');
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemType, setNewItemType] = useState<'file' | 'folder'>('file');
-  const [showNewItem, setShowNewItem] = useState(false);
-  const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
-  
+  const [terminalOutput, setTerminalOutput] = useState<string[]>(['$ lucid-ide initialized', '$ watching for changes...']);
+  const [consoleOutput, setConsoleOutput] = useState<string[]>(['[info] Console ready']);
+  const [debugOutput, setDebugOutput] = useState<string[]>(['Debugger not attached']);
+  const [problems, setProblems] = useState<string[]>([]);
+
+  // Bottom drawer
+  const [bottomDrawerOpen, setBottomDrawerOpen] = useState(true);
+  const [bottomDrawerHeight, setBottomDrawerHeight] = useState(200);
+  const [activeBottomTab, setActiveBottomTab] = useState<BottomTab>('terminal');
+  const [isResizingBottom, setIsResizingBottom] = useState(false);
+  const [bottomMaximized, setBottomMaximized] = useState(false);
+  const [terminalInput, setTerminalInput] = useState('');
+
   const editorRef = useRef<any>(null);
 
-  // Find file in tree
+  // Git subway map data
+  const [gitCommits] = useState<GitCommit[]>([
+    { id: 'c7', message: 'feat: add AI chat integration', branch: 'feature/ai-chat', timestamp: '2m ago', author: 'AI', parents: ['c6'], color: 'hsl(var(--primary))' },
+    { id: 'c6', message: 'refactor: clean up components', branch: 'main', timestamp: '15m ago', author: 'Dev', parents: ['c5'], color: 'hsl(var(--wisdom-success))' },
+    { id: 'c5', message: 'merge: feature/docs into main', branch: 'main', timestamp: '1h ago', author: 'Dev', parents: ['c4', 'c3'], color: 'hsl(var(--wisdom-success))' },
+    { id: 'c4', message: 'feat: document builder MVP', branch: 'feature/docs', timestamp: '2h ago', author: 'AI', parents: ['c2'], color: 'hsl(var(--wisdom-neural))' },
+    { id: 'c3', message: 'fix: memory leak in editor', branch: 'main', timestamp: '3h ago', author: 'Dev', parents: ['c2'], color: 'hsl(var(--wisdom-success))' },
+    { id: 'c2', message: 'feat: initial IDE layout', branch: 'main', timestamp: '5h ago', author: 'Dev', parents: ['c1'], color: 'hsl(var(--wisdom-success))' },
+    { id: 'c1', message: 'init: project scaffold', branch: 'main', timestamp: '1d ago', author: 'Dev', parents: [], color: 'hsl(var(--wisdom-success))' },
+  ]);
+
+  // File operations
   const findFile = (nodes: FileNode[], id: string): FileNode | null => {
     for (const node of nodes) {
       if (node.id === id) return node;
-      if (node.children) {
-        const found = findFile(node.children, id);
-        if (found) return found;
-      }
+      if (node.children) { const f = findFile(node.children, id); if (f) return f; }
     }
     return null;
   };
 
-  // Update file content
   const updateFileContent = (id: string, content: string) => {
-    const updateTree = (nodes: FileNode[]): FileNode[] => {
-      return nodes.map(node => {
-        if (node.id === id) {
-          return { ...node, content };
-        }
-        if (node.children) {
-          return { ...node, children: updateTree(node.children) };
-        }
-        return node;
-      });
-    };
-    setFileTree(updateTree(fileTree));
-    
-    // Update open files
+    const update = (nodes: FileNode[]): FileNode[] =>
+      nodes.map(n => n.id === id ? { ...n, content } : n.children ? { ...n, children: update(n.children) } : n);
+    setFileTree(update(fileTree));
     setOpenFiles(prev => prev.map(f => f.id === id ? { ...f, content } : f));
-    if (selectedFile?.id === id) {
-      setSelectedFile({ ...selectedFile, content });
-    }
+    if (selectedFile?.id === id) setSelectedFile({ ...selectedFile, content });
   };
 
-  // Toggle folder open/closed
   const toggleFolder = (id: string) => {
-    const updateTree = (nodes: FileNode[]): FileNode[] => {
-      return nodes.map(node => {
-        if (node.id === id) {
-          return { ...node, isOpen: !node.isOpen };
-        }
-        if (node.children) {
-          return { ...node, children: updateTree(node.children) };
-        }
-        return node;
-      });
-    };
-    setFileTree(updateTree(fileTree));
+    const update = (nodes: FileNode[]): FileNode[] =>
+      nodes.map(n => n.id === id ? { ...n, isOpen: !n.isOpen } : n.children ? { ...n, children: update(n.children) } : n);
+    setFileTree(update(fileTree));
   };
 
-  // Select file
   const selectFile = (file: FileNode) => {
     if (file.type === 'file') {
       setSelectedFile(file);
-      if (!openFiles.find(f => f.id === file.id)) {
-        setOpenFiles(prev => [...prev, file]);
-      }
+      if (!openFiles.find(f => f.id === file.id)) setOpenFiles(prev => [...prev, file]);
     } else {
       toggleFolder(file.id);
-      setSelectedFolder(file.id);
     }
   };
 
-  // Close file tab
   const closeFile = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setOpenFiles(prev => prev.filter(f => f.id !== id));
@@ -238,404 +157,342 @@ p {
     }
   };
 
-  // Add new file or folder
-  const addNewItem = (parentId: string | null) => {
-    if (!newItemName.trim()) return;
+  // Terminal command execution
+  const executeCommand = (cmd: string) => {
+    setTerminalOutput(prev => [...prev, `$ ${cmd}`]);
+    if (cmd === 'clear') { setTerminalOutput([]); return; }
+    if (cmd === 'help') { setTerminalOutput(prev => [...prev, 'Available: clear, help, build, run, test, git status']); return; }
+    if (cmd === 'build') { setTerminalOutput(prev => [...prev, '⚡ Building...', '✓ Build complete in 1.2s']); return; }
+    if (cmd === 'run') { setTerminalOutput(prev => [...prev, '▶ Starting dev server...', '  → http://localhost:5173']); return; }
+    if (cmd.startsWith('git')) { setTerminalOutput(prev => [...prev, `[git] ${cmd.slice(4)} executed`]); return; }
+    setTerminalOutput(prev => [...prev, `Command not found: ${cmd}`]);
+  };
 
-    const newItem: FileNode = {
-      id: crypto.randomUUID(),
-      name: newItemName,
-      type: newItemType,
-      ...(newItemType === 'file' ? { content: '', language: getLanguage(newItemName) } : { children: [], isOpen: true })
+  // Bottom drawer resize
+  useEffect(() => {
+    if (!isResizingBottom) return;
+    const move = (e: MouseEvent) => {
+      const vh = window.innerHeight;
+      const newH = vh - e.clientY - 48; // 48 = top bar
+      setBottomDrawerHeight(Math.max(100, Math.min(vh * 0.6, newH)));
     };
-
-    const addToTree = (nodes: FileNode[]): FileNode[] => {
-      if (!parentId) {
-        return [...nodes, newItem];
-      }
-      return nodes.map(node => {
-        if (node.id === parentId && node.type === 'folder') {
-          return { ...node, children: [...(node.children || []), newItem] };
-        }
-        if (node.children) {
-          return { ...node, children: addToTree(node.children) };
-        }
-        return node;
-      });
+    const up = () => setIsResizingBottom(false);
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+    return () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
     };
-
-    setFileTree(addToTree(fileTree));
-    setNewItemName('');
-    setShowNewItem(false);
-    
-    if (newItemType === 'file') {
-      selectFile(newItem);
-    }
-    
-    toast.success(`${newItemType === 'file' ? 'File' : 'Folder'} created`);
-  };
-
-  // Delete file or folder
-  const deleteItem = (id: string) => {
-    const deleteFromTree = (nodes: FileNode[]): FileNode[] => {
-      return nodes.filter(node => {
-        if (node.id === id) return false;
-        if (node.children) {
-          node.children = deleteFromTree(node.children);
-        }
-        return true;
-      });
-    };
-    
-    setFileTree(deleteFromTree(fileTree));
-    setOpenFiles(prev => prev.filter(f => f.id !== id));
-    if (selectedFile?.id === id) {
-      setSelectedFile(null);
-    }
-    toast.success('Item deleted');
-  };
-
-  // AI Code Generation
-  const generateCode = async () => {
-    if (!aiInstruction.trim()) {
-      toast.error('Please enter an instruction');
-      return;
-    }
-
-    setIsGenerating(true);
-    setTerminalOutput(prev => [...prev, `> AI generating code: "${aiInstruction}"...`]);
-
-    try {
-      const { data, error } = await supabase.functions.invoke('dream-mode', {
-        body: {
-          action: 'generate_code',
-          instruction: aiInstruction,
-          currentFile: selectedFile?.content || '',
-          fileName: selectedFile?.name || 'new-file.tsx',
-          fileTree: fileTree.map(f => ({ name: f.name, type: f.type }))
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.code) {
-        if (selectedFile) {
-          updateFileContent(selectedFile.id, data.code);
-          setTerminalOutput(prev => [...prev, `> Code generated and applied to ${selectedFile.name}`]);
-        } else {
-          // Create new file with generated code
-          const newFile: FileNode = {
-            id: crypto.randomUUID(),
-            name: data.fileName || 'generated.tsx',
-            type: 'file',
-            content: data.code,
-            language: 'typescript'
-          };
-          setFileTree(prev => [...prev, newFile]);
-          selectFile(newFile);
-          setTerminalOutput(prev => [...prev, `> New file created: ${newFile.name}`]);
-        }
-        toast.success('Code generated successfully!');
-      }
-    } catch (error) {
-      console.error('AI generation error:', error);
-      setTerminalOutput(prev => [...prev, `> Error: ${error}`]);
-      toast.error('Failed to generate code');
-    } finally {
-      setIsGenerating(false);
-      setAiInstruction('');
-    }
-  };
-
-  // Render file tree
-  const renderTree = (nodes: FileNode[], depth = 0) => {
-    return nodes.map(node => (
-      <div key={node.id}>
-        <div
-          className={cn(
-            "flex items-center gap-1 py-1 px-2 cursor-pointer rounded-md transition-colors",
-            selectedFile?.id === node.id ? "bg-primary/20 text-primary" : "hover:bg-muted/50"
-          )}
-          style={{ paddingLeft: `${depth * 12 + 8}px` }}
-          onClick={() => selectFile(node)}
-        >
-          {node.type === 'folder' ? (
-            <>
-              {node.isOpen ? (
-                <ChevronDown className="w-4 h-4 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="w-4 h-4 text-muted-foreground" />
-              )}
-              {node.isOpen ? (
-                <FolderOpen className="w-4 h-4 text-amber-400" />
-              ) : (
-                <Folder className="w-4 h-4 text-amber-400" />
-              )}
-            </>
-          ) : (
-            <>
-              <span className="w-4" />
-              {getFileIcon(node.name)}
-            </>
-          )}
-          <span className="text-sm flex-1 truncate">{node.name}</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="w-5 h-5 opacity-0 group-hover:opacity-100"
-            onClick={(e) => { e.stopPropagation(); deleteItem(node.id); }}
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
-        {node.type === 'folder' && node.isOpen && node.children && (
-          renderTree(node.children, depth + 1)
-        )}
-      </div>
-    ));
-  };
+  }, [isResizingBottom]);
 
   const handleEditorMount = (editor: any, monaco: Monaco) => {
     editorRef.current = editor;
     editor.updateOptions({
-      theme: 'vs-dark',
-      fontSize: 14,
-      minimap: { enabled: true },
-      wordWrap: 'on',
-      lineNumbers: 'on',
-      padding: { top: 16 },
-      smoothScrolling: true,
-      cursorBlinking: 'smooth',
-      cursorSmoothCaretAnimation: 'on',
+      fontSize: 14, minimap: { enabled: true }, wordWrap: 'on',
+      lineNumbers: 'on', padding: { top: 16 }, smoothScrolling: true,
+      cursorBlinking: 'smooth', cursorSmoothCaretAnimation: 'on',
     });
   };
 
+  const effectiveBottomH = bottomMaximized ? window.innerHeight * 0.6 : bottomDrawerOpen ? bottomDrawerHeight : 0;
+
+  const bottomTabs: { id: BottomTab; label: string; icon: React.ComponentType<any>; count?: number }[] = [
+    { id: 'terminal', label: 'Terminal', icon: Terminal },
+    { id: 'console', label: 'Console', icon: Monitor, count: consoleOutput.length },
+    { id: 'debug', label: 'Debug', icon: Bug },
+    { id: 'problems', label: 'Problems', icon: Zap, count: problems.length },
+    { id: 'git-map', label: 'Git Map', icon: GitBranch },
+  ];
+
   return (
-    <div className="h-full flex flex-col bg-background/95 backdrop-blur">
-      {/* Header Toolbar */}
-      <div className="flex items-center justify-between p-3 border-b border-border/30">
-        <div className="flex items-center gap-3">
-          <Code2 className="w-5 h-5 text-cyan-400" />
-          <span className="font-semibold">Code Builder IDE</span>
-          <Badge variant="outline" className="text-xs">AI Assisted</Badge>
-        </div>
-        
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => setShowNewItem(true)}>
-            <Plus className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8">
-            <Save className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8">
-            <Download className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8">
-            <Play className="w-4 h-4" />
-          </Button>
+    <div className="h-full flex flex-col bg-background/95 backdrop-blur relative">
+      {/* Editor Area */}
+      <div className="flex-1 flex flex-col overflow-hidden" style={{ marginBottom: bottomDrawerOpen ? effectiveBottomH + 32 : 32 }}>
+        {/* File Tabs */}
+        {openFiles.length > 0 && (
+          <div className="flex items-center border-b border-border/30 bg-muted/10 overflow-x-auto shrink-0">
+            {openFiles.map(file => (
+              <div
+                key={file.id}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-2 border-r border-border/30 cursor-pointer transition-colors",
+                  selectedFile?.id === file.id ? "bg-background border-b-2 border-b-primary" : "hover:bg-muted/30"
+                )}
+                onClick={() => setSelectedFile(file)}
+              >
+                {getFileIcon(file.name)}
+                <span className="text-xs whitespace-nowrap">{file.name}</span>
+                <Button variant="ghost" size="icon" className="w-4 h-4 opacity-60 hover:opacity-100" onClick={(e) => closeFile(file.id, e)}>
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Monaco Editor */}
+        <div className="flex-1">
+          {selectedFile ? (
+            <Editor
+              height="100%"
+              language={selectedFile.language || 'typescript'}
+              value={selectedFile.content || ''}
+              onChange={(value) => updateFileContent(selectedFile.id, value || '')}
+              onMount={handleEditorMount}
+              theme="vs-dark"
+              options={{ fontSize: 14, minimap: { enabled: true }, wordWrap: 'on', lineNumbers: 'on', padding: { top: 16 }, smoothScrolling: true }}
+            />
+          ) : (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Code2 className="w-16 h-16 mx-auto mb-4 opacity-30" />
+                <p className="text-lg font-medium">Select a file to start editing</p>
+                <p className="text-sm mt-1 text-muted-foreground/60">Open files from the left drawer explorer</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - File Tree & AI */}
-        <div className="w-64 border-r border-border/30 flex flex-col">
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="flex flex-col h-full">
-            <TabsList className="mx-2 mt-2 justify-start w-auto bg-muted/30 flex-shrink-0">
-              <TabsTrigger value="files" className="text-xs"><FolderTree className="w-3 h-3" /></TabsTrigger>
-              <TabsTrigger value="ai" className="text-xs"><Brain className="w-3 h-3" /></TabsTrigger>
-              <TabsTrigger value="sam" className="text-xs"><Map className="w-3 h-3" /></TabsTrigger>
-              <TabsTrigger value="terminal" className="text-xs"><Terminal className="w-3 h-3" /></TabsTrigger>
-            </TabsList>
+      {/* Bottom Bar — always visible */}
+      <div className="fixed bottom-0 left-12 right-12 z-30" style={{ left: 'calc(48px)', right: 'calc(48px)' }}>
+        {/* Bottom Drawer Content */}
+        {bottomDrawerOpen && (
+          <div
+            className="bg-background/98 backdrop-blur-xl border-t border-x border-border/40 rounded-t-lg overflow-hidden"
+            style={{ height: effectiveBottomH }}
+          >
+            {/* Resize handle */}
+            <div
+              className="h-1 cursor-row-resize hover:bg-primary/40 transition-colors"
+              onMouseDown={() => setIsResizingBottom(true)}
+            />
 
-            <TabsContent value="files" className="flex-1 m-0 overflow-hidden">
-              <div className="p-2 border-b border-border/30">
-                <Input 
-                  placeholder="Search files..." 
-                  className="h-7 text-xs bg-muted/30 border-none"
-                />
-              </div>
-              <ScrollArea className="flex-1">
-                <div className="p-2">
-                  {renderTree(fileTree)}
+            {/* Tab content */}
+            <div className="h-full overflow-hidden">
+              {activeBottomTab === 'terminal' && (
+                <div className="h-full flex flex-col">
+                  <ScrollArea className="flex-1 px-3 py-1">
+                    <div className="font-mono text-xs space-y-0.5">
+                      {terminalOutput.map((line, i) => (
+                        <div key={i} className={cn(
+                          line.startsWith('$') ? 'text-primary' :
+                          line.startsWith('✓') ? 'text-emerald-400' :
+                          line.startsWith('⚡') ? 'text-amber-400' :
+                          line.startsWith('▶') ? 'text-cyan-400' :
+                          'text-muted-foreground'
+                        )}>{line}</div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  <div className="flex items-center gap-2 px-3 py-1 border-t border-border/20">
+                    <span className="text-primary text-xs font-mono">$</span>
+                    <Input
+                      value={terminalInput}
+                      onChange={e => setTerminalInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter' && terminalInput.trim()) { executeCommand(terminalInput.trim()); setTerminalInput(''); } }}
+                      placeholder="Type a command..."
+                      className="h-6 text-xs font-mono bg-transparent border-none focus-visible:ring-0 px-0"
+                    />
+                  </div>
                 </div>
-              </ScrollArea>
-            </TabsContent>
+              )}
 
-            <TabsContent value="ai" className="flex-1 flex flex-col m-0 overflow-hidden">
-              <div className="p-2 space-y-2 flex-shrink-0">
-                <Textarea
-                  placeholder="Describe what code you want to generate..."
-                  value={aiInstruction}
-                  onChange={(e) => setAiInstruction(e.target.value)}
-                  className="text-xs h-24 bg-muted/30 border-border/30"
-                />
-                <Button 
-                  size="sm" 
-                  className="w-full h-8 text-xs gap-1"
-                  onClick={generateCode}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                      Generating...
-                    </>
+              {activeBottomTab === 'console' && (
+                <ScrollArea className="h-full px-3 py-2">
+                  <div className="font-mono text-xs space-y-1">
+                    {consoleOutput.map((line, i) => (
+                      <div key={i} className={cn(
+                        line.includes('[error]') ? 'text-destructive' :
+                        line.includes('[warn]') ? 'text-amber-400' :
+                        'text-muted-foreground'
+                      )}>{line}</div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+
+              {activeBottomTab === 'debug' && (
+                <div className="h-full p-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Button variant="outline" size="sm" className="h-6 text-xs gap-1"><Play className="w-3 h-3" /> Start</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-xs gap-1">Step Over</Button>
+                    <Button variant="outline" size="sm" className="h-6 text-xs gap-1">Step Into</Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground font-mono">
+                    {debugOutput.map((line, i) => <div key={i}>{line}</div>)}
+                  </div>
+                </div>
+              )}
+
+              {activeBottomTab === 'problems' && (
+                <ScrollArea className="h-full px-3 py-2">
+                  {problems.length === 0 ? (
+                    <div className="text-xs text-muted-foreground flex items-center gap-2 p-2">
+                      <Check className="w-4 h-4 text-emerald-400" /> No problems detected
+                    </div>
                   ) : (
-                    <>
-                      <Sparkles className="w-3 h-3" />
-                      Generate Code
-                    </>
+                    <div className="font-mono text-xs space-y-1">
+                      {problems.map((p, i) => <div key={i} className="text-amber-400">{p}</div>)}
+                    </div>
                   )}
-                </Button>
-              </div>
-              <div className="flex-1 p-2">
-                <Card className="h-full p-3 bg-muted/20">
-                  <p className="text-xs text-muted-foreground">
-                    AI suggestions and code insights will appear here as you work.
-                  </p>
-                </Card>
-              </div>
-            </TabsContent>
+                </ScrollArea>
+              )}
 
-            <TabsContent value="sam" className="flex-1 m-0 overflow-hidden">
-              <SAMAnalysisPanel
-                content={selectedFile?.content || ''}
-                contentType="code"
-                fileName={selectedFile?.name || 'untitled'}
-                language={selectedFile?.language || 'typescript'}
-                onApplySAM={(samContent) => {
-                  // Create a new SAM documentation file
-                  const samFile: FileNode = {
-                    id: crypto.randomUUID(),
-                    name: `${selectedFile?.name?.replace(/\.[^/.]+$/, '') || 'untitled'}_SAM.md`,
-                    type: 'file',
-                    content: samContent,
-                    language: 'markdown',
-                  };
-                  setFileTree(prev => [...prev, samFile]);
-                  selectFile(samFile);
-                  setTerminalOutput(prev => [...prev, `> SAM documentation generated: ${samFile.name}`]);
-                  toast.success('SAM documentation created!');
-                }}
-              />
-            </TabsContent>
-
-            <TabsContent value="terminal" className="flex-1 m-0 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="p-2 font-mono text-xs space-y-1">
-                  {terminalOutput.map((line, i) => (
-                    <div key={i} className="text-muted-foreground">{line}</div>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        {/* Editor Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* File Tabs */}
-          {openFiles.length > 0 && (
-            <div className="flex items-center border-b border-border/30 bg-muted/10 overflow-x-auto">
-              {openFiles.map(file => (
-                <div
-                  key={file.id}
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 border-r border-border/30 cursor-pointer",
-                    selectedFile?.id === file.id ? "bg-background" : "hover:bg-muted/30"
-                  )}
-                  onClick={() => setSelectedFile(file)}
-                >
-                  {getFileIcon(file.name)}
-                  <span className="text-xs">{file.name}</span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-4 h-4"
-                    onClick={(e) => closeFile(file.id, e)}
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                </div>
-              ))}
+              {activeBottomTab === 'git-map' && (
+                <ScrollArea className="h-full px-3 py-2">
+                  <GitSubwayMap commits={gitCommits} />
+                </ScrollArea>
+              )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Monaco Editor */}
-          <div className="flex-1">
-            {selectedFile ? (
-              <Editor
-                height="100%"
-                language={selectedFile.language || 'typescript'}
-                value={selectedFile.content || ''}
-                onChange={(value) => updateFileContent(selectedFile.id, value || '')}
-                onMount={handleEditorMount}
-                theme="vs-dark"
-                options={{
-                  fontSize: 14,
-                  minimap: { enabled: true },
-                  wordWrap: 'on',
-                  lineNumbers: 'on',
-                  padding: { top: 16 },
-                  smoothScrolling: true,
+        {/* Bottom Tab Bar */}
+        <div className="h-8 bg-background/90 backdrop-blur-xl border-t border-border/40 flex items-center px-2 gap-0.5">
+          {bottomTabs.map(tab => {
+            const Icon = tab.icon;
+            const isActive = activeBottomTab === tab.id && bottomDrawerOpen;
+            return (
+              <Button
+                key={tab.id}
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  if (activeBottomTab === tab.id && bottomDrawerOpen) {
+                    setBottomDrawerOpen(false);
+                  } else {
+                    setActiveBottomTab(tab.id);
+                    setBottomDrawerOpen(true);
+                  }
                 }}
-              />
-            ) : (
-              <div className="h-full flex items-center justify-center text-muted-foreground">
-                <div className="text-center">
-                  <Code2 className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Select a file to start editing</p>
-                  <p className="text-xs mt-1">or use AI to generate new code</p>
-                </div>
-              </div>
-            )}
+                className={cn(
+                  'h-6 px-2 text-[10px] gap-1 rounded-sm',
+                  isActive ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Icon className="w-3 h-3" />
+                {tab.label}
+                {tab.count !== undefined && tab.count > 0 && (
+                  <Badge variant="outline" className="h-3.5 px-1 text-[8px] ml-0.5">{tab.count}</Badge>
+                )}
+              </Button>
+            );
+          })}
+
+          <div className="flex-1" />
+
+          <Button
+            variant="ghost" size="icon" className="w-5 h-5"
+            onClick={() => setBottomMaximized(!bottomMaximized)}
+          >
+            {bottomMaximized ? <Minimize2 className="w-3 h-3" /> : <Maximize2 className="w-3 h-3" />}
+          </Button>
+          <Button variant="ghost" size="icon" className="w-5 h-5" onClick={() => setBottomDrawerOpen(!bottomDrawerOpen)}>
+            {bottomDrawerOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
+          </Button>
+
+          {/* Status items */}
+          <div className="flex items-center gap-2 ml-2 text-[10px] text-muted-foreground">
+            <span className="flex items-center gap-1"><GitBranch className="w-3 h-3" /> main</span>
+            <span>UTF-8</span>
+            <span>{selectedFile?.language || 'Plain Text'}</span>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
 
-      {/* New Item Modal */}
-      {showNewItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowNewItem(false)}>
-          <Card className="p-4 w-80" onClick={(e) => e.stopPropagation()}>
-            <h3 className="font-semibold mb-3">Create New Item</h3>
-            <div className="space-y-3">
-              <div className="flex gap-2">
-                <Button
-                  variant={newItemType === 'file' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setNewItemType('file')}
-                >
-                  <File className="w-4 h-4 mr-1" />
-                  File
-                </Button>
-                <Button
-                  variant={newItemType === 'folder' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setNewItemType('folder')}
-                >
-                  <Folder className="w-4 h-4 mr-1" />
-                  Folder
-                </Button>
+// Git Subway Map Component
+function GitSubwayMap({ commits }: { commits: GitCommit[] }) {
+  const branches = [...new Set(commits.map(c => c.branch))];
+  const branchColors: Record<string, string> = {};
+  const palette = [
+    'hsl(var(--wisdom-success))',
+    'hsl(var(--primary))',
+    'hsl(var(--wisdom-neural))',
+    'hsl(var(--wisdom-warning))',
+    'hsl(var(--wisdom-memory))',
+  ];
+  branches.forEach((b, i) => { branchColors[b] = palette[i % palette.length]; });
+
+  return (
+    <div className="relative">
+      {/* Branch legend */}
+      <div className="flex items-center gap-3 mb-3 px-1">
+        {branches.map(b => (
+          <div key={b} className="flex items-center gap-1.5">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: branchColors[b] }} />
+            <span className="text-[10px] font-mono text-muted-foreground">{b}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Commit lines */}
+      <div className="space-y-0">
+        {commits.map((commit, i) => {
+          const branchIdx = branches.indexOf(commit.branch);
+          const isMerge = commit.parents.length > 1;
+
+          return (
+            <div key={commit.id} className="flex items-start gap-3 group py-1.5 hover:bg-muted/20 rounded px-1 transition-colors">
+              {/* Subway lines */}
+              <div className="relative flex items-center" style={{ width: branches.length * 24, minWidth: branches.length * 24 }}>
+                {branches.map((b, bi) => {
+                  const isActive = b === commit.branch;
+                  const xPos = bi * 24 + 8;
+                  return (
+                    <div key={bi} className="absolute" style={{ left: xPos - 1 }}>
+                      {/* Vertical line */}
+                      <div
+                        className="w-0.5 absolute -top-2"
+                        style={{
+                          backgroundColor: branchColors[b],
+                          opacity: isActive || (i > 0 && commits.slice(0, i).some(c => c.branch === b)) ? 0.4 : 0.08,
+                          height: 32,
+                        }}
+                      />
+                      {/* Node */}
+                      {isActive && (
+                        <div
+                          className={cn(
+                            "w-3 h-3 rounded-full border-2 relative z-10 transition-transform group-hover:scale-125",
+                            isMerge && 'w-3.5 h-3.5'
+                          )}
+                          style={{
+                            borderColor: branchColors[b],
+                            backgroundColor: isMerge ? branchColors[b] : 'hsl(var(--background))',
+                            marginTop: 4,
+                          }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <Input
-                placeholder={newItemType === 'file' ? 'filename.tsx' : 'folder-name'}
-                value={newItemName}
-                onChange={(e) => setNewItemName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addNewItem(selectedFolder)}
-              />
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1" onClick={() => setShowNewItem(false)}>
-                  Cancel
-                </Button>
-                <Button className="flex-1" onClick={() => addNewItem(selectedFolder)}>
-                  Create
-                </Button>
+
+              {/* Commit info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-mono text-primary/70">{commit.id}</span>
+                  <span className="text-xs truncate">{commit.message}</span>
+                </div>
+                <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                  <span>{commit.author}</span>
+                  <span>•</span>
+                  <span>{commit.timestamp}</span>
+                  {isMerge && <Badge variant="outline" className="text-[8px] h-3.5 px-1">merge</Badge>}
+                </div>
               </div>
             </div>
-          </Card>
-        </div>
-      )}
+          );
+        })}
+      </div>
     </div>
   );
 }
