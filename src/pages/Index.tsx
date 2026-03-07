@@ -4,37 +4,30 @@ import { useState, lazy, Suspense, useCallback } from "react";
 import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PageTopBar, PageId } from "@/components/layout/PageTopBar";
+import { AppLauncher } from "@/components/layout/AppLauncher";
 import { PersistentRightDrawer } from "@/components/layout/PersistentRightDrawer";
 import { PageLeftDrawer } from "@/components/layout/PageLeftDrawer";
 import { AdvancedPersistentChat } from "@/components/AIChat/AdvancedPersistentChat";
 import { DocumentBuilderPage } from '@/components/Documents/DocumentBuilderPage';
-import { RealMemoryDashboard } from "@/components/AIChat/RealMemoryDashboard";
 import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
 import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
-import { cn } from "@/lib/utils";
 
-// Lazy load heavy pages
-const OrchestrationWorkspace = lazy(() =>
-  import("@/components/Orchestration/OrchestrationWorkspace").then((m) => ({ default: m.OrchestrationWorkspace }))
-);
-const CodeBuilderIDE = lazy(() =>
-  import("@/components/CodeBuilder/CodeBuilderIDE").then((m) => ({ default: m.CodeBuilderIDE }))
-);
-const GlassMapPage = lazy(() =>
-  import("@/components/Map/GlassMapPage").then((m) => ({ default: m.GlassMapPage }))
-);
-const ImageEditor = lazy(() =>
-  import("@/components/MediaEditors/ImageEditor").then((m) => ({ default: m.ImageEditor }))
-);
-const AudioEditor = lazy(() =>
-  import("@/components/MediaEditors/AudioEditor").then((m) => ({ default: m.AudioEditor }))
-);
-const VideoEditor = lazy(() =>
-  import("@/components/MediaEditors/VideoEditor").then((m) => ({ default: m.VideoEditor }))
-);
+// Lazy load all heavy pages
+const OrchestrationWorkspace = lazy(() => import("@/components/Orchestration/OrchestrationWorkspace").then(m => ({ default: m.OrchestrationWorkspace })));
+const CodeBuilderIDE = lazy(() => import("@/components/CodeBuilder/CodeBuilderIDE").then(m => ({ default: m.CodeBuilderIDE })));
+const GlassMapPage = lazy(() => import("@/components/Map/GlassMapPage").then(m => ({ default: m.GlassMapPage })));
+const ImageEditor = lazy(() => import("@/components/MediaEditors/ImageEditor").then(m => ({ default: m.ImageEditor })));
+const AudioEditor = lazy(() => import("@/components/MediaEditors/AudioEditor").then(m => ({ default: m.AudioEditor })));
+const VideoEditor = lazy(() => import("@/components/MediaEditors/VideoEditor").then(m => ({ default: m.VideoEditor })));
+const SpreadsheetPage = lazy(() => import("@/components/Productivity/SpreadsheetPage").then(m => ({ default: m.SpreadsheetPage })));
+const CalendarPage = lazy(() => import("@/components/Productivity/CalendarPage").then(m => ({ default: m.CalendarPage })));
+const EmailPage = lazy(() => import("@/components/Productivity/EmailPage").then(m => ({ default: m.EmailPage })));
+const TasksPage = lazy(() => import("@/components/Productivity/TasksPage").then(m => ({ default: m.TasksPage })));
+
+const DEFAULT_PINNED: PageId[] = ['chat', 'orchestration', 'documents', 'spreadsheet', 'calendar', 'email', 'tasks', 'ide'];
 
 const Index = () => {
   const [activePage, setActivePage] = useState<PageId>('chat');
@@ -42,57 +35,40 @@ const Index = () => {
   const [rightDrawerOpen, setRightDrawerOpen] = useState(true);
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
+  const [showLauncher, setShowLauncher] = useState(false);
+  const [pinnedApps, setPinnedApps] = useState<PageId[]>(DEFAULT_PINNED);
 
   const {
-    isStreaming,
-    orchestrationPlan,
-    thinkingSteps,
-    agents: streamingAgents,
-    discordMessages,
-    discordThreads,
-    currentMode,
+    isStreaming, orchestrationPlan, thinkingSteps,
+    agents: streamingAgents, discordMessages, discordThreads, currentMode,
   } = useAIMOSStreaming();
 
   const handleOpenFullscreen = useCallback((type: string) => {
     if (type === 'discord') setShowFullDiscord(true);
   }, []);
 
-  // On chat page: chat is central, right drawer shows transparency only
-  // On other pages: chat moves to right drawer
-  const isChatPage = activePage === 'chat';
+  const handleTogglePin = useCallback((id: PageId) => {
+    setPinnedApps(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+  }, []);
 
-  // Side icon bars are always 48px (w-12). Drawer panels expand beside them.
   const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
   const rightWidth = rightDrawerOpen ? 48 + 380 : 48;
 
   const renderMainContent = () => {
     switch (activePage) {
-      case 'chat':
-        return <AdvancedPersistentChat onDocumentsClick={() => setActivePage('documents')} />;
-      case 'orchestration':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <OrchestrationWorkspace />
-          </Suspense>
-        );
-      case 'documents':
-        return <DocumentBuilderPage />;
-      case 'ide':
-        return (
-          <Suspense fallback={<LoadingFallback />}>
-            <CodeBuilderIDE onClose={() => setActivePage('chat')} />
-          </Suspense>
-        );
-      case 'image':
-        return <Suspense fallback={<LoadingFallback />}><ImageEditor /></Suspense>;
-      case 'audio':
-        return <Suspense fallback={<LoadingFallback />}><AudioEditor /></Suspense>;
-      case 'video':
-        return <Suspense fallback={<LoadingFallback />}><VideoEditor /></Suspense>;
-      case 'map':
-        return <Suspense fallback={<LoadingFallback />}><GlassMapPage /></Suspense>;
-      default:
-        return null;
+      case 'chat': return <AdvancedPersistentChat onDocumentsClick={() => setActivePage('documents')} />;
+      case 'orchestration': return <Suspense fallback={<LoadingFallback />}><OrchestrationWorkspace /></Suspense>;
+      case 'documents': return <DocumentBuilderPage />;
+      case 'ide': return <Suspense fallback={<LoadingFallback />}><CodeBuilderIDE onClose={() => setActivePage('chat')} /></Suspense>;
+      case 'image': return <Suspense fallback={<LoadingFallback />}><ImageEditor /></Suspense>;
+      case 'audio': return <Suspense fallback={<LoadingFallback />}><AudioEditor /></Suspense>;
+      case 'video': return <Suspense fallback={<LoadingFallback />}><VideoEditor /></Suspense>;
+      case 'map': return <Suspense fallback={<LoadingFallback />}><GlassMapPage /></Suspense>;
+      case 'spreadsheet': return <Suspense fallback={<LoadingFallback />}><SpreadsheetPage /></Suspense>;
+      case 'calendar': return <Suspense fallback={<LoadingFallback />}><CalendarPage /></Suspense>;
+      case 'email': return <Suspense fallback={<LoadingFallback />}><EmailPage /></Suspense>;
+      case 'tasks': return <Suspense fallback={<LoadingFallback />}><TasksPage /></Suspense>;
+      default: return <PlaceholderPage name={activePage} />;
     }
   };
 
@@ -101,42 +77,41 @@ const Index = () => {
       <TooltipProvider>
         <div className="min-h-screen relative overflow-hidden">
           <Helmet>
-            <title>LUCID - Advanced AGI with Persistent Memory</title>
-            <meta
-              name="description"
-              content="Advanced AGI system with persistent memory, SDF-CVF reasoning traces, and beautiful neural interface."
-            />
+            <title>LUCID - Browser OS</title>
+            <meta name="description" content="LUCID Browser OS — a full operating system in your browser with AI-powered productivity, creative, and development tools." />
           </Helmet>
 
-          {/* Animated Background */}
           <StarfieldNebulaBackground isProcessing={isStreaming} />
           <NeuralParticles isProcessing={isStreaming} particleCount={60} connectionDistance={100} />
 
-          {/* Background Settings */}
-          <BackgroundSettingsPanel
-            isOpen={showBackgroundSettings}
-            onClose={() => setShowBackgroundSettings(false)}
-          />
+          <BackgroundSettingsPanel isOpen={showBackgroundSettings} onClose={() => setShowBackgroundSettings(false)} />
 
-          {/* Top Bar with Page Tabs */}
           <PageTopBar
             activePage={activePage}
             onPageChange={setActivePage}
             systemStatus={isStreaming ? 'processing' : 'online'}
             activeAgents={streamingAgents?.length || 0}
+            pinnedApps={pinnedApps}
+            onOpenLauncher={() => setShowLauncher(true)}
           />
 
-          {/* Left Drawer — page-specific */}
+          <AppLauncher
+            isOpen={showLauncher}
+            onClose={() => setShowLauncher(false)}
+            onAppSelect={setActivePage}
+            pinnedApps={pinnedApps}
+            onTogglePin={handleTogglePin}
+          />
+
           <PageLeftDrawer
             activePage={activePage}
             isOpen={leftDrawerOpen}
-            onToggle={() => setLeftDrawerOpen((v) => !v)}
+            onToggle={() => setLeftDrawerOpen(v => !v)}
           />
 
-          {/* Right Drawer — persistent AI + transparency */}
           <PersistentRightDrawer
             isOpen={rightDrawerOpen}
-            onToggle={() => setRightDrawerOpen((v) => !v)}
+            onToggle={() => setRightDrawerOpen(v => !v)}
             isStreaming={isStreaming}
             orchestrationPlan={orchestrationPlan}
             thinkingSteps={thinkingSteps}
@@ -148,18 +123,13 @@ const Index = () => {
             onOpenBackgroundSettings={() => setShowBackgroundSettings(true)}
           />
 
-          {/* Main Content */}
           <main
             className="transition-all duration-300 pt-12 relative z-10 h-[calc(100vh-3rem)]"
-            style={{
-              marginLeft: leftWidth,
-              marginRight: rightWidth,
-            }}
+            style={{ marginLeft: leftWidth, marginRight: rightWidth }}
           >
             {renderMainContent()}
           </main>
 
-          {/* Full Discord View Modal */}
           {showFullDiscord && (
             <FullDiscordView
               messages={discordMessages || []}
@@ -181,6 +151,17 @@ function LoadingFallback() {
       <div className="text-center">
         <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+function PlaceholderPage({ name }: { name: string }) {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-center">
+        <p className="text-lg font-semibold capitalize mb-1">{name}</p>
+        <p className="text-sm text-muted-foreground">Coming soon — this workspace is under construction.</p>
       </div>
     </div>
   );
