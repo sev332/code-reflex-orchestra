@@ -60,7 +60,7 @@ const Index = () => {
   }, []);
 
   const handleTogglePin = useCallback((id: PageId) => {
-    setPinnedApps(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+    // no-op, kept for AppLauncher compatibility
   }, []);
 
   const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
