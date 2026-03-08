@@ -28,7 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import {
   Play, Pause, RotateCcw, ZoomIn, ZoomOut, Maximize,
-  Brain, Search, Compress, GitBranch, ShieldCheck, FileText,
+  Brain, Search, Minimize2, GitBranch, ShieldCheck, FileText,
   Target, Sparkles, AlertTriangle, Cpu, Eye, Wand2,
   Plus, Trash2, Copy,
 } from 'lucide-react';
