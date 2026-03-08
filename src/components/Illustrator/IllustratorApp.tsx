@@ -806,6 +806,52 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
         )}
       </div>
 
+      {/* Artboards (Sprint 6) */}
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Artboards</div>
+        <div className="flex gap-1 mb-1">
+          <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1" onClick={() => engine.addArtboard()}>+ Artboard</Button>
+        </div>
+        <div className="grid grid-cols-2 gap-1 mb-1">
+          {engine.artboardPresets.slice(0, 8).map(preset => (
+            <Button key={preset.name} variant="ghost" size="sm" className="h-6 text-[8px] truncate"
+              onClick={() => engine.addArtboard(preset)}>
+              {preset.name}
+            </Button>
+          ))}
+        </div>
+        {state.scene.artboards.length > 0 && (
+          <div className="space-y-0.5">
+            {state.scene.artboards.map(ab => (
+              <div key={ab.id}
+                className={cn('flex items-center justify-between text-[9px] px-1 py-0.5 rounded cursor-pointer',
+                  state.scene.activeArtboardId === ab.id ? 'bg-primary/15 text-primary' : 'bg-[hsl(220,15%,8%)] text-muted-foreground hover:text-foreground'
+                )}
+                onClick={() => engine.selectArtboard(ab.id)}>
+                <span className="truncate flex-1">{ab.name}</span>
+                <span className="text-[7px] text-muted-foreground/60">{ab.width}×{ab.height}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {state.scene.artboards.length > 1 && (
+          <div className="flex gap-1 mt-1">
+            <Button variant="ghost" size="sm" className="h-5 text-[8px] flex-1" onClick={() => engine.rearrangeAllArtboards('horizontal')}>H Layout</Button>
+            <Button variant="ghost" size="sm" className="h-5 text-[8px] flex-1" onClick={() => engine.rearrangeAllArtboards('grid')}>Grid</Button>
+          </div>
+        )}
+      </div>
+
+      {/* Document Info (Sprint 6) */}
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Document</div>
+        <Input value={engine.documentName} onChange={e => engine.setDocumentName(e.target.value)}
+          className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)] mb-1" placeholder="Document name" />
+        {engine.lastSaved && (
+          <p className="text-[8px] text-muted-foreground/60">Saved: {new Date(engine.lastSaved).toLocaleTimeString()}</p>
+        )}
+      </div>
+
       {/* Node editing info */}
       {engine.nodeOverlay.enabled && (
         <div>
