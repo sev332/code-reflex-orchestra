@@ -1012,7 +1012,7 @@ export function Studio3DPage() {
     if (newObjs.length > 0) setSelectedId(newObjs[0].id);
   }, [pushUndo]);
 
-
+  return (
     <div className="h-full flex flex-col bg-background/30">
       {/* ─── Top Toolbar ─── */}
       <div className="h-10 bg-background/80 backdrop-blur-xl border-b border-border/30 flex items-center px-2 gap-1 shrink-0">
