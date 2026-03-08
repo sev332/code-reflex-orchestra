@@ -1270,6 +1270,9 @@ export function Studio3DPage() {
               { id: 'render' as const, icon: Sparkles, label: 'Render' },
               { id: 'particles' as const, icon: Wand2, label: 'Particles' },
               { id: 'procedural' as const, icon: Hexagon, label: 'Procedural' },
+              { id: 'physics' as const, icon: Zap, label: 'Physics' },
+              { id: 'viewport' as const, icon: Camera, label: 'Viewport' },
+              { id: 'scene' as const, icon: Globe, label: 'Scene' },
             ] as const).map(({ id, icon: Icon, label }) => (
               <Tooltip key={id} delayDuration={200}>
                 <TooltipTrigger asChild>
