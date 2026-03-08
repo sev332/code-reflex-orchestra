@@ -23,7 +23,7 @@ export type PageId =
   | 'chat' | 'orchestration' | 'documents' | 'ide' | 'image' | 'audio' | 'video' | 'map'
   | 'spreadsheet' | 'calendar' | 'email' | 'tasks'
   | 'presentations' | 'studio3d' | 'terminal' | 'apistudio' | 'database' | 'dashboard'
-  | 'browser' | 'notes' | 'files' | 'comms';
+  | 'browser' | 'notes' | 'files' | 'comms' | 'illustrator';
 
 const iconMap: Record<PageId, React.ComponentType<any>> = {
   chat: MessageSquare, orchestration: Zap, documents: FileText, ide: Code2,
