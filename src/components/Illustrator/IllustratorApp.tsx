@@ -1,6 +1,7 @@
 // Illustrator App — Dark Pro Studio Drawing Engine
 // Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
 // Sprint 2: Gradient tool, Proper booleans, Scissors/Knife, Groups, Isolation, Alignment
+// Sprint 3: Transform tools, Effects, Blend, Clipping masks, Warp tools
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
