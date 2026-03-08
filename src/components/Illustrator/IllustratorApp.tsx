@@ -220,9 +220,16 @@ export function IllustratorApp() {
       return;
     }
 
-    // Pen tool — click to add anchor
+    // Pen tool — pointerDown starts anchor + handle drag
     if (tool === 'pen') {
-      engine.addPenAnchor({ x: world.x, y: world.y });
+      engine.beginPenHandleDrag({ x: world.x, y: world.y });
+      setIsDrawing(true);
+      return;
+    }
+
+    // Text tool — click to create text
+    if (tool === 'text') {
+      engine.addTextEntity(world.x, world.y);
       return;
     }
 
