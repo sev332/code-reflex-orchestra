@@ -277,46 +277,32 @@ export function TasksPage() {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-hidden flex">
-        <div className="flex-1 overflow-hidden">
-          {viewMode === 'kanban' && (
-            <KanbanView
-              tasks={filtered}
-              counts={counts}
-              onMove={moveTask}
-              onSelect={setSelectedTask}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onDragEnd={handleDragEnd}
-              dragOverColumn={dragOverColumn}
-              draggedTaskId={draggedTaskId}
-              inlineCreateColumn={inlineCreateColumn}
-              inlineCreateTitle={inlineCreateTitle}
-              setInlineCreateColumn={setInlineCreateColumn}
-              setInlineCreateTitle={setInlineCreateTitle}
-              onInlineCreate={handleInlineCreate}
-              inlineInputRef={inlineInputRef}
-            />
-          )}
-          {viewMode === 'list' && (
-            <ListView tasks={filtered} onSelect={setSelectedTask} onMove={moveTask} />
-          )}
-          {viewMode === 'timeline' && (
-            <TimelineView tasks={filtered} onSelect={setSelectedTask} />
-          )}
-        </div>
-
-        {/* Task detail panel */}
-        {selectedTask && (
-          <TaskDetailPanel
-            task={selectedTask}
-            onClose={() => setSelectedTask(null)}
+      <div className="flex-1 overflow-hidden">
+        {viewMode === 'kanban' && (
+          <KanbanView
+            tasks={filtered}
+            counts={counts}
             onMove={moveTask}
-            onToggleSubtask={toggleSubtask}
-            onAddSubtask={addSubtask}
-            onDelete={deleteTask}
+            onSelect={setSelectedTask}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
+            dragOverColumn={dragOverColumn}
+            draggedTaskId={draggedTaskId}
+            inlineCreateColumn={inlineCreateColumn}
+            inlineCreateTitle={inlineCreateTitle}
+            setInlineCreateColumn={setInlineCreateColumn}
+            setInlineCreateTitle={setInlineCreateTitle}
+            onInlineCreate={handleInlineCreate}
+            inlineInputRef={inlineInputRef}
           />
+        )}
+        {viewMode === 'list' && (
+          <ListView tasks={filtered} onSelect={setSelectedTask} onMove={moveTask} />
+        )}
+        {viewMode === 'timeline' && (
+          <TimelineView tasks={filtered} onSelect={setSelectedTask} />
         )}
       </div>
     </div>
