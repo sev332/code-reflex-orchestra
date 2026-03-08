@@ -284,7 +284,7 @@ export function fitCubicBeziers(
 function _fitCubicSegment(
   points: Vec2[], first: number, last: number,
   tHat1: Vec2, tHat2: Vec2, error: number,
-  result: Vec2[],
+  result: Vec2[][],
 ) {
   if (last - first === 1) {
     const d = distance(points[first], points[last]) / 3;
