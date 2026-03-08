@@ -66,10 +66,6 @@ export function BrowserPage() {
   ]);
   const [activeTabId, setActiveTabId] = useState('tab-1');
   const [urlInput, setUrlInput] = useState('');
-  const [sidePanel, setSidePanel] = useState<'bookmarks' | 'reading' | 'ai' | null>(null);
-  const [bookmarks] = useState(defaultBookmarks);
-  const [readingList] = useState(defaultReadingList);
-  const [aiSummary, setAiSummary] = useState('');
 
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
 
