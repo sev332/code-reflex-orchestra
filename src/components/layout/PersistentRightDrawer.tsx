@@ -20,6 +20,7 @@ import {
 import { cn } from '@/lib/utils';
 import { AdvancedPersistentChat } from '@/components/AIChat/AdvancedPersistentChat';
 import { EnhancedRightDrawerPanel } from './EnhancedRightDrawerPanel';
+import { VaultPanel } from './VaultPanel';
 
 export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network';
 
