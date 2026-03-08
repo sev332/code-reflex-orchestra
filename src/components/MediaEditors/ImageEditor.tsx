@@ -31,6 +31,7 @@ interface AdjustmentState {
 
 export function ImageEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>('select');
@@ -43,6 +44,48 @@ export function ImageEditor() {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [activePanel, setActivePanel] = useState<'tools' | 'adjust' | 'ai' | 'layers'>('tools');
+  const animFrameRef = useRef<number>(0);
+
+  // Boundary Instrument lasso hook
+  const lasso = useLassoTool();
+
+  // Load field cache when image changes
+  const loadLassoField = useCallback(() => {
+    if (canvasRef.current && activeTool === 'lasso') {
+      lasso.loadImage(canvasRef.current);
+      toast.success('Field cache built — lasso ready');
+    }
+  }, [activeTool, lasso]);
+
+  // When switching to lasso tool, build field cache
+  useEffect(() => {
+    if (activeTool === 'lasso' && currentImage && canvasRef.current) {
+      lasso.loadImage(canvasRef.current);
+    }
+  }, [activeTool, currentImage]);
+
+  // Render lasso overlay loop
+  useEffect(() => {
+    if (activeTool !== 'lasso') return;
+    const overlay = overlayCanvasRef.current;
+    const mainCanvas = canvasRef.current;
+    if (!overlay || !mainCanvas) return;
+
+    overlay.width = mainCanvas.width;
+    overlay.height = mainCanvas.height;
+
+    const renderLoop = () => {
+      const ctx = overlay.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        lasso.renderOverlay(ctx);
+      }
+      animFrameRef.current = requestAnimationFrame(renderLoop);
+    };
+    animFrameRef.current = requestAnimationFrame(renderLoop);
+
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [activeTool, lasso]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
