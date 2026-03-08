@@ -1,20 +1,21 @@
-// AI-Powered Audio Editor with multi-track waveform visualization
-import React, { useState, useRef } from 'react';
+// DAW-Grade Audio Editor — multi-track, canvas waveforms, mixer, FX chain, spectrogram
+import React, { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
 import {
-  Music, Upload, Download, Play, Pause, SkipBack, SkipForward,
-  Volume2, VolumeX, Scissors, Copy, Trash2, Plus, Minus,
-  Wand2, Sparkles, Mic, Radio, Headphones, Loader2,
-  ZoomIn, ZoomOut, Repeat, Shuffle, MoreVertical, Waves
+  Wand2, Sparkles, Loader2, Plus, Trash2,
+  Headphones, SlidersHorizontal, Activity, BarChart3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { AudioWaveformCanvas } from './audio/AudioWaveformCanvas';
+import { AudioMixerPanel } from './audio/AudioMixerPanel';
+import { AudioEffectsChain } from './audio/AudioEffectsChain';
+import { AudioSpectrogram } from './audio/AudioSpectrogram';
+import { AudioTransport } from './audio/AudioTransport';
+import { AudioTimelineRuler } from './audio/AudioTimelineRuler';
 
 interface AudioTrack {
   id: string;
@@ -27,42 +28,82 @@ interface AudioTrack {
   waveform: number[];
 }
 
+type RightPanel = 'mixer' | 'effects' | 'spectrogram' | null;
+
 export function AudioEditor() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(180); // 3 min demo
+  const [duration] = useState(180);
   const [zoom, setZoom] = useState(1);
+  const [bpm, setBpm] = useState(120);
+  const [loop, setLoop] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [masterVolume, setMasterVolume] = useState(80);
+  const [rightPanel, setRightPanel] = useState<RightPanel>('mixer');
+  const [selectedTrackId, setSelectedTrackId] = useState<string>('1');
+  const [regionStart, setRegionStart] = useState<number | null>(null);
+  const [regionEnd, setRegionEnd] = useState<number | null>(null);
 
   const [tracks, setTracks] = useState<AudioTrack[]>([
-    { id: '1', name: 'Vocals', color: 'hsl(var(--primary))', muted: false, solo: false, volume: 75, pan: 0,
-      waveform: Array.from({ length: 200 }, () => Math.random() * 0.8 + 0.1) },
-    { id: '2', name: 'Instruments', color: 'hsl(var(--wisdom-neural))', muted: false, solo: false, volume: 60, pan: -20,
-      waveform: Array.from({ length: 200 }, () => Math.random() * 0.6 + 0.2) },
-    { id: '3', name: 'Bass', color: 'hsl(var(--wisdom-data-flow))', muted: false, solo: false, volume: 70, pan: 0,
-      waveform: Array.from({ length: 200 }, () => Math.random() * 0.4 + 0.1) },
-    { id: '4', name: 'Effects', color: 'hsl(var(--wisdom-warning))', muted: true, solo: false, volume: 50, pan: 30,
-      waveform: Array.from({ length: 200 }, () => Math.random() * 0.3) },
+    { id: '1', name: 'Vocals', color: 'hsl(193, 100%, 50%)', muted: false, solo: false, volume: 75, pan: 0,
+      waveform: Array.from({ length: 400 }, (_, i) => {
+        const t = i / 400;
+        return (Math.sin(t * 30) * 0.3 + Math.sin(t * 80) * 0.2 + Math.random() * 0.3) * 0.8 + 0.1;
+      })},
+    { id: '2', name: 'Guitar', color: 'hsl(270, 100%, 70%)', muted: false, solo: false, volume: 60, pan: -20,
+      waveform: Array.from({ length: 400 }, (_, i) => {
+        const t = i / 400;
+        return (Math.sin(t * 50) * 0.25 + Math.sin(t * 120) * 0.15 + Math.random() * 0.25) * 0.7 + 0.15;
+      })},
+    { id: '3', name: 'Bass', color: 'hsl(150, 100%, 60%)', muted: false, solo: false, volume: 70, pan: 0,
+      waveform: Array.from({ length: 400 }, (_, i) => {
+        const t = i / 400;
+        return (Math.sin(t * 15) * 0.5 + Math.random() * 0.15) * 0.5 + 0.1;
+      })},
+    { id: '4', name: 'Drums', color: 'hsl(30, 100%, 65%)', muted: false, solo: false, volume: 80, pan: 0,
+      waveform: Array.from({ length: 400 }, (_, i) => {
+        // Transient-heavy
+        const beat = Math.sin(i * 0.08 * Math.PI);
+        return Math.abs(beat) * 0.6 + Math.random() * 0.2 + 0.05;
+      })},
+    { id: '5', name: 'Synth Pad', color: 'hsl(300, 100%, 75%)', muted: true, solo: false, volume: 50, pan: 30,
+      waveform: Array.from({ length: 400 }, (_, i) => {
+        const t = i / 400;
+        return (Math.sin(t * 8) * 0.2 + 0.3) * 0.4 + 0.05;
+      })},
   ]);
 
-  const formatTime = (s: number) => {
-    const m = Math.floor(s / 60);
-    const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
-  };
+  const TRACK_LABEL_WIDTH = 130;
 
   const addTrack = () => {
-    const colors = ['hsl(var(--wisdom-memory))', 'hsl(var(--accent))', 'hsl(var(--destructive))'];
-    setTracks(prev => [...prev, {
+    const colors = ['hsl(45, 100%, 65%)', 'hsl(180, 100%, 65%)', 'hsl(0, 75%, 55%)', 'hsl(210, 100%, 65%)'];
+    const newTrack: AudioTrack = {
       id: crypto.randomUUID(),
-      name: `Track ${prev.length + 1}`,
-      color: colors[prev.length % colors.length],
+      name: `Track ${tracks.length + 1}`,
+      color: colors[tracks.length % colors.length],
       muted: false, solo: false, volume: 75, pan: 0,
-      waveform: Array.from({ length: 200 }, () => Math.random() * 0.5 + 0.1)
-    }]);
+      waveform: Array.from({ length: 400 }, () => Math.random() * 0.5 + 0.1),
+    };
+    setTracks(prev => [...prev, newTrack]);
+    setSelectedTrackId(newTrack.id);
+  };
+
+  const removeTrack = (id: string) => {
+    if (tracks.length <= 1) return;
+    setTracks(prev => prev.filter(t => t.id !== id));
+    if (selectedTrackId === id) setSelectedTrackId(tracks[0].id);
+  };
+
+  const updateTrack = useCallback((id: string, updates: Partial<AudioTrack>) => {
+    setTracks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+  }, []);
+
+  const handleRegionChange = (start: number, end: number) => {
+    setRegionStart(start);
+    setRegionEnd(end);
   };
 
   const processWithAI = async () => {
@@ -70,7 +111,7 @@ export function AudioEditor() {
     setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('gemini-agents', {
-        body: { action: 'audio_edit', prompt: aiPrompt }
+        body: { action: 'audio_edit', prompt: aiPrompt, tracks: tracks.map(t => t.name) }
       });
       if (error) throw error;
       toast.success('AI audio processing applied');
@@ -82,151 +123,202 @@ export function AudioEditor() {
     }
   };
 
+  const selectedTrack = tracks.find(t => t.id === selectedTrackId);
+
+  const togglePanel = (panel: RightPanel) => {
+    setRightPanel(prev => prev === panel ? null : panel);
+  };
+
   return (
-    <div className="h-full flex flex-col">
-      {/* Transport Bar */}
-      <div className="flex items-center gap-3 px-4 py-2 border-b border-border/30 bg-background/50 backdrop-blur-sm shrink-0">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="w-8 h-8"><SkipBack className="w-4 h-4" /></Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn("w-10 h-10 rounded-full", isPlaying && "bg-primary/20 text-primary")}
-            onClick={() => setIsPlaying(!isPlaying)}
-          >
-            {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5 ml-0.5" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8"><SkipForward className="w-4 h-4" /></Button>
-        </div>
+    <div className="h-full flex flex-col bg-background/30">
+      {/* Transport */}
+      <AudioTransport
+        isPlaying={isPlaying}
+        isRecording={isRecording}
+        currentTime={currentTime}
+        duration={duration}
+        masterVolume={masterVolume}
+        bpm={bpm}
+        zoom={zoom}
+        loop={loop}
+        onPlayPause={() => setIsPlaying(v => !v)}
+        onStop={() => { setIsPlaying(false); setCurrentTime(0); }}
+        onRecord={() => setIsRecording(v => !v)}
+        onSeek={setCurrentTime}
+        onMasterVolumeChange={setMasterVolume}
+        onBpmChange={setBpm}
+        onZoomChange={setZoom}
+        onLoopToggle={() => setLoop(v => !v)}
+        onImport={() => fileInputRef.current?.click()}
+        onExport={() => toast.info('Export coming soon')}
+      />
+      <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" />
 
-        <div className="flex items-center gap-2 text-xs font-mono text-muted-foreground">
-          <span className="text-primary">{formatTime(currentTime)}</span>
-          <span>/</span>
-          <span>{formatTime(duration)}</span>
-        </div>
+      {/* Main area */}
+      <div className="flex-1 flex overflow-hidden min-h-0">
+        {/* Tracks + Timeline */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Timeline ruler */}
+          <AudioTimelineRuler
+            duration={duration}
+            currentTime={currentTime}
+            zoom={zoom}
+            bpm={bpm}
+            trackLabelWidth={TRACK_LABEL_WIDTH}
+            onSeek={setCurrentTime}
+          />
 
-        <div className="flex-1" />
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="w-7 h-7"><Repeat className="w-3.5 h-3.5" /></Button>
-          <div className="flex items-center gap-1">
-            <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />
-            <Slider value={[masterVolume]} min={0} max={100} className="w-20" onValueChange={([v]) => setMasterVolume(v)} />
-          </div>
-          <div className="w-px h-5 bg-border/30" />
-          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => setZoom(z => Math.min(z + 0.5, 4))}><ZoomIn className="w-3.5 h-3.5" /></Button>
-          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => setZoom(z => Math.max(z - 0.5, 0.5))}><ZoomOut className="w-3.5 h-3.5" /></Button>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" />
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="w-3 h-3" /> Import
-          </Button>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
-            <Download className="w-3 h-3" /> Export
-          </Button>
-        </div>
-      </div>
-
-      {/* Timeline ruler */}
-      <div className="h-6 border-b border-border/30 bg-muted/10 flex items-end px-[140px] shrink-0 overflow-hidden">
-        {Array.from({ length: Math.ceil(duration / 10) }).map((_, i) => (
-          <div key={i} className="flex-shrink-0" style={{ width: `${(10 / duration) * 100 * zoom}%` }}>
-            <span className="text-[9px] text-muted-foreground font-mono">{formatTime(i * 10)}</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Tracks area */}
-      <div className="flex-1 overflow-auto">
-        {tracks.map(track => (
-          <div key={track.id} className="flex border-b border-border/20 hover:bg-muted/5 transition-colors">
-            {/* Track controls */}
-            <div className="w-[140px] shrink-0 border-r border-border/30 p-2 flex flex-col gap-1">
-              <div className="flex items-center gap-1.5">
-                <div className="w-2 h-8 rounded-full" style={{ backgroundColor: track.color }} />
-                <Input
-                  value={track.name}
-                  onChange={(e) => setTracks(prev => prev.map(t => t.id === track.id ? { ...t, name: e.target.value } : t))}
-                  className="h-5 text-[10px] bg-transparent border-none px-1 focus-visible:ring-0"
-                />
-              </div>
-              <div className="flex items-center gap-0.5">
-                <Button
-                  variant="ghost" size="icon" className={cn("w-5 h-5 rounded text-[8px]", track.muted && "bg-destructive/20 text-destructive")}
-                  onClick={() => setTracks(prev => prev.map(t => t.id === track.id ? { ...t, muted: !t.muted } : t))}
-                >M</Button>
-                <Button
-                  variant="ghost" size="icon" className={cn("w-5 h-5 rounded text-[8px]", track.solo && "bg-amber-500/20 text-amber-400")}
-                  onClick={() => setTracks(prev => prev.map(t => t.id === track.id ? { ...t, solo: !t.solo } : t))}
-                >S</Button>
-                <Slider
-                  value={[track.volume]} min={0} max={100}
-                  className="flex-1 mx-1"
-                  onValueChange={([v]) => setTracks(prev => prev.map(t => t.id === track.id ? { ...t, volume: v } : t))}
-                />
-                <span className="text-[8px] text-muted-foreground w-6 text-right">{track.volume}</span>
-              </div>
-            </div>
-
-            {/* Waveform */}
-            <div className="flex-1 relative h-16 overflow-hidden">
-              <svg className="w-full h-full" preserveAspectRatio="none" style={{ transform: `scaleX(${zoom})`, transformOrigin: 'left' }}>
-                {/* Waveform bars */}
-                {track.waveform.map((v, i) => {
-                  const x = (i / track.waveform.length) * 100;
-                  const h = v * 100;
-                  return (
-                    <rect
-                      key={i}
-                      x={`${x}%`}
-                      y={`${50 - h / 2}%`}
-                      width={`${100 / track.waveform.length * 0.8}%`}
-                      height={`${h}%`}
-                      fill={track.muted ? 'hsl(var(--muted-foreground))' : track.color}
-                      opacity={track.muted ? 0.15 : 0.6}
-                      rx="1"
-                    />
-                  );
-                })}
-              </svg>
-
-              {/* Playhead */}
+          {/* Track lanes */}
+          <div className="flex-1 overflow-auto scrollbar-neural">
+            {tracks.map(track => (
               <div
-                className="absolute top-0 bottom-0 w-px bg-primary shadow-[0_0_6px_hsl(var(--primary))]"
-                style={{ left: `${(currentTime / duration) * 100 * zoom}%` }}
-              />
+                key={track.id}
+                className={cn(
+                  'flex border-b border-border/15 transition-colors cursor-pointer',
+                  selectedTrackId === track.id && 'bg-primary/[0.03]',
+                )}
+                onClick={() => setSelectedTrackId(track.id)}
+              >
+                {/* Track controls */}
+                <div className="shrink-0 border-r border-border/20 p-1.5 flex flex-col gap-0.5" style={{ width: TRACK_LABEL_WIDTH }}>
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-6 rounded-full shrink-0" style={{ backgroundColor: track.color }} />
+                    <Input
+                      value={track.name}
+                      onChange={e => updateTrack(track.id, { name: e.target.value })}
+                      className="h-5 text-[10px] bg-transparent border-none px-1 focus-visible:ring-0 font-medium"
+                      onClick={e => e.stopPropagation()}
+                    />
+                    <Button
+                      variant="ghost" size="icon" className="w-4 h-4 shrink-0 text-muted-foreground/40 hover:text-destructive"
+                      onClick={e => { e.stopPropagation(); removeTrack(track.id); }}
+                    >
+                      <Trash2 className="w-2.5 h-2.5" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-0.5">
+                    <Button
+                      variant="ghost" size="icon"
+                      className={cn('w-5 h-5 rounded text-[7px] font-bold', track.muted && 'bg-destructive/20 text-destructive')}
+                      onClick={e => { e.stopPropagation(); updateTrack(track.id, { muted: !track.muted }); }}
+                    >M</Button>
+                    <Button
+                      variant="ghost" size="icon"
+                      className={cn('w-5 h-5 rounded text-[7px] font-bold', track.solo && 'bg-amber-500/20 text-amber-400')}
+                      onClick={e => { e.stopPropagation(); updateTrack(track.id, { solo: !track.solo }); }}
+                    >S</Button>
+                    <Slider
+                      value={[track.volume]} min={0} max={100}
+                      className="flex-1 mx-0.5"
+                      onValueChange={([v]) => updateTrack(track.id, { volume: v })}
+                    />
+                    <span className="text-[7px] text-muted-foreground w-5 text-right font-mono">{track.volume}</span>
+                  </div>
+                </div>
+
+                {/* Canvas waveform */}
+                <AudioWaveformCanvas
+                  waveform={track.waveform}
+                  color={track.color}
+                  muted={track.muted}
+                  volume={track.volume}
+                  currentTime={currentTime}
+                  duration={duration}
+                  zoom={zoom}
+                  height={64}
+                  regionStart={selectedTrackId === track.id ? regionStart : null}
+                  regionEnd={selectedTrackId === track.id ? regionEnd : null}
+                  onSeek={setCurrentTime}
+                  onRegionChange={selectedTrackId === track.id ? handleRegionChange : undefined}
+                  className="flex-1"
+                />
+              </div>
+            ))}
+
+            {/* Add track */}
+            <div className="flex items-center justify-center py-2">
+              <Button variant="ghost" size="sm" className="text-[10px] gap-1 text-muted-foreground hover:text-foreground" onClick={addTrack}>
+                <Plus className="w-3 h-3" /> Add Track
+              </Button>
             </div>
           </div>
-        ))}
+        </div>
 
-        {/* Add track */}
-        <div className="flex items-center justify-center py-3">
-          <Button variant="ghost" size="sm" className="text-xs gap-1 text-muted-foreground" onClick={addTrack}>
-            <Plus className="w-3 h-3" /> Add Track
+        {/* Right panel toggle bar */}
+        <div className="w-8 bg-background/60 border-l border-border/20 flex flex-col items-center py-2 gap-1 shrink-0">
+          <Button
+            variant="ghost" size="icon"
+            className={cn('w-6 h-6', rightPanel === 'mixer' && 'bg-primary/15 text-primary')}
+            onClick={() => togglePanel('mixer')}
+            title="Mixer"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost" size="icon"
+            className={cn('w-6 h-6', rightPanel === 'effects' && 'bg-primary/15 text-primary')}
+            onClick={() => togglePanel('effects')}
+            title="Effects"
+          >
+            <Activity className="w-3.5 h-3.5" />
+          </Button>
+          <Button
+            variant="ghost" size="icon"
+            className={cn('w-6 h-6', rightPanel === 'spectrogram' && 'bg-primary/15 text-primary')}
+            onClick={() => togglePanel('spectrogram')}
+            title="Spectrogram"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
           </Button>
         </div>
+
+        {/* Right panel content */}
+        {rightPanel && (
+          <div className="w-64 shrink-0 border-l border-border/20 flex flex-col bg-background/40 backdrop-blur-sm">
+            {rightPanel === 'mixer' && (
+              <AudioMixerPanel
+                tracks={tracks}
+                masterVolume={masterVolume}
+                onTrackUpdate={updateTrack}
+                onMasterVolumeChange={setMasterVolume}
+              />
+            )}
+            {rightPanel === 'effects' && (
+              <AudioEffectsChain
+                trackName={selectedTrack?.name || 'No track'}
+                className="flex-1"
+              />
+            )}
+            {rightPanel === 'spectrogram' && (
+              <AudioSpectrogram
+                isPlaying={isPlaying}
+                currentTime={currentTime}
+                duration={duration}
+                className="flex-1"
+              />
+            )}
+          </div>
+        )}
       </div>
 
       {/* AI Panel — bottom */}
-      <div className="border-t border-border/30 bg-background/50 backdrop-blur-sm p-3 shrink-0">
-        <div className="flex items-center gap-2 max-w-2xl mx-auto">
+      <div className="border-t border-border/30 bg-background/60 backdrop-blur-sm p-2 shrink-0">
+        <div className="flex items-center gap-2 max-w-3xl mx-auto">
           <Sparkles className="w-4 h-4 text-primary shrink-0" />
           <Input
             value={aiPrompt}
             onChange={e => setAiPrompt(e.target.value)}
-            placeholder="AI: 'Remove vocals', 'Add reverb to Track 2', 'Generate beat at 120 BPM'..."
+            placeholder="AI: 'Remove vocals', 'Add reverb to Guitar', 'Generate drum pattern at 120 BPM', 'Master this mix'..."
             className="text-xs bg-muted/20 border-border/30"
             onKeyDown={e => e.key === 'Enter' && processWithAI()}
           />
-          <Button size="sm" className="h-8 text-xs gap-1 shrink-0" onClick={processWithAI} disabled={isProcessing}>
+          <Button size="sm" className="h-7 text-xs gap-1 shrink-0" onClick={processWithAI} disabled={isProcessing}>
             {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Wand2 className="w-3 h-3" />}
             Apply
           </Button>
         </div>
-        <div className="flex gap-1.5 mt-2 max-w-2xl mx-auto">
-          {['Remove noise', 'Normalize', 'Add fade in/out', 'Separate stems', 'Auto-master'].map(q => (
+        <div className="flex gap-1 mt-1.5 max-w-3xl mx-auto flex-wrap">
+          {['Remove noise', 'Normalize', 'Separate stems', 'Auto-master', 'Add fade in/out', 'Generate beat', 'Pitch correct'].map(q => (
             <Button key={q} variant="outline" size="sm" className="h-5 text-[9px] px-2" onClick={() => setAiPrompt(q)}>{q}</Button>
           ))}
         </div>
