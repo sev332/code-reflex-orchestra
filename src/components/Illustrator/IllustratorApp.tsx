@@ -330,6 +330,13 @@ export function IllustratorApp() {
 
     const tool = state.tool.activeToolId;
 
+    // End pen handle drag
+    if (tool === 'pen' && isDrawing) {
+      engine.endPenHandleDrag();
+      setIsDrawing(false);
+      return;
+    }
+
     // End node drag
     if (tool === 'direct-select' && isDrawing) {
       engine.endNodeDrag();
