@@ -38,6 +38,7 @@ export const allApps: AppDef[] = [
   { id: 'audio', label: 'Audio', icon: Music, category: 'Creative', color: 'from-purple-500 to-violet-600', description: 'Audio production' },
   { id: 'video', label: 'Video', icon: Video, category: 'Creative', color: 'from-red-500 to-pink-600', description: 'Video editor' },
   { id: 'studio3d', label: '3D Studio', icon: Box, category: 'Creative', color: 'from-indigo-500 to-blue-600', description: 'CAD & 3D scenes', status: 'beta' },
+  { id: 'illustrator', label: 'Illustrator', icon: PenTool, category: 'Creative', color: 'from-amber-500 to-rose-600', description: 'Vector drawing engine', status: 'new' },
   // Dev & Data
   { id: 'ide', label: 'Code IDE', icon: Code2, category: 'Dev & Data', color: 'from-green-500 to-emerald-600', description: 'Software dev' },
   { id: 'terminal', label: 'Terminal', icon: Terminal, category: 'Dev & Data', color: 'from-gray-500 to-zinc-600', description: 'Shell emulator', status: 'beta' },

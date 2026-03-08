@@ -74,6 +74,7 @@ const Index = () => {
       case 'documents': return <DocumentBuilderPage />;
       case 'ide': return <Suspense fallback={<LoadingFallback />}><CodeBuilderIDE onClose={() => setActivePage('chat')} /></Suspense>;
       case 'image': return <Suspense fallback={<LoadingFallback />}><ImageEditor /></Suspense>;
+      case 'illustrator': return <Suspense fallback={<LoadingFallback />}><IllustratorApp /></Suspense>;
       case 'audio': return <Suspense fallback={<LoadingFallback />}><AudioEditor /></Suspense>;
       case 'video': return <Suspense fallback={<LoadingFallback />}><VideoEditor /></Suspense>;
       case 'map': return <Suspense fallback={<LoadingFallback />}><GlassMapPage /></Suspense>;
