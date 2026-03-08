@@ -323,7 +323,132 @@ function renderSelectionOverlay(ctx: CanvasRenderingContext2D, e: DrawableEntity
 }
 
 // ============================================
-// FULL SCENE RENDER (with live preview layer)
+// NODE EDITING OVERLAY
+// ============================================
+
+export interface NodeEditOverlay {
+  enabled: boolean;
+  entityId: string | null;
+  activeNodeHit: import('./node-editing').NodeHit | null;
+}
+
+export const emptyNodeOverlay: NodeEditOverlay = { enabled: false, entityId: null, activeNodeHit: null };
+
+export function renderNodeOverlay(
+  ctx: CanvasRenderingContext2D, entity: DrawableEntity, vp: ViewportState,
+  activeHit: import('./node-editing').NodeHit | null,
+) {
+  const pd = entity.pathData;
+  if (!pd) return;
+  ctx.save();
+
+  for (let ci = 0; ci < pd.contours.length; ci++) {
+    const contour = pd.contours[ci];
+    if (contour.anchors.length > 1) {
+      ctx.strokeStyle = 'hsl(193,100%,50%)';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.7;
+      ctx.beginPath();
+      const a0 = contour.anchors[0];
+      ctx.moveTo((a0.position.x + vp.panX) * vp.zoom, (a0.position.y + vp.panY) * vp.zoom);
+      for (let i = 1; i < contour.anchors.length; i++) {
+        const prev = contour.anchors[i - 1];
+        const curr = contour.anchors[i];
+        if (prev.handleOut && curr.handleIn) {
+          ctx.bezierCurveTo(
+            (prev.handleOut.x + vp.panX) * vp.zoom, (prev.handleOut.y + vp.panY) * vp.zoom,
+            (curr.handleIn.x + vp.panX) * vp.zoom, (curr.handleIn.y + vp.panY) * vp.zoom,
+            (curr.position.x + vp.panX) * vp.zoom, (curr.position.y + vp.panY) * vp.zoom,
+          );
+        } else {
+          ctx.lineTo((curr.position.x + vp.panX) * vp.zoom, (curr.position.y + vp.panY) * vp.zoom);
+        }
+      }
+      if (contour.closed) ctx.closePath();
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+    for (let ai = 0; ai < contour.anchors.length; ai++) {
+      const anchor = contour.anchors[ai];
+      const ax = (anchor.position.x + vp.panX) * vp.zoom;
+      const ay = (anchor.position.y + vp.panY) * vp.zoom;
+      const isActive = activeHit && activeHit.contourIndex === ci && activeHit.anchorIndex === ai;
+
+      if (anchor.handleIn) {
+        const hx = (anchor.handleIn.x + vp.panX) * vp.zoom;
+        const hy = (anchor.handleIn.y + vp.panY) * vp.zoom;
+        ctx.strokeStyle = 'hsla(193,100%,50%,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
+        ctx.fillStyle = (isActive && activeHit?.type === 'handleIn') ? 'hsl(40,100%,60%)' : 'hsl(193,100%,70%)';
+        ctx.beginPath(); ctx.arc(hx, hy, (isActive && activeHit?.type === 'handleIn') ? 4.5 : 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+      if (anchor.handleOut) {
+        const hx = (anchor.handleOut.x + vp.panX) * vp.zoom;
+        const hy = (anchor.handleOut.y + vp.panY) * vp.zoom;
+        ctx.strokeStyle = 'hsla(193,100%,50%,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
+        ctx.fillStyle = (isActive && activeHit?.type === 'handleOut') ? 'hsl(40,100%,60%)' : 'hsl(193,100%,70%)';
+        ctx.beginPath(); ctx.arc(hx, hy, (isActive && activeHit?.type === 'handleOut') ? 4.5 : 3.5, 0, Math.PI * 2); ctx.fill();
+      }
+
+      const isAnchorActive = isActive && activeHit?.type === 'anchor';
+      const size = isAnchorActive ? 5 : 4;
+      ctx.fillStyle = isAnchorActive ? 'hsl(40,100%,60%)' : 'hsl(193,100%,50%)';
+      ctx.strokeStyle = 'hsl(220,27%,4%)'; ctx.lineWidth = 1.5;
+      ctx.fillRect(ax - size, ay - size, size * 2, size * 2);
+      ctx.strokeRect(ax - size, ay - size, size * 2, size * 2);
+    }
+  }
+  ctx.restore();
+}
+
+export function renderTransformHandles(
+  ctx: CanvasRenderingContext2D,
+  handles: import('./node-editing').TransformHandle[],
+  vp: ViewportState,
+) {
+  ctx.save();
+  // Draw bounding box
+  const corners = handles.filter(h => ['nw', 'ne', 'se', 'sw'].includes(h.type));
+  if (corners.length === 4) {
+    const order = ['nw', 'ne', 'se', 'sw'];
+    const sorted = order.map(t => corners.find(c => c.type === t)!);
+    ctx.strokeStyle = 'hsla(193,100%,50%,0.5)'; ctx.lineWidth = 1; ctx.setLineDash([]);
+    ctx.beginPath();
+    for (let i = 0; i < sorted.length; i++) {
+      const sx = (sorted[i].position.x + vp.panX) * vp.zoom;
+      const sy = (sorted[i].position.y + vp.panY) * vp.zoom;
+      i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    }
+    ctx.closePath(); ctx.stroke();
+  }
+
+  for (const h of handles) {
+    const sx = (h.position.x + vp.panX) * vp.zoom;
+    const sy = (h.position.y + vp.panY) * vp.zoom;
+    if (h.type === 'rotate') {
+      ctx.fillStyle = 'hsl(193,100%,50%)'; ctx.strokeStyle = 'hsl(220,27%,4%)'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(sx, sy, 5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      const topHandle = handles.find(hh => hh.type === 'n');
+      if (topHandle) {
+        ctx.strokeStyle = 'hsla(193,100%,50%,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(sx, sy);
+        ctx.lineTo((topHandle.position.x + vp.panX) * vp.zoom, (topHandle.position.y + vp.panY) * vp.zoom);
+        ctx.stroke();
+      }
+    } else {
+      ctx.fillStyle = 'hsl(193,100%,50%)'; ctx.strokeStyle = 'hsl(220,27%,4%)'; ctx.lineWidth = 1.5;
+      ctx.fillRect(sx - 4, sy - 4, 8, 8);
+      ctx.strokeRect(sx - 4, sy - 4, 8, 8);
+    }
+  }
+  ctx.restore();
+}
+
+// ============================================
+// FULL SCENE RENDER
 // ============================================
 
 export function renderScene(
@@ -331,6 +456,8 @@ export function renderScene(
   selectedIds: string[], hoveredId: string | null,
   cw: number, ch: number, gridEnabled: boolean, gridSize: number,
   preview?: LivePreviewState,
+  nodeOverlay?: NodeEditOverlay,
+  transformHandles?: import('./node-editing').TransformHandle[],
 ) {
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = 'hsl(220,27%,4%)';
@@ -344,8 +471,14 @@ export function renderScene(
       if (e) renderEntity(ctx, e, vp, selectedIds.includes(eid), hoveredId === eid);
     }
   }
-  // Live preview layer — renders on top
   if (preview) renderLivePreview(ctx, vp, preview);
+  if (nodeOverlay?.enabled && nodeOverlay.entityId) {
+    const entity = scene.entities[nodeOverlay.entityId];
+    if (entity) renderNodeOverlay(ctx, entity, vp, nodeOverlay.activeNodeHit);
+  }
+  if (transformHandles && transformHandles.length > 0) {
+    renderTransformHandles(ctx, transformHandles, vp);
+  }
 }
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
