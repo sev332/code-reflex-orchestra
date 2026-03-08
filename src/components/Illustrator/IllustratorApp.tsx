@@ -36,6 +36,7 @@ import { WIDTH_PRESETS } from '@/lib/drawing-engine/reshape-engine';
 import { APPEARANCE_PRESETS } from '@/lib/drawing-engine/appearance-engine';
 import { PATTERN_PRESETS } from '@/lib/drawing-engine/pattern-engine';
 import { MESH_PRESETS } from '@/lib/drawing-engine/mesh-gradient-engine';
+import { ARTBOARD_PRESETS } from '@/lib/drawing-engine/artboard-engine';
 
 // ============================================
 // TOOL DEFINITIONS
