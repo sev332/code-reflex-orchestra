@@ -531,7 +531,7 @@ const allCommands = [
   'mkdir', 'touch', 'rm', 'clear', 'date', 'whoami', 'env', 'export', 'alias', 'history',
   'curl', 'node', 'python', 'ai', 'git', 'npm', 'bun', 'top', 'htop', 'ps',
   'neofetch', 'uname', 'hostname', 'uptime', 'tree', 'find', 'df', 'free', 'which',
-  'man', 'seq', 'yes', 'theme',
+  'man', 'seq', 'yes', 'theme', 'exec', 'vm',
 ];
 
 /* ─────────── Component ─────────── */
