@@ -21,6 +21,7 @@ const OrchestrationWorkspace = lazy(() => import("@/components/Orchestration/Orc
 const CodeBuilderIDE = lazy(() => import("@/components/CodeBuilder/CodeBuilderIDE").then(m => ({ default: m.CodeBuilderIDE })));
 const GlassMapPage = lazy(() => import("@/components/Map/GlassMapPage").then(m => ({ default: m.GlassMapPage })));
 const ImageEditor = lazy(() => import("@/components/MediaEditors/ImageEditor").then(m => ({ default: m.ImageEditor })));
+const IllustratorApp = lazy(() => import("@/components/Illustrator/IllustratorApp").then(m => ({ default: m.IllustratorApp })));
 const AudioEditor = lazy(() => import("@/components/MediaEditors/AudioEditor").then(m => ({ default: m.AudioEditor })));
 const VideoEditor = lazy(() => import("@/components/MediaEditors/VideoEditor").then(m => ({ default: m.VideoEditor })));
 const Studio3DPage = lazy(() => import("@/components/Studio3D/Studio3DPage").then(m => ({ default: m.Studio3DPage })));
