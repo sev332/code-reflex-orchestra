@@ -17,6 +17,7 @@ import {
   MessageCircle, Presentation, Users, Inbox, Send, Filter,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { emitPageDrawerAction } from '@/lib/page-drawer-events';
 import type { PageId } from './PageTopBar';
 
 interface SideIcon {
