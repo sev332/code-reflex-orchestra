@@ -43,6 +43,7 @@ const rightIcons: IconDef[] = [
   { id: 'analytics', icon: Activity, label: 'Analytics', activeColor: 'text-pink-500' },
   { id: 'processing', icon: Cpu, label: 'Processing', activeColor: 'text-red-500' },
   { id: 'network', icon: Network, label: 'Network', activeColor: 'text-indigo-500' },
+  { id: 'vault', icon: KeyRound, label: 'Vault', activeColor: 'text-amber-500' },
 ];
 
 interface PersistentRightDrawerProps {
