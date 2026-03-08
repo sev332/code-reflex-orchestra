@@ -1,6 +1,7 @@
 // Illustrator App — Dark Pro Studio Drawing Engine
 // Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
 // Sprint 2: Gradient tool, Proper booleans, Scissors/Knife, Groups, Isolation, Alignment
+// Sprint 3: Transform tools, Effects, Blend, Clipping masks, Warp tools
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -14,9 +15,10 @@ import {
   Hexagon, Star, Minus, Type, Pipette, Hand, ZoomIn, PaintBucket,
   Undo, Redo, Plus, Eye, EyeOff, Lock, Unlock, Trash2, Copy,
   Grid3x3, Magnet, Scissors, Slice, Group, Ungroup,
-  Download, Upload, Maximize2, RotateCw,
+  Download, Upload, Maximize2, RotateCw, FlipHorizontal, FlipVertical,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, Palette,
+  Blend, Sparkles, Move, RotateCcw, Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
@@ -26,6 +28,8 @@ import type { RawInputSample } from '@/lib/drawing-engine/brush-core';
 import { ColorPicker } from './ColorPicker';
 import { BUILT_IN_FONTS } from '@/lib/drawing-engine/text-engine';
 import { createLinearGradient, createRadialGradient, GRADIENT_PRESETS } from '@/lib/drawing-engine/gradient-engine';
+import { EFFECT_PRESETS } from '@/lib/drawing-engine/effects-engine';
+import { WIDTH_PRESETS } from '@/lib/drawing-engine/reshape-engine';
 
 // ============================================
 // TOOL DEFINITIONS
@@ -529,7 +533,8 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Transform</div>
           <div className="grid grid-cols-2 gap-1.5 text-[10px]">
             {[['X', Math.round(selectedEntity.transform.translateX)], ['Y', Math.round(selectedEntity.transform.translateY)],
-              ['W', Math.round(selectedEntity.shapeProps?.width ?? 0)], ['H', Math.round(selectedEntity.shapeProps?.height ?? 0)]
+              ['W', Math.round(selectedEntity.shapeProps?.width ?? 0)], ['H', Math.round(selectedEntity.shapeProps?.height ?? 0)],
+              ['R°', Math.round(selectedEntity.transform.rotation)], ['Sk', Math.round(selectedEntity.transform.skewX)],
             ].map(([label, val]) => (
               <div key={label as string} className="flex items-center gap-1">
                 <span className="text-muted-foreground w-4">{label}</span>
@@ -537,10 +542,15 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
               </div>
             ))}
           </div>
-          <div className="flex gap-1 mt-3">
-            <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive" onClick={engine.deleteSelected}><Trash2 className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7"><Copy className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7"><RotateCw className="w-3.5 h-3.5" /></Button>
+          
+          {/* Transform actions */}
+          <div className="flex gap-0.5 mt-2">
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.rotateSelected(90)}><RotateCw className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Rotate 90°</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.rotateSelected(-90)}><RotateCcw className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Rotate -90°</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.reflectSelected('horizontal')}><FlipHorizontal className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Flip Horizontal</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.reflectSelected('vertical')}><FlipVertical className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Flip Vertical</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.duplicateSelected}><Copy className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Duplicate</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7 text-destructive" onClick={engine.deleteSelected}><Trash2 className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Delete</TooltipContent></Tooltip>
           </div>
 
           {/* Arrange */}
@@ -550,6 +560,47 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('forward')}><ArrowUp className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Bring Forward</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('backward')}><ArrowDown className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Send Backward</TooltipContent></Tooltip>
             <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('back')}><ChevronsDown className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Send to Back</TooltipContent></Tooltip>
+          </div>
+
+          {/* Effects */}
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">Effects</div>
+          <div className="grid grid-cols-2 gap-1">
+            {EFFECT_PRESETS.slice(0, 6).map(preset => (
+              <Button key={preset.name} variant="ghost" size="sm" className="h-7 text-[9px]"
+                onClick={() => engine.applyEffectPreset(selectedEntity.id, preset)}>
+                {preset.name}
+              </Button>
+            ))}
+          </div>
+          {engine.entityEffects[selectedEntity.id]?.effects.length > 0 && (
+            <div className="mt-1 space-y-0.5">
+              {engine.entityEffects[selectedEntity.id].effects.map(fx => (
+                <div key={fx.id} className="flex items-center justify-between text-[9px] px-1 py-0.5 bg-[hsl(220,15%,8%)] rounded">
+                  <span className={fx.enabled ? 'text-primary' : 'text-muted-foreground'}>{fx.type}</span>
+                  <div className="flex gap-0.5">
+                    <button className="text-muted-foreground hover:text-foreground" onClick={() => engine.toggleEntityEffect(selectedEntity.id, fx.id)}>
+                      {fx.enabled ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                    </button>
+                    <button className="text-muted-foreground hover:text-destructive" onClick={() => engine.removeEntityEffect(selectedEntity.id, fx.id)}>
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Blend (2 selected) */}
+      {state.selection.selectedIds.length === 2 && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Blend</div>
+          <div className="grid grid-cols-2 gap-1">
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.blendSelected({ mode: 'specified-steps', steps: 5 })}>5 Steps</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.blendSelected({ mode: 'specified-steps', steps: 10 })}>10 Steps</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.blendSelected({ mode: 'smooth-color' })}>Smooth</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.makeClippingMask()}>Clip Mask</Button>
           </div>
         </div>
       )}
