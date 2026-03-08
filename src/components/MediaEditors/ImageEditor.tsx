@@ -1,7 +1,6 @@
-// AI-Powered Image Editor with Gemini Integration + Boundary Instrument Lasso
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+// Professional Image Editor — Canvas-based with real layer system, selection, brush, crop
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -10,16 +9,26 @@ import {
   Image, Upload, Download, Undo, Redo, ZoomIn, ZoomOut,
   Crop, RotateCw, FlipHorizontal, FlipVertical, Palette,
   Wand2, Sparkles, Layers, Type, Eraser, Paintbrush,
-  Move, Square, Circle, Triangle, Minus, Plus, Sun,
-  Contrast, Droplets, Eye, Loader2, SlidersHorizontal,
-  Lasso, Scissors, X
+  Move, Square, Circle, Minus, Plus, Sun,
+  Contrast, Droplets, Eye, EyeOff, Loader2, SlidersHorizontal,
+  Lasso, Scissors, X, Lock, Unlock, Trash2, Copy, ChevronUp,
+  ChevronDown, Hand, Pipette, MousePointer, Grid3X3
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useLassoTool } from '@/lib/lasso-engine/useLassoTool';
 
-type Tool = 'select' | 'brush' | 'eraser' | 'crop' | 'text' | 'shape' | 'move' | 'lasso';
+import { type ToolId, type Color, type BrushSettings, DEFAULT_BRUSH, DEFAULT_COLOR } from '@/lib/image-engine/types';
+import { CoordinateSystem } from '@/lib/image-engine/coordinate-system';
+import { LayerManager } from '@/lib/image-engine/layer-manager';
+import { SelectionManager } from '@/lib/image-engine/selection-manager';
+import { RenderPipeline } from '@/lib/image-engine/render-pipeline';
+import { BrushEngine } from '@/lib/image-engine/brush-engine';
+import { FastFloodFill } from '@/lib/image-engine/flood-fill';
+import { CropEngine, CROP_PRESETS } from '@/lib/image-engine/crop-engine';
+import { HistoryManager } from '@/lib/image-engine/history-manager';
+
+type PanelId = 'tools' | 'adjust' | 'ai' | 'layers';
 
 interface AdjustmentState {
   brightness: number;
@@ -31,145 +40,386 @@ interface AdjustmentState {
 
 export function ImageEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [currentImage, setCurrentImage] = useState<string | null>(null);
-  const [activeTool, setActiveTool] = useState<Tool>('select');
+
+  // Core engines (persistent refs)
+  const coordSystem = useRef(new CoordinateSystem());
+  const layerMgr = useRef(new LayerManager());
+  const selMgr = useRef(new SelectionManager(1, 1));
+  const brushEngine = useRef(new BrushEngine());
+  const cropEngine = useRef(new CropEngine());
+  const historyMgr = useRef(new HistoryManager());
+  const renderPipeline = useRef<RenderPipeline | null>(null);
+  const animFrame = useRef(0);
+
+  // State
+  const [hasImage, setHasImage] = useState(false);
+  const [activeTool, setActiveTool] = useState<ToolId>('select');
+  const [activePanel, setActivePanel] = useState<PanelId>('tools');
+  const [zoom, setZoom] = useState(100);
+  const [layers, setLayers] = useState<Array<{ id: string; name: string; visible: boolean; locked: boolean; opacity: number; blendMode: string }>>([]);
+  const [activeLayerId, setActiveLayerId] = useState<string | null>(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+  const [brushSettings, setBrushSettings] = useState<BrushSettings>({ ...DEFAULT_BRUSH });
+  const [foregroundColor, setForegroundColor] = useState<Color>({ ...DEFAULT_COLOR });
   const [aiPrompt, setAiPrompt] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [zoom, setZoom] = useState(100);
   const [adjustments, setAdjustments] = useState<AdjustmentState>({
-    brightness: 100, contrast: 100, saturation: 100, blur: 0, hue: 0
+    brightness: 100, contrast: 100, saturation: 100, blur: 0, hue: 0,
   });
-  const [history, setHistory] = useState<string[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
-  const [activePanel, setActivePanel] = useState<'tools' | 'adjust' | 'ai' | 'layers'>('tools');
-  const animFrameRef = useRef<number>(0);
+  const [isCropping, setIsCropping] = useState(false);
+  const [isPanning, setIsPanning] = useState(false);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
+  const [, forceRender] = useState(0);
 
-  // Boundary Instrument lasso hook
-  const lasso = useLassoTool();
+  // Sync layers state from manager
+  const syncLayers = useCallback(() => {
+    const ls = layerMgr.current.getLayers();
+    setLayers(ls.map(l => ({
+      id: l.id, name: l.name, visible: l.visible,
+      locked: l.locked, opacity: l.opacity, blendMode: l.blendMode,
+    })));
+    setActiveLayerId(layerMgr.current.getActiveLayerId());
+    setCanUndo(historyMgr.current.canUndo);
+    setCanRedo(historyMgr.current.canRedo);
+  }, []);
 
-  // Load field cache when image changes
-  const loadLassoField = useCallback(() => {
-    if (canvasRef.current && activeTool === 'lasso') {
-      lasso.loadImage(canvasRef.current);
-      toast.success('Field cache built — lasso ready');
-    }
-  }, [activeTool, lasso]);
-
-  // When switching to lasso tool, build field cache
-  useEffect(() => {
-    if (activeTool === 'lasso' && currentImage && canvasRef.current) {
-      lasso.loadImage(canvasRef.current);
-    }
-  }, [activeTool, currentImage]);
-
-  // Render lasso overlay loop
-  useEffect(() => {
-    if (activeTool !== 'lasso') return;
-    const overlay = overlayCanvasRef.current;
-    const mainCanvas = canvasRef.current;
-    if (!overlay || !mainCanvas) return;
-
-    overlay.width = mainCanvas.width;
-    overlay.height = mainCanvas.height;
-
-    const renderLoop = () => {
-      const ctx = overlay.getContext('2d');
-      if (ctx) {
-        ctx.clearRect(0, 0, overlay.width, overlay.height);
-        lasso.renderOverlay(ctx);
+  // Render loop
+  const requestRender = useCallback(() => {
+    cancelAnimationFrame(animFrame.current);
+    animFrame.current = requestAnimationFrame(() => {
+      if (!renderPipeline.current) return;
+      const sel = selMgr.current.getSelection();
+      renderPipeline.current.render(
+        layerMgr.current.getLayers(),
+        sel,
+        cursorPos,
+        activeTool === 'brush' || activeTool === 'eraser' ? brushSettings.size : undefined,
+      );
+      // Crop overlay
+      if (isCropping) {
+        const ctx = canvasRef.current?.getContext('2d');
+        if (ctx) {
+          coordSystem.current.applyTransform(ctx);
+          cropEngine.current.renderOverlay(ctx, coordSystem.current.zoom);
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+        }
       }
-      animFrameRef.current = requestAnimationFrame(renderLoop);
-    };
-    animFrameRef.current = requestAnimationFrame(renderLoop);
+    });
+  }, [cursorPos, activeTool, brushSettings.size, isCropping]);
 
-    return () => cancelAnimationFrame(animFrameRef.current);
-  }, [activeTool, lasso]);
+  useEffect(() => {
+    requestRender();
+  }, [requestRender, layers, zoom, cursorPos, isCropping]);
+
+  // Setup canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const rect = container.getBoundingClientRect();
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      canvas.style.width = `${rect.width}px`;
+      canvas.style.height = `${rect.height}px`;
+      coordSystem.current.setCanvasSize(rect.width, rect.height);
+      requestRender();
+    };
+
+    const ctx = canvas.getContext('2d')!;
+    renderPipeline.current = new RenderPipeline(ctx, coordSystem.current);
+    renderPipeline.current.startMarchingAnts();
+
+    resize();
+    const observer = new ResizeObserver(resize);
+    observer.observe(container);
+
+    return () => {
+      observer.disconnect();
+      renderPipeline.current?.stopMarchingAnts();
+    };
+  }, []);
+
+  // Marching ants animation loop
+  useEffect(() => {
+    if (!hasImage) return;
+    let running = true;
+    const loop = () => {
+      if (!running) return;
+      requestRender();
+      setTimeout(() => requestAnimationFrame(loop), 80);
+    };
+    loop();
+    return () => { running = false; };
+  }, [hasImage, requestRender]);
+
+  // Load image
+  const loadImage = useCallback((src: string) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const w = img.naturalWidth;
+      const h = img.naturalHeight;
+
+      coordSystem.current.setImageSize(w, h);
+      coordSystem.current.fitToView();
+      setZoom(Math.round(coordSystem.current.zoom * 100));
+
+      layerMgr.current.initialize(w, h);
+      selMgr.current.setDimensions(w, h);
+      cropEngine.current.initialize(w, h);
+
+      // Draw image onto background layer
+      const bgLayer = layerMgr.current.getActiveLayer();
+      if (bgLayer) {
+        const ctx = bgLayer.canvas.getContext('2d')!;
+        ctx.drawImage(img, 0, 0);
+      }
+
+      // Save initial history
+      historyMgr.current.push('Open Image', layerMgr.current.getLayers());
+
+      setHasImage(true);
+      syncLayers();
+      requestRender();
+      toast.success(`Image loaded · ${w}×${h}`);
+    };
+    img.src = src;
+  }, [syncLayers, requestRender]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
-      const src = ev.target?.result as string;
-      setCurrentImage(src);
-      setHistory(prev => [...prev.slice(0, historyIndex + 1), src]);
-      setHistoryIndex(prev => prev + 1);
-      drawImageToCanvas(src);
-    };
+    reader.onload = (ev) => loadImage(ev.target?.result as string);
     reader.readAsDataURL(file);
   };
 
-  const drawImageToCanvas = useCallback((src: string) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const img = new window.Image();
-    img.onload = () => {
-      canvas.width = img.width;
-      canvas.height = img.height;
-      ctx.filter = getFilterString();
-      ctx.drawImage(img, 0, 0);
-    };
-    img.src = src;
-  }, [adjustments]);
+  // Save history snapshot
+  const saveHistory = useCallback((label: string) => {
+    historyMgr.current.push(label, layerMgr.current.getLayers());
+    syncLayers();
+  }, [syncLayers]);
 
-  const getFilterString = () => {
-    return `brightness(${adjustments.brightness}%) contrast(${adjustments.contrast}%) saturate(${adjustments.saturation}%) blur(${adjustments.blur}px) hue-rotate(${adjustments.hue}deg)`;
-  };
+  const undo = useCallback(() => {
+    const snapshot = historyMgr.current.undo();
+    if (snapshot) {
+      historyMgr.current.restoreSnapshot(snapshot, layerMgr.current.getLayers());
+      syncLayers();
+      requestRender();
+    }
+  }, [syncLayers, requestRender]);
 
-  // AI image processing via Gemini
+  const redo = useCallback(() => {
+    const snapshot = historyMgr.current.redo();
+    if (snapshot) {
+      historyMgr.current.restoreSnapshot(snapshot, layerMgr.current.getLayers());
+      syncLayers();
+      requestRender();
+    }
+  }, [syncLayers, requestRender]);
+
+  // Zoom controls
+  const handleZoom = useCallback((delta: number) => {
+    const newZoom = coordSystem.current.zoom * (1 + delta * 0.15);
+    coordSystem.current.setZoom(newZoom);
+    setZoom(Math.round(coordSystem.current.zoom * 100));
+    requestRender();
+  }, [requestRender]);
+
+  // Canvas pointer handlers
+  const getWorldPos = useCallback((e: React.PointerEvent): { x: number; y: number } => {
+    const rect = canvasRef.current!.getBoundingClientRect();
+    return coordSystem.current.screenToWorld(e.clientX - rect.left, e.clientY - rect.top);
+  }, []);
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    if (!hasImage) return;
+    const world = getWorldPos(e);
+
+    // Middle button or hand tool = pan
+    if (e.button === 1 || activeTool === 'hand') {
+      setIsPanning(true);
+      return;
+    }
+
+    // Crop tool
+    if (isCropping) {
+      cropEngine.current.handlePointerDown(world.x, world.y);
+      return;
+    }
+
+    // Magic wand
+    if (activeTool === 'magic-wand') {
+      const layer = layerMgr.current.getActiveLayer();
+      if (!layer) return;
+      const ctx = layer.canvas.getContext('2d')!;
+      const imageData = ctx.getImageData(0, 0, layer.canvas.width, layer.canvas.height);
+      const ff = new FastFloodFill(imageData);
+      const result = ff.execute(world.x, world.y, { tolerance: 32, contiguous: true });
+      selMgr.current.applyMask(result.mask, result.bounds, e.shiftKey ? 'add' : 'new');
+      requestRender();
+      toast.success(`Selected ${result.pixelCount.toLocaleString()} pixels`);
+      return;
+    }
+
+    // Eyedropper
+    if (activeTool === 'eyedropper') {
+      const flat = layerMgr.current.flattenAll();
+      const ctx = flat.getContext('2d')!;
+      const px = Math.floor(world.x);
+      const py = Math.floor(world.y);
+      if (px >= 0 && px < flat.width && py >= 0 && py < flat.height) {
+        const pixel = ctx.getImageData(px, py, 1, 1).data;
+        const color = { r: pixel[0], g: pixel[1], b: pixel[2], a: pixel[3] };
+        setForegroundColor(color);
+        setBrushSettings(prev => ({ ...prev, color }));
+        toast.success(`Color picked: rgb(${color.r}, ${color.g}, ${color.b})`);
+      }
+      return;
+    }
+
+    // Brush / Eraser
+    if (activeTool === 'brush' || activeTool === 'eraser') {
+      const layer = layerMgr.current.getActiveLayer();
+      if (!layer || layer.locked) return;
+      setIsDrawing(true);
+      const settings = { ...brushSettings, color: foregroundColor };
+      brushEngine.current.beginStroke(world, settings, activeTool === 'eraser');
+      brushEngine.current.renderStrokeToCanvas(layer.canvas, [world], settings, activeTool === 'eraser');
+      requestRender();
+      return;
+    }
+  }, [hasImage, activeTool, isCropping, getWorldPos, brushSettings, foregroundColor, requestRender]);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!hasImage) return;
+    const world = getWorldPos(e);
+    setCursorPos(world);
+
+    if (isPanning) {
+      coordSystem.current.setPan(
+        coordSystem.current.pan.x + e.movementX,
+        coordSystem.current.pan.y + e.movementY,
+      );
+      requestRender();
+      return;
+    }
+
+    if (isCropping) {
+      cropEngine.current.handlePointerMove(world.x, world.y);
+      requestRender();
+      return;
+    }
+
+    if (isDrawing && (activeTool === 'brush' || activeTool === 'eraser')) {
+      const layer = layerMgr.current.getActiveLayer();
+      if (!layer) return;
+      const points = brushEngine.current.continueStroke(world, e.pressure || 1);
+      if (points.length > 0) {
+        brushEngine.current.renderStrokeToCanvas(layer.canvas, points, { ...brushSettings, color: foregroundColor }, activeTool === 'eraser', e.pressure || 1);
+        requestRender();
+      }
+    }
+  }, [hasImage, isPanning, isCropping, isDrawing, activeTool, getWorldPos, brushSettings, foregroundColor, requestRender]);
+
+  const handlePointerUp = useCallback(() => {
+    if (isPanning) { setIsPanning(false); return; }
+    if (isCropping) { cropEngine.current.handlePointerUp(); return; }
+    if (isDrawing) {
+      brushEngine.current.endStroke();
+      setIsDrawing(false);
+      saveHistory(activeTool === 'eraser' ? 'Erase' : 'Brush');
+    }
+  }, [isPanning, isCropping, isDrawing, activeTool, saveHistory]);
+
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!hasImage) return;
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      handleZoom(e.deltaY < 0 ? 1 : -1);
+    } else {
+      coordSystem.current.setPan(
+        coordSystem.current.pan.x - e.deltaX,
+        coordSystem.current.pan.y - e.deltaY,
+      );
+      requestRender();
+    }
+  }, [hasImage, handleZoom, requestRender]);
+
+  // Export
+  const exportImage = useCallback(() => {
+    if (!hasImage) return;
+    const flat = layerMgr.current.flattenAll();
+    const url = flat.toDataURL('image/png');
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'edited-image.png';
+    a.click();
+    toast.success('Image exported');
+  }, [hasImage]);
+
+  // Crop
+  const startCrop = useCallback(() => {
+    cropEngine.current.start(null);
+    setIsCropping(true);
+    requestRender();
+  }, [requestRender]);
+
+  const applyCrop = useCallback(() => {
+    const bounds = cropEngine.current.apply();
+    if (!bounds) return;
+    const ls = layerMgr.current.getLayers();
+    for (const layer of ls) {
+      const ctx = layer.canvas.getContext('2d')!;
+      const cropped = ctx.getImageData(bounds.x, bounds.y, bounds.width, bounds.height);
+      layer.canvas.width = bounds.width;
+      layer.canvas.height = bounds.height;
+      ctx.putImageData(cropped, 0, 0);
+      layer.bounds = { ...bounds, x: 0, y: 0 };
+    }
+    coordSystem.current.setImageSize(bounds.width, bounds.height);
+    coordSystem.current.fitToView();
+    setZoom(Math.round(coordSystem.current.zoom * 100));
+    selMgr.current.setDimensions(bounds.width, bounds.height);
+    cropEngine.current.initialize(bounds.width, bounds.height);
+    setIsCropping(false);
+    saveHistory('Crop');
+    requestRender();
+    toast.success(`Cropped to ${bounds.width}×${bounds.height}`);
+  }, [saveHistory, requestRender]);
+
+  // AI processing
   const processWithAI = async () => {
-    if (!aiPrompt.trim()) return;
+    if (!aiPrompt.trim() || !hasImage) return;
     setIsProcessing(true);
     try {
       const { data, error } = await supabase.functions.invoke('gemini-agents', {
-        body: {
-          action: 'image_edit',
-          prompt: aiPrompt,
-          image: currentImage,
-        }
+        body: { action: 'image_edit', prompt: aiPrompt, image: layerMgr.current.flattenAll().toDataURL() },
       });
       if (error) throw error;
-      if (data?.result) {
-        toast.success('AI processing complete');
-      }
-    } catch (e) {
-      toast.error('AI processing failed');
-    } finally {
-      setIsProcessing(false);
-      setAiPrompt('');
-    }
+      if (data?.result) toast.success('AI processing complete');
+    } catch { toast.error('AI processing failed'); }
+    finally { setIsProcessing(false); setAiPrompt(''); }
   };
 
-  const undo = () => {
-    if (historyIndex > 0) {
-      setHistoryIndex(prev => prev - 1);
-      const prev = history[historyIndex - 1];
-      setCurrentImage(prev);
-      drawImageToCanvas(prev);
-    }
-  };
-
-  const redo = () => {
-    if (historyIndex < history.length - 1) {
-      setHistoryIndex(prev => prev + 1);
-      const next = history[historyIndex + 1];
-      setCurrentImage(next);
-      drawImageToCanvas(next);
-    }
-  };
-
-  const tools = [
-    { id: 'select' as Tool, icon: Move, label: 'Select' },
-    { id: 'lasso' as Tool, icon: Lasso, label: 'Lasso' },
-    { id: 'brush' as Tool, icon: Paintbrush, label: 'Brush' },
-    { id: 'eraser' as Tool, icon: Eraser, label: 'Eraser' },
-    { id: 'crop' as Tool, icon: Crop, label: 'Crop' },
-    { id: 'text' as Tool, icon: Type, label: 'Text' },
-    { id: 'shape' as Tool, icon: Square, label: 'Shape' },
+  // Tools configuration
+  const tools: Array<{ id: ToolId; icon: React.ElementType; label: string; shortcut?: string }> = [
+    { id: 'select', icon: MousePointer, label: 'Select', shortcut: 'V' },
+    { id: 'move', icon: Move, label: 'Move', shortcut: 'M' },
+    { id: 'magic-wand', icon: Wand2, label: 'Magic Wand', shortcut: 'W' },
+    { id: 'brush', icon: Paintbrush, label: 'Brush', shortcut: 'B' },
+    { id: 'eraser', icon: Eraser, label: 'Eraser', shortcut: 'E' },
+    { id: 'eyedropper', icon: Pipette, label: 'Eyedropper', shortcut: 'I' },
+    { id: 'crop', icon: Crop, label: 'Crop', shortcut: 'C' },
+    { id: 'text', icon: Type, label: 'Text', shortcut: 'T' },
+    { id: 'shape', icon: Square, label: 'Shape', shortcut: 'U' },
+    { id: 'hand', icon: Hand, label: 'Hand', shortcut: 'H' },
   ];
 
   const adjustmentSliders = [
@@ -180,36 +430,88 @@ export function ImageEditor() {
     { key: 'hue' as const, icon: Palette, label: 'Hue Rotate', min: 0, max: 360 },
   ];
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') { e.preventDefault(); selMgr.current.selectAll(); requestRender(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'd') { e.preventDefault(); selMgr.current.clear(); requestRender(); return; }
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'I') { e.preventDefault(); selMgr.current.invert(); requestRender(); return; }
+      if (e.key === 'Escape' && isCropping) { cropEngine.current.cancel(); setIsCropping(false); requestRender(); return; }
+      if (e.key === 'Enter' && isCropping) { applyCrop(); return; }
+
+      const shortcuts: Record<string, ToolId> = { v: 'select', m: 'move', w: 'magic-wand', b: 'brush', e: 'eraser', i: 'eyedropper', c: 'crop', t: 'text', u: 'shape', h: 'hand' };
+      const tool = shortcuts[e.key.toLowerCase()];
+      if (tool) {
+        if (tool === 'crop') startCrop();
+        else setActiveTool(tool);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [undo, redo, requestRender, isCropping, applyCrop, startCrop]);
+
   return (
-    <div className="h-full flex flex-col">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-2 border-b border-border/30 shrink-0 bg-background/50 backdrop-blur-sm">
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={undo} disabled={historyIndex <= 0}>
-            <Undo className="w-4 h-4" />
+    <div className="h-full flex flex-col bg-background">
+      {/* Top Toolbar */}
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/30 shrink-0 bg-card/50 backdrop-blur-sm">
+        <div className="flex items-center gap-0.5">
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={undo} disabled={!canUndo}>
+            <Undo className="w-3.5 h-3.5" />
           </Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={redo} disabled={historyIndex >= history.length - 1}>
-            <Redo className="w-4 h-4" />
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={redo} disabled={!canRedo}>
+            <Redo className="w-3.5 h-3.5" />
           </Button>
-          <div className="w-px h-5 bg-border/30 mx-1" />
-          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => setZoom(z => Math.min(z + 25, 400))}>
-            <ZoomIn className="w-4 h-4" />
+          <div className="w-px h-4 bg-border/30 mx-1" />
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => handleZoom(1)}>
+            <ZoomIn className="w-3.5 h-3.5" />
           </Button>
-          <span className="text-xs text-muted-foreground w-10 text-center">{zoom}%</span>
-          <Button variant="ghost" size="icon" className="w-8 h-8" onClick={() => setZoom(z => Math.max(z - 25, 25))}>
-            <ZoomOut className="w-4 h-4" />
+          <span className="text-[10px] text-muted-foreground w-9 text-center font-mono">{zoom}%</span>
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => handleZoom(-1)}>
+            <ZoomOut className="w-3.5 h-3.5" />
           </Button>
-          <div className="w-px h-5 bg-border/30 mx-1" />
-          <Button variant="ghost" size="icon" className="w-8 h-8"><RotateCw className="w-4 h-4" /></Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8"><FlipHorizontal className="w-4 h-4" /></Button>
-          <Button variant="ghost" size="icon" className="w-8 h-8"><FlipVertical className="w-4 h-4" /></Button>
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => {
+            coordSystem.current.fitToView();
+            setZoom(Math.round(coordSystem.current.zoom * 100));
+            requestRender();
+          }}>
+            <Grid3X3 className="w-3.5 h-3.5" />
+          </Button>
+          <div className="w-px h-4 bg-border/30 mx-1" />
+          <Button variant="ghost" size="icon" className="w-7 h-7"><RotateCw className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="w-7 h-7"><FlipHorizontal className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="w-7 h-7"><FlipVertical className="w-3.5 h-3.5" /></Button>
+          {isCropping && (
+            <>
+              <div className="w-px h-4 bg-border/30 mx-1" />
+              <Button variant="default" size="sm" className="h-6 text-[10px] px-2 gap-1" onClick={applyCrop}>
+                ✓ Apply Crop
+              </Button>
+              <Button variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => {
+                cropEngine.current.cancel();
+                setIsCropping(false);
+                requestRender();
+              }}>
+                Cancel
+              </Button>
+            </>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          {hasImage && (
+            <div className="text-[9px] text-muted-foreground font-mono mr-2">
+              {coordSystem.current.imageSize.width}×{coordSystem.current.imageSize.height}
+              {cursorPos && coordSystem.current.isInBounds(cursorPos.x, cursorPos.y) &&
+                ` · ${Math.floor(cursorPos.x)}, ${Math.floor(cursorPos.y)}`
+              }
+            </div>
+          )}
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => fileInputRef.current?.click()}>
-            <Upload className="w-3 h-3" /> Upload
+          <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={() => fileInputRef.current?.click()}>
+            <Upload className="w-3 h-3" /> Open
           </Button>
-          <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+          <Button variant="outline" size="sm" className="h-6 text-[10px] gap-1" onClick={exportImage} disabled={!hasImage}>
             <Download className="w-3 h-3" /> Export
           </Button>
         </div>
@@ -217,7 +519,7 @@ export function ImageEditor() {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Tool sidebar */}
-        <div className="w-12 border-r border-border/30 flex flex-col items-center py-2 gap-1 shrink-0">
+        <div className="w-10 border-r border-border/30 flex flex-col items-center py-1.5 gap-0.5 shrink-0 bg-card/30">
           {tools.map(tool => {
             const Icon = tool.icon;
             return (
@@ -225,101 +527,83 @@ export function ImageEditor() {
                 key={tool.id}
                 variant="ghost"
                 size="icon"
-                className={cn('w-9 h-9 rounded-lg', activeTool === tool.id && 'bg-primary/15 text-primary')}
-                onClick={() => setActiveTool(tool.id)}
+                title={`${tool.label} (${tool.shortcut})`}
+                className={cn('w-8 h-8 rounded-lg', activeTool === tool.id && 'bg-primary/15 text-primary ring-1 ring-primary/30')}
+                onClick={() => {
+                  if (tool.id === 'crop') startCrop();
+                  else setActiveTool(tool.id);
+                }}
               >
-                <Icon className="w-4 h-4" />
+                <Icon className="w-3.5 h-3.5" />
               </Button>
             );
           })}
+          <div className="flex-1" />
+          {/* Foreground color swatch */}
+          <div
+            className="w-6 h-6 rounded border border-border/50 cursor-pointer shadow-sm"
+            style={{ backgroundColor: `rgb(${foregroundColor.r},${foregroundColor.g},${foregroundColor.b})` }}
+            title="Foreground Color"
+          />
         </div>
 
         {/* Canvas area */}
-        <div className="flex-1 relative overflow-auto bg-[hsl(220,27%,3%)]" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, hsla(220,27%,8%,1) 0%, hsla(220,27%,3%,1) 100%)' }}>
-          {currentImage ? (
-            <div className="absolute inset-0 flex items-center justify-center p-8" style={{ transform: `scale(${zoom / 100})` }}>
-              <div className="relative">
-                <canvas
-                  ref={canvasRef}
-                  className="max-w-full max-h-full shadow-2xl shadow-black/50 rounded-sm"
-                  style={{ filter: getFilterString() }}
-                />
-                {/* Lasso overlay canvas */}
-                {activeTool === 'lasso' && (
-                  <canvas
-                    ref={overlayCanvasRef}
-                    className="absolute inset-0 w-full h-full cursor-crosshair"
-                    style={{ imageRendering: 'auto' }}
-                    onPointerDown={lasso.handlePointerDown}
-                    onPointerMove={lasso.handlePointerMove}
-                    onPointerUp={lasso.handlePointerUp}
-                  />
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="h-full flex items-center justify-center">
+        <div
+          ref={containerRef}
+          className="flex-1 relative overflow-hidden"
+          style={{ background: 'hsl(var(--background))' }}
+        >
+          <canvas
+            ref={canvasRef}
+            className={cn(
+              'absolute inset-0 w-full h-full',
+              activeTool === 'brush' && 'cursor-crosshair',
+              activeTool === 'eraser' && 'cursor-crosshair',
+              activeTool === 'hand' && (isPanning ? 'cursor-grabbing' : 'cursor-grab'),
+              activeTool === 'eyedropper' && 'cursor-crosshair',
+              activeTool === 'magic-wand' && 'cursor-crosshair',
+              activeTool === 'crop' && 'cursor-crosshair',
+              activeTool === 'move' && 'cursor-move',
+            )}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={() => { setCursorPos(null); handlePointerUp(); }}
+            onWheel={handleWheel}
+            onContextMenu={e => e.preventDefault()}
+          />
+
+          {!hasImage && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <div
-                className="text-center p-12 rounded-2xl border-2 border-dashed border-border/30 bg-muted/5 cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-all"
+                className="text-center p-10 rounded-2xl border-2 border-dashed border-border/30 bg-muted/5 cursor-pointer hover:border-primary/30 hover:bg-primary/5 transition-all pointer-events-auto"
                 onClick={() => fileInputRef.current?.click()}
               >
-                <Image className="w-16 h-16 mx-auto mb-4 text-muted-foreground/30" />
-                <p className="text-sm font-medium text-muted-foreground">Drop an image or click to upload</p>
-                <p className="text-xs text-muted-foreground/60 mt-1">Supports PNG, JPG, SVG, WebP</p>
+                <Image className="w-14 h-14 mx-auto mb-3 text-muted-foreground/20" />
+                <p className="text-sm font-medium text-muted-foreground/60">Drop an image or click to open</p>
+                <p className="text-[10px] text-muted-foreground/40 mt-1">PNG, JPG, SVG, WebP</p>
               </div>
-            </div>
-          )}
-
-          {/* Lasso status bar */}
-          {activeTool === 'lasso' && currentImage && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/30 text-xs">
-              <Lasso className="w-3.5 h-3.5 text-primary" />
-              <span className="text-muted-foreground">
-                {lasso.phase === 'idle' && 'Click & drag to draw selection'}
-                {lasso.phase === 'drawing' && `Drawing — ${lasso.vertices.length} pts`}
-                {lasso.phase === 'closed' && `Selection closed · ${lasso.junctions.length} junctions`}
-              </span>
-              {lasso.phase === 'drawing' && (
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1">
-                    <div className="w-1.5 h-1.5 rounded-full" style={{
-                      backgroundColor: `hsl(${180 * lasso.confidence}, 80%, 55%)`
-                    }} />
-                    <span className="text-[10px]">{(lasso.confidence * 100).toFixed(0)}%</span>
-                  </div>
-                  {lasso.distanceToStart < 30 && lasso.vertices.length > 10 && (
-                    <span className="text-[10px] text-emerald-400 animate-pulse">
-                      {lasso.distanceToStart < 14 ? '● Close' : `${lasso.distanceToStart.toFixed(0)}px`}
-                    </span>
-                  )}
-                </div>
-              )}
-              {lasso.phase === 'closed' && (
-                <Button variant="ghost" size="icon" className="w-5 h-5" onClick={lasso.resetLasso}>
-                  <X className="w-3 h-3" />
-                </Button>
-              )}
             </div>
           )}
         </div>
 
         {/* Right panel */}
-        <div className="w-64 border-l border-border/30 flex flex-col shrink-0">
+        <div className="w-60 border-l border-border/30 flex flex-col shrink-0 bg-card/30">
           {/* Panel tabs */}
-          <div className="flex border-b border-border/30 px-1 py-1 gap-0.5">
-            {[
-              { id: 'tools' as const, icon: SlidersHorizontal, label: 'Tools' },
-              { id: 'adjust' as const, icon: Sun, label: 'Adjust' },
-              { id: 'ai' as const, icon: Sparkles, label: 'AI' },
-              { id: 'layers' as const, icon: Layers, label: 'Layers' },
-            ].map(tab => {
+          <div className="flex border-b border-border/30 px-0.5 py-0.5 gap-0.5">
+            {([
+              { id: 'tools' as PanelId, icon: SlidersHorizontal, label: 'Tools' },
+              { id: 'adjust' as PanelId, icon: Sun, label: 'Adjust' },
+              { id: 'ai' as PanelId, icon: Sparkles, label: 'AI' },
+              { id: 'layers' as PanelId, icon: Layers, label: 'Layers' },
+            ]).map(tab => {
               const Icon = tab.icon;
               return (
                 <Button
                   key={tab.id}
                   variant="ghost"
                   size="sm"
-                  className={cn('h-7 px-2 text-xs gap-1 flex-1', activePanel === tab.id && 'bg-primary/15 text-primary')}
+                  className={cn('h-6 px-1.5 text-[10px] gap-1 flex-1', activePanel === tab.id && 'bg-primary/15 text-primary')}
                   onClick={() => setActivePanel(tab.id)}
                 >
                   <Icon className="w-3 h-3" />
@@ -330,220 +614,259 @@ export function ImageEditor() {
           </div>
 
           <ScrollArea className="flex-1">
-            <div className="p-3">
+            <div className="p-2.5">
+              {/* Tool Options */}
+              {activePanel === 'tools' && (
+                <div className="space-y-3">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">
+                    {tools.find(t => t.id === activeTool)?.label ?? 'Tool Options'}
+                  </div>
+
+                  {(activeTool === 'brush' || activeTool === 'eraser') && (
+                    <div className="space-y-2.5">
+                      {[
+                        { key: 'size', label: 'Size', min: 1, max: 200, val: brushSettings.size },
+                        { key: 'opacity', label: 'Opacity', min: 1, max: 100, val: brushSettings.opacity },
+                        { key: 'hardness', label: 'Hardness', min: 0, max: 100, val: brushSettings.hardness },
+                        { key: 'flow', label: 'Flow', min: 1, max: 100, val: brushSettings.flow },
+                        { key: 'spacing', label: 'Spacing', min: 5, max: 200, val: brushSettings.spacing },
+                      ].map(s => (
+                        <div key={s.key}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px]">{s.label}</span>
+                            <span className="text-[9px] text-muted-foreground font-mono">{s.val}</span>
+                          </div>
+                          <Slider
+                            value={[s.val]}
+                            min={s.min}
+                            max={s.max}
+                            step={1}
+                            onValueChange={([v]) => setBrushSettings(prev => ({ ...prev, [s.key]: v }))}
+                            className="w-full"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {activeTool === 'magic-wand' && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground">Click on a region to select similar colors.</p>
+                      <p className="text-[10px] text-muted-foreground">Hold Shift to add to selection.</p>
+                      <div className="flex gap-1.5 mt-2">
+                        <Button variant="outline" size="sm" className="h-6 text-[9px] flex-1" onClick={() => { selMgr.current.clear(); requestRender(); }}>
+                          Deselect
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-6 text-[9px] flex-1" onClick={() => { selMgr.current.invert(); requestRender(); }}>
+                          Invert
+                        </Button>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <Button variant="outline" size="sm" className="h-6 text-[9px] flex-1" onClick={() => { selMgr.current.expand(2); requestRender(); }}>
+                          Expand
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-6 text-[9px] flex-1" onClick={() => { selMgr.current.contract(2); requestRender(); }}>
+                          Contract
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-6 text-[9px] flex-1" onClick={() => { selMgr.current.feather(3); requestRender(); }}>
+                          Feather
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeTool === 'crop' && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] text-muted-foreground">Select an area, then press Enter or click Apply.</p>
+                      <div className="grid grid-cols-2 gap-1">
+                        {CROP_PRESETS.map(p => (
+                          <Button
+                            key={p.label}
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[9px]"
+                            onClick={() => {
+                              cropEngine.current.start(p.ratio);
+                              setIsCropping(true);
+                              requestRender();
+                            }}
+                          >
+                            {p.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Adjustments */}
               {activePanel === 'adjust' && (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {adjustmentSliders.map(slider => {
                     const Icon = slider.icon;
                     return (
                       <div key={slider.key}>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                            <span className="text-xs">{slider.label}</span>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1">
+                            <Icon className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-[10px]">{slider.label}</span>
                           </div>
-                          <span className="text-[10px] text-muted-foreground">{adjustments[slider.key]}</span>
+                          <span className="text-[9px] text-muted-foreground font-mono">{adjustments[slider.key]}</span>
                         </div>
                         <Slider
                           value={[adjustments[slider.key]]}
                           min={slider.min}
                           max={slider.max}
                           step={1}
-                          onValueChange={([v]) => {
-                            setAdjustments(prev => ({ ...prev, [slider.key]: v }));
-                            if (currentImage) drawImageToCanvas(currentImage);
-                          }}
+                          onValueChange={([v]) => setAdjustments(prev => ({ ...prev, [slider.key]: v }))}
                           className="w-full"
                         />
                       </div>
                     );
                   })}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs mt-2"
-                    onClick={() => setAdjustments({ brightness: 100, contrast: 100, saturation: 100, blur: 0, hue: 0 })}
-                  >
+                  <Button variant="outline" size="sm" className="w-full text-[10px] h-6 mt-1"
+                    onClick={() => setAdjustments({ brightness: 100, contrast: 100, saturation: 100, blur: 0, hue: 0 })}>
                     Reset All
                   </Button>
                 </div>
               )}
 
+              {/* AI */}
               {activePanel === 'ai' && (
-                <div className="space-y-3">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">AI Image Tools</div>
+                <div className="space-y-2.5">
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">AI Image Tools</div>
                   <Textarea
                     value={aiPrompt}
                     onChange={e => setAiPrompt(e.target.value)}
-                    placeholder="Describe what you want to do with the image..."
-                    className="text-xs h-24 bg-muted/20 border-border/30"
+                    placeholder="Describe what to do..."
+                    className="text-[10px] h-20 bg-muted/20 border-border/30 resize-none"
                   />
-                  <Button
-                    size="sm"
-                    className="w-full text-xs gap-1"
-                    onClick={processWithAI}
-                    disabled={isProcessing || !currentImage}
-                  >
+                  <Button size="sm" className="w-full text-[10px] h-7 gap-1" onClick={processWithAI} disabled={isProcessing || !hasImage}>
                     {isProcessing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                     {isProcessing ? 'Processing...' : 'Apply AI Edit'}
                   </Button>
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] text-muted-foreground">Quick Actions</p>
-                    {['Remove background', 'Upscale 2x', 'Auto-enhance', 'Add depth of field', 'Convert to illustration'].map(action => (
-                      <Button key={action} variant="outline" size="sm" className="w-full text-xs justify-start h-7 gap-1" onClick={() => setAiPrompt(action)}>
-                        <Wand2 className="w-3 h-3" />{action}
+                  <div className="space-y-1">
+                    <p className="text-[9px] text-muted-foreground">Quick Actions</p>
+                    {['Remove background', 'Upscale 2x', 'Auto-enhance', 'Add depth of field', 'Convert to illustration'].map(a => (
+                      <Button key={a} variant="outline" size="sm" className="w-full text-[10px] justify-start h-6 gap-1" onClick={() => setAiPrompt(a)}>
+                        <Wand2 className="w-3 h-3" />{a}
                       </Button>
                     ))}
                   </div>
                 </div>
               )}
 
-              {activePanel === 'tools' && (
-                <div className="space-y-3">
-                  <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active: {activeTool}</div>
-                  
-              {activeTool === 'lasso' && (
-                    <div className="space-y-3">
-                      <div className="text-[10px] text-muted-foreground bg-muted/10 rounded-lg p-2 border border-border/20">
-                        <p className="font-medium text-foreground/80 mb-1">Boundary Instrument</p>
-                        <p>Field-assisted lasso with edge attraction, organic backtrack, junction detection, and quality scoring.</p>
-                      </div>
-
-                      {/* Quality report */}
-                      {lasso.qualityReport && lasso.phase === 'closed' && (
-                        <div className="bg-muted/10 rounded-lg p-2 border border-border/20 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-medium text-foreground/80">Path Quality</span>
-                            <Badge variant="outline" className="text-[9px] h-4" style={{
-                              borderColor: lasso.qualityReport.overallScore >= 0.7 ? 'hsl(var(--primary))' :
-                                lasso.qualityReport.overallScore >= 0.4 ? 'hsl(40, 90%, 55%)' : 'hsl(0, 80%, 55%)'
-                            }}>
-                              {(lasso.qualityReport.overallScore * 100).toFixed(0)}%
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground">
-                            <span>Confidence</span>
-                            <span className="text-right">{(lasso.qualityReport.avgConfidence * 100).toFixed(0)}%</span>
-                            <span>Smoothness</span>
-                            <span className="text-right">{(lasso.qualityReport.smoothness * 100).toFixed(0)}%</span>
-                            <span>Junctions</span>
-                            <span className="text-right">{lasso.qualityReport.junctionCount}</span>
-                            <span>Low-conf ratio</span>
-                            <span className="text-right">{(lasso.qualityReport.lowConfidenceRatio * 100).toFixed(0)}%</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Backtrack indicator */}
-                      {lasso.lastBacktrack && lasso.lastBacktrack.removedCount > 0 && lasso.phase === 'drawing' && (
-                        <div className="flex items-center gap-1.5 text-[10px] text-amber-400/80 bg-amber-400/5 rounded px-2 py-1 border border-amber-400/10">
-                          <Scissors className="w-3 h-3" />
-                          <span>Backtracked {lasso.lastBacktrack.removedCount} pts</span>
-                        </div>
-                      )}
-
-                      <div>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs">Mode</span>
-                          <Badge variant="outline" className="text-[9px] h-4">Field-Assisted</Badge>
-                        </div>
-                      </div>
-                      <div>
-                        <span className="text-xs">Edge Attraction</span>
-                        <Slider
-                          value={[lasso.lassoRef.current.config.motion.baseWeights.attraction * 100]}
-                          min={0} max={100} step={5}
-                          onValueChange={([v]) => lasso.setConfig({
-                            motion: {
-                              ...lasso.lassoRef.current.config.motion,
-                              baseWeights: { ...lasso.lassoRef.current.config.motion.baseWeights, attraction: v / 100 }
-                            }
-                          })}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-xs">Spring Stiffness</span>
-                        <Slider
-                          value={[lasso.lassoRef.current.config.motion.springStiffness * 100]}
-                          min={10} max={100} step={5}
-                          onValueChange={([v]) => lasso.setConfig({
-                            motion: { ...lasso.lassoRef.current.config.motion, springStiffness: v / 100 }
-                          })}
-                          className="mt-1"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-xs">Feather</span>
-                        <Slider
-                          value={[lasso.lassoRef.current.config.featherRadius]}
-                          min={0} max={20} step={1}
-                          onValueChange={([v]) => lasso.setConfig({ featherRadius: v })}
-                          className="mt-1"
-                        />
-                      </div>
-
-                      {/* Phase 2+3 toggles */}
-                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider pt-1">Behavior</div>
-                      {[
-                        { key: 'enableOrganicUnzip' as const, label: 'Organic Backtrack' },
-                        { key: 'showJunctions' as const, label: 'Show Junctions' },
-                        { key: 'showConfidenceZones' as const, label: 'Confidence Zones' },
-                        { key: 'showQuality' as const, label: 'Quality Badge' },
-                        { key: 'showField' as const, label: 'Field Overlay' },
-                      ].map(toggle => (
-                        <div key={toggle.key} className="flex items-center justify-between">
-                          <span className="text-xs">{toggle.label}</span>
-                          <Button
-                            variant={lasso.lassoRef.current.config[toggle.key] ? "default" : "outline"}
-                            size="sm" className="h-6 text-[10px] px-2"
-                            onClick={() => lasso.setConfig({ [toggle.key]: !lasso.lassoRef.current.config[toggle.key] })}
-                          >
-                            {lasso.lassoRef.current.config[toggle.key] ? 'On' : 'Off'}
-                          </Button>
-                        </div>
-                      ))}
-
-                      {lasso.phase === 'closed' && (
-                        <Button size="sm" className="w-full text-xs gap-1" onClick={lasso.resetLasso}>
-                          <X className="w-3 h-3" /> Clear Selection
-                        </Button>
-                      )}
-                    </div>
-                  )}
-
-                  {activeTool === 'brush' && (
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-xs">Size</span>
-                        <Slider value={[10]} min={1} max={100} className="mt-1" />
-                      </div>
-                      <div>
-                        <span className="text-xs">Opacity</span>
-                        <Slider value={[100]} min={0} max={100} className="mt-1" />
-                      </div>
-                      <div>
-                        <span className="text-xs">Hardness</span>
-                        <Slider value={[80]} min={0} max={100} className="mt-1" />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
+              {/* Layers */}
               {activePanel === 'layers' && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Layers</span>
-                    <Button variant="ghost" size="icon" className="w-6 h-6"><Plus className="w-3 h-3" /></Button>
-                  </div>
-                  <div className="bg-muted/20 rounded-lg p-2 border border-border/20">
-                    <div className="flex items-center gap-2">
-                      <Eye className="w-3 h-3 text-muted-foreground" />
-                      <span className="text-xs flex-1">Background</span>
-                      <Badge variant="outline" className="text-[8px] h-3.5">100%</Badge>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Layers</span>
+                    <div className="flex gap-0.5">
+                      <Button variant="ghost" size="icon" className="w-5 h-5" onClick={() => {
+                        layerMgr.current.addLayer();
+                        saveHistory('Add Layer');
+                        requestRender();
+                      }}>
+                        <Plus className="w-3 h-3" />
+                      </Button>
                     </div>
                   </div>
+                  {[...layers].reverse().map(layer => (
+                    <div
+                      key={layer.id}
+                      className={cn(
+                        'flex items-center gap-1.5 p-1.5 rounded-md border transition-colors cursor-pointer',
+                        layer.id === activeLayerId
+                          ? 'border-primary/30 bg-primary/5'
+                          : 'border-border/20 bg-muted/5 hover:border-border/40',
+                      )}
+                      onClick={() => {
+                        layerMgr.current.setActiveLayer(layer.id);
+                        setActiveLayerId(layer.id);
+                      }}
+                    >
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-5 h-5 shrink-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          layerMgr.current.toggleLayerVisibility(layer.id);
+                          syncLayers();
+                          requestRender();
+                        }}
+                      >
+                        {layer.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-muted-foreground/40" />}
+                      </Button>
+                      <span className="text-[10px] flex-1 truncate">{layer.name}</span>
+                      <Badge variant="outline" className="text-[8px] h-3.5 shrink-0">{layer.opacity}%</Badge>
+                      {layer.locked && <Lock className="w-2.5 h-2.5 text-muted-foreground/40" />}
+                      <div className="flex gap-0.5 opacity-0 group-hover:opacity-100">
+                        <Button variant="ghost" size="icon" className="w-4 h-4" onClick={(e) => {
+                          e.stopPropagation();
+                          layerMgr.current.duplicateLayer(layer.id);
+                          saveHistory('Duplicate Layer');
+                          requestRender();
+                        }}>
+                          <Copy className="w-2.5 h-2.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="w-4 h-4" onClick={(e) => {
+                          e.stopPropagation();
+                          layerMgr.current.removeLayer(layer.id);
+                          saveHistory('Delete Layer');
+                          requestRender();
+                        }}>
+                          <Trash2 className="w-2.5 h-2.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+
+                  {activeLayerId && (
+                    <div className="space-y-2 pt-2 border-t border-border/20">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px]">Opacity</span>
+                          <span className="text-[9px] text-muted-foreground font-mono">
+                            {layers.find(l => l.id === activeLayerId)?.opacity ?? 100}%
+                          </span>
+                        </div>
+                        <Slider
+                          value={[layers.find(l => l.id === activeLayerId)?.opacity ?? 100]}
+                          min={0} max={100} step={1}
+                          onValueChange={([v]) => {
+                            layerMgr.current.setLayerOpacity(activeLayerId, v);
+                            syncLayers();
+                            requestRender();
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="sm" className="h-5 text-[9px] flex-1 px-1" onClick={() => {
+                          layerMgr.current.moveLayer(activeLayerId, 'up');
+                          syncLayers();
+                          requestRender();
+                        }}>
+                          <ChevronUp className="w-3 h-3" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-5 text-[9px] flex-1 px-1" onClick={() => {
+                          layerMgr.current.moveLayer(activeLayerId, 'down');
+                          syncLayers();
+                          requestRender();
+                        }}>
+                          <ChevronDown className="w-3 h-3" />
+                        </Button>
+                        <Button variant="outline" size="sm" className="h-5 text-[9px] flex-1 px-1" onClick={() => {
+                          layerMgr.current.mergeDown(activeLayerId);
+                          saveHistory('Merge Down');
+                          requestRender();
+                        }}>
+                          Merge↓
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
