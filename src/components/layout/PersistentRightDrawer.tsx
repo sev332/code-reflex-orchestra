@@ -15,12 +15,14 @@ import {
   Cpu,
   Network,
   Palette,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AdvancedPersistentChat } from '@/components/AIChat/AdvancedPersistentChat';
 import { EnhancedRightDrawerPanel } from './EnhancedRightDrawerPanel';
+import { VaultPanel } from './VaultPanel';
 
-export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network';
+export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network' | 'vault';
 
 interface IconDef {
   id: RightTab;
@@ -41,6 +43,7 @@ const rightIcons: IconDef[] = [
   { id: 'analytics', icon: Activity, label: 'Analytics', activeColor: 'text-pink-500' },
   { id: 'processing', icon: Cpu, label: 'Processing', activeColor: 'text-red-500' },
   { id: 'network', icon: Network, label: 'Network', activeColor: 'text-indigo-500' },
+  { id: 'vault', icon: KeyRound, label: 'Vault', activeColor: 'text-amber-500' },
 ];
 
 interface PersistentRightDrawerProps {
@@ -145,6 +148,8 @@ export function PersistentRightDrawer({
           <div className="flex-1 overflow-hidden">
             {activeTab === 'chat' ? (
               <AdvancedPersistentChat />
+            ) : activeTab === 'vault' ? (
+              <VaultPanel />
             ) : (
               <EnhancedRightDrawerPanel
                 activeDrawer={transparencyDrawerType as any}
