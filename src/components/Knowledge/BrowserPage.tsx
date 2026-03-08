@@ -1,10 +1,7 @@
-// Browser/Research — Web research workspace with bookmarks, reading list, AI summarization
-import React, { useState, useCallback, useRef } from 'react';
+// Browser/Research — Web research workspace (center content only, uses shell drawers)
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Globe, Plus, X, ArrowLeft, ArrowRight, RotateCcw, Lock, Search,
 } from 'lucide-react';
@@ -18,37 +15,6 @@ interface BrowserTab {
   favicon?: string;
   content?: string;
 }
-
-interface BookmarkItem {
-  id: string;
-  title: string;
-  url: string;
-  folder: string;
-  addedAt: Date;
-}
-
-interface ReadingListItem {
-  id: string;
-  title: string;
-  url: string;
-  excerpt: string;
-  addedAt: Date;
-  read: boolean;
-}
-
-const defaultBookmarks: BookmarkItem[] = [
-  { id: 'b1', title: 'React Documentation', url: 'https://react.dev', folder: 'Dev', addedAt: new Date() },
-  { id: 'b2', title: 'Three.js Docs', url: 'https://threejs.org/docs', folder: 'Dev', addedAt: new Date() },
-  { id: 'b3', title: 'MDN Web Docs', url: 'https://developer.mozilla.org', folder: 'Dev', addedAt: new Date() },
-  { id: 'b4', title: 'Hacker News', url: 'https://news.ycombinator.com', folder: 'News', addedAt: new Date() },
-  { id: 'b5', title: 'arXiv CS', url: 'https://arxiv.org/list/cs.AI', folder: 'Research', addedAt: new Date() },
-];
-
-const defaultReadingList: ReadingListItem[] = [
-  { id: 'r1', title: 'Attention Is All You Need', url: 'https://arxiv.org/abs/1706.03762', excerpt: 'The dominant sequence transduction models are based on complex recurrent or convolutional neural networks...', addedAt: new Date(), read: false },
-  { id: 'r2', title: 'The Bitter Lesson - Rich Sutton', url: 'http://www.incompleteideas.net/IncIdeas/BitterLesson.html', excerpt: 'The biggest lesson that can be read from 70 years of AI research is that general methods that leverage computation are ultimately the most effective...', addedAt: new Date(), read: true },
-  { id: 'r3', title: 'Scaling Laws for Neural Language Models', url: 'https://arxiv.org/abs/2001.08361', excerpt: 'We study empirical scaling laws for language model performance on the cross-entropy loss...', addedAt: new Date(), read: false },
-];
 
 const renderPageContent = (url: string) => {
   // Simulated page content based on URL
