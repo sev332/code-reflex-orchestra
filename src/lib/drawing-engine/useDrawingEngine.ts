@@ -41,6 +41,11 @@ export function useDrawingEngine() {
   // Transform state (select tool)
   const [transformState, setTransformState] = useState<TransformState>(emptyTransformState);
 
+  const updateHistory = useCallback(() => {
+    setCanUndo(historyRef.current.canUndo);
+    setCanRedo(historyRef.current.canRedo);
+  }, []);
+
   // ── State mutations ──
 
   const setTool = useCallback((toolId: ToolId) => {
