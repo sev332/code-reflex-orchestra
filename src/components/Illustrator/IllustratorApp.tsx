@@ -15,9 +15,10 @@ import {
   Hexagon, Star, Minus, Type, Pipette, Hand, ZoomIn, PaintBucket,
   Undo, Redo, Plus, Eye, EyeOff, Lock, Unlock, Trash2, Copy,
   Grid3x3, Magnet, Scissors, Slice, Group, Ungroup,
-  Download, Upload, Maximize2, RotateCw,
+  Download, Upload, Maximize2, RotateCw, FlipHorizontal, FlipVertical,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, Palette,
+  Blend, Sparkles, Move, RotateCcw, Layers,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
