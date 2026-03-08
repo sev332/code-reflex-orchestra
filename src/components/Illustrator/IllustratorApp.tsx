@@ -1,5 +1,5 @@
 // Illustrator App — Dark Pro Studio Drawing Engine
-// Full Blueprint: Canvas + Pen + Brush + Shapes + Layers + Live Preview
+// Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   MousePointer2, Pencil, PenTool, Paintbrush, Eraser, Square, Circle,
   Hexagon, Star, Minus, Type, Pipette, Hand, ZoomIn, PaintBucket,
@@ -20,6 +21,8 @@ import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
 import { renderScene } from '@/lib/drawing-engine/renderer';
 import { ToolId, Vec2 } from '@/lib/drawing-engine/types';
 import type { RawInputSample } from '@/lib/drawing-engine/brush-core';
+import { ColorPicker } from './ColorPicker';
+import { BUILT_IN_FONTS } from '@/lib/drawing-engine/text-engine';
 
 // ============================================
 // TOOL DEFINITIONS
