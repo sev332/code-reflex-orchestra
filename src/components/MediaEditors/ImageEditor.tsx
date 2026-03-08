@@ -277,14 +277,21 @@ export function ImageEditor() {
               <span className="text-muted-foreground">
                 {lasso.phase === 'idle' && 'Click & drag to draw selection'}
                 {lasso.phase === 'drawing' && `Drawing — ${lasso.vertices.length} pts`}
-                {lasso.phase === 'closed' && 'Selection closed'}
+                {lasso.phase === 'closed' && `Selection closed · ${lasso.junctions.length} junctions`}
               </span>
               {lasso.phase === 'drawing' && (
-                <div className="flex items-center gap-1">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{
-                    backgroundColor: `hsl(${180 * lasso.confidence}, 80%, 55%)`
-                  }} />
-                  <span className="text-[10px]">{(lasso.confidence * 100).toFixed(0)}%</span>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    <div className="w-1.5 h-1.5 rounded-full" style={{
+                      backgroundColor: `hsl(${180 * lasso.confidence}, 80%, 55%)`
+                    }} />
+                    <span className="text-[10px]">{(lasso.confidence * 100).toFixed(0)}%</span>
+                  </div>
+                  {lasso.distanceToStart < 30 && lasso.vertices.length > 10 && (
+                    <span className="text-[10px] text-emerald-400 animate-pulse">
+                      {lasso.distanceToStart < 14 ? '● Close' : `${lasso.distanceToStart.toFixed(0)}px`}
+                    </span>
+                  )}
                 </div>
               )}
               {lasso.phase === 'closed' && (
