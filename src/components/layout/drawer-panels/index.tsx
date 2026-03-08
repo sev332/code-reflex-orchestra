@@ -369,55 +369,107 @@ export function CalendarUpcomingPanel() {
 
 
 // ============================================================
-// TASKS DRAWER PANELS
+// TASKS DRAWER PANELS (Perfected)
 // ============================================================
 
 export function TasksBoardPanel() {
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const statusCounts = [
-    { label: 'Backlog', count: 2, icon: Circle, color: 'text-muted-foreground' },
-    { label: 'To Do', count: 3, icon: Circle, color: 'text-[hsl(210,80%,60%)]' },
-    { label: 'In Progress', count: 2, icon: Timer, color: 'text-[hsl(45,100%,65%)]' },
-    { label: 'Review', count: 1, icon: PauseCircle, color: 'text-[hsl(270,80%,65%)]' },
-    { label: 'Done', count: 4, icon: CheckCircle2, color: 'text-[hsl(150,100%,60%)]' },
+    { id: 'backlog', label: 'Backlog', count: 2, icon: Circle, color: 'text-muted-foreground', bgColor: 'bg-muted/10' },
+    { id: 'todo', label: 'To Do', count: 3, icon: Circle, color: 'text-[hsl(210,80%,60%)]', bgColor: 'bg-[hsl(210,80%,60%)]/5' },
+    { id: 'in_progress', label: 'In Progress', count: 2, icon: Timer, color: 'text-[hsl(45,100%,65%)]', bgColor: 'bg-[hsl(45,100%,65%)]/5' },
+    { id: 'review', label: 'Review', count: 1, icon: PauseCircle, color: 'text-[hsl(270,80%,65%)]', bgColor: 'bg-[hsl(270,80%,65%)]/5' },
+    { id: 'done', label: 'Done', count: 4, icon: CheckCircle2, color: 'text-[hsl(150,100%,60%)]', bgColor: 'bg-[hsl(150,100%,60%)]/5' },
   ];
   const total = statusCounts.reduce((a, s) => a + s.count, 0);
   const done = statusCounts.find(s => s.label === 'Done')?.count || 0;
+  const inProgress = statusCounts.find(s => s.label === 'In Progress')?.count || 0;
   const completion = Math.round((done / total) * 100);
+
+  // Quick task input
+  const [quickTask, setQuickTask] = useState('');
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-3">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs">
-          <Plus className="w-3.5 h-3.5" /> New Task
-        </Button>
+      <div className="p-2 space-y-3">
+        {/* Quick add */}
+        <div className="flex gap-1">
+          <Input
+            placeholder="Quick add task..."
+            value={quickTask}
+            onChange={(e) => setQuickTask(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && quickTask.trim()) { emitPageDrawerAction({ page: 'tasks', action: 'add-task', value: quickTask }); setQuickTask(''); } }}
+            className="h-8 text-xs bg-muted/20 border-border/30 flex-1"
+          />
+          <Button size="sm" className="h-8 w-8 p-0 shrink-0">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
 
-        <div className="bg-muted/20 rounded-lg p-3 space-y-2">
+        {/* Progress card */}
+        <div className="rounded-xl border border-border/20 bg-muted/10 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium">Progress</span>
-            <span className="text-xs text-primary">{completion}%</span>
+            <div>
+              <p className="text-xs font-semibold">{completion}% Complete</p>
+              <p className="text-[10px] text-muted-foreground">{done}/{total} tasks done</p>
+            </div>
+            <div className="w-10 h-10 relative">
+              <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" opacity="0.2" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--primary))" strokeWidth="3" strokeDasharray={`${completion} ${100 - completion}`} strokeLinecap="round" />
+              </svg>
+            </div>
           </div>
-          <Progress value={completion} className="h-1.5" />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>{done} done</span>
-            <span>{total} total</span>
+          <div className="flex gap-3 text-[10px]">
+            <span className="text-[hsl(45,100%,65%)]">● {inProgress} active</span>
+            <span className="text-destructive">● 1 overdue</span>
           </div>
         </div>
 
+        {/* Status filters */}
         <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">By Status</p>
           {statusCounts.map(s => {
             const Icon = s.icon;
+            const isActive = activeFilter === s.id;
             return (
-              <Button
-                key={s.label}
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start h-8 px-2 text-xs gap-2"
-                onClick={() => emitPageDrawerAction({ page: 'tasks', action: 'filter-status', value: s.label })}
+              <button
+                key={s.id}
+                onClick={() => { setActiveFilter(isActive ? null : s.id); emitPageDrawerAction({ page: 'tasks', action: 'filter-status', value: s.id }); }}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all',
+                  isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+                )}
               >
                 <Icon className={cn('w-4 h-4', s.color)} />
-                <span className="flex-1 text-left">{s.label}</span>
-                <Badge variant="outline" className="text-[10px] px-1.5 h-4">{s.count}</Badge>
-              </Button>
+                <span className="flex-1 text-left font-medium">{s.label}</span>
+                <span className={cn(
+                  'text-[10px] font-semibold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                  isActive ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-muted-foreground',
+                )}>
+                  {s.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Priority breakdown */}
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">By Priority</p>
+          {[
+            { label: 'Urgent', icon: AlertCircle, color: 'text-destructive', count: 1 },
+            { label: 'High', icon: ArrowUp, color: 'text-[hsl(30,100%,60%)]', count: 3 },
+            { label: 'Medium', icon: ArrowRight, color: 'text-[hsl(45,100%,65%)]', count: 5 },
+            { label: 'Low', icon: ArrowDown, color: 'text-[hsl(210,70%,55%)]', count: 3 },
+          ].map(p => {
+            const Icon = p.icon;
+            return (
+              <button key={p.label} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs hover:bg-muted/25 transition-all">
+                <Icon className={cn('w-3.5 h-3.5', p.color)} />
+                <span className="flex-1 text-left">{p.label}</span>
+                <span className="text-[10px] text-muted-foreground">{p.count}</span>
+              </button>
             );
           })}
         </div>
@@ -427,24 +479,50 @@ export function TasksBoardPanel() {
 }
 
 export function TasksProjectsPanel() {
+  const [activeProject, setActiveProject] = useState('Browser OS');
   const projects = [
-    { name: 'Browser OS', tasks: 8, color: 'bg-primary' },
-    { name: 'AIMOS Engine', tasks: 5, color: 'bg-[hsl(270,80%,60%)]' },
-    { name: 'Design System', tasks: 3, color: 'bg-[hsl(150,100%,60%)]' },
+    { name: 'Browser OS', tasks: 8, done: 3, color: 'hsl(var(--primary))' },
+    { name: 'AIMOS Engine', tasks: 5, done: 1, color: 'hsl(270, 80%, 60%)' },
+    { name: 'Design System', tasks: 3, done: 2, color: 'hsl(150, 100%, 60%)' },
+    { name: 'Documentation', tasks: 4, done: 4, color: 'hsl(45, 100%, 65%)' },
   ];
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-2">
+      <div className="p-2 space-y-2">
         <Button variant="ghost" size="sm" className="w-full justify-start text-xs gap-2 h-7">
           <Plus className="w-3.5 h-3.5" /> New Project
         </Button>
-        {projects.map(p => (
-          <div key={p.name} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/20 cursor-pointer">
-            <div className={cn('w-3 h-3 rounded', p.color)} />
-            <span className="text-xs flex-1">{p.name}</span>
-            <Badge variant="outline" className="text-[10px] px-1 h-4">{p.tasks}</Badge>
-          </div>
-        ))}
+        {projects.map(p => {
+          const isActive = activeProject === p.name;
+          const pct = Math.round((p.done / p.tasks) * 100);
+          return (
+            <button
+              key={p.name}
+              onClick={() => { setActiveProject(p.name); emitPageDrawerAction({ page: 'tasks', action: 'select-project', value: p.name }); }}
+              className={cn(
+                'w-full text-left px-2.5 py-2.5 rounded-lg transition-all',
+                isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-3 h-3 rounded shrink-0" style={{ background: p.color }} />
+                <span className="text-xs font-medium flex-1">{p.name}</span>
+                <span className="text-[10px] text-muted-foreground">{p.done}/{p.tasks}</span>
+              </div>
+              <Progress value={pct} className="h-1" />
+            </button>
+          );
+        })}
+
+        {/* Labels */}
+        <div className="border-t border-border/20 pt-2 space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Labels</p>
+          {['Core', 'UI', 'Backend', 'Spreadsheet', 'Calendar', 'AI'].map(l => (
+            <Button key={l} variant="ghost" size="sm" className="h-7 px-2.5 text-xs gap-2 mr-1">
+              <Tag className="w-3 h-3 text-muted-foreground" />{l}
+            </Button>
+          ))}
+        </div>
       </div>
     </ScrollArea>
   );
@@ -454,29 +532,62 @@ export function TasksAnalyticsPanel() {
   return (
     <ScrollArea className="h-full">
       <div className="p-3 space-y-3">
+        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Open', value: '8', color: 'text-primary' },
-            { label: 'Done', value: '4', color: 'text-[hsl(150,100%,60%)]' },
-            { label: 'Overdue', value: '1', color: 'text-destructive' },
-            { label: 'Avg Time', value: '2.3d', color: 'text-muted-foreground' },
+            { label: 'Open', value: '8', color: 'text-primary', trend: '+2' },
+            { label: 'Done', value: '4', color: 'text-[hsl(150,100%,60%)]', trend: '+1' },
+            { label: 'Overdue', value: '1', color: 'text-destructive', trend: '0' },
+            { label: 'Avg Time', value: '2.3d', color: 'text-muted-foreground', trend: '-0.5d' },
           ].map(s => (
-            <div key={s.label} className="bg-muted/20 rounded-lg p-2 text-center">
-              <p className={cn('text-lg font-bold', s.color)}>{s.value}</p>
-              <p className="text-[10px] text-muted-foreground">{s.label}</p>
+            <div key={s.label} className="bg-muted/15 rounded-xl p-2.5 border border-border/10">
+              <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                <span className={cn('text-[9px]', s.trend.startsWith('-') ? 'text-[hsl(150,100%,60%)]' : s.trend === '0' ? 'text-muted-foreground' : 'text-[hsl(45,100%,65%)]')}>{s.trend}</span>
+              </div>
             </div>
           ))}
         </div>
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Velocity</p>
-          <div className="h-20 bg-muted/10 rounded-lg border border-border/20 flex items-end justify-around px-2 pb-1">
-            {[40, 65, 50, 80, 70, 90, 55].map((h, i) => (
-              <div key={i} className="w-3 rounded-t bg-primary/40" style={{ height: `${h}%` }} />
+
+        {/* Weekly velocity */}
+        <div className="rounded-xl border border-border/20 bg-muted/5 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Weekly Velocity</p>
+            <Badge variant="outline" className="text-[9px] h-4">This Week</Badge>
+          </div>
+          <div className="h-24 flex items-end justify-between gap-1 px-1">
+            {[
+              { day: 'M', val: 40 }, { day: 'T', val: 65 }, { day: 'W', val: 50 },
+              { day: 'T', val: 80 }, { day: 'F', val: 70 }, { day: 'S', val: 90 }, { day: 'S', val: 55 },
+            ].map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full rounded-t-sm bg-primary/30 hover:bg-primary/60 transition-colors" style={{ height: `${d.val}%` }} />
+                <span className="text-[8px] text-muted-foreground">{d.day}</span>
+              </div>
             ))}
           </div>
-          <div className="flex justify-between text-[9px] text-muted-foreground px-1">
-            <span>Mon</span><span>Sun</span>
-          </div>
+        </div>
+
+        {/* Team workload */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase px-1">Team Workload</p>
+          {[
+            { name: 'Alex', tasks: 4, color: 'bg-primary' },
+            { name: 'Jordan', tasks: 3, color: 'bg-[hsl(270,80%,60%)]' },
+            { name: 'Sam', tasks: 2, color: 'bg-[hsl(150,100%,60%)]' },
+          ].map(m => (
+            <div key={m.name} className="flex items-center gap-2 px-2">
+              <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-background', m.color)}>
+                {m.name[0]}
+              </div>
+              <span className="text-xs flex-1">{m.name}</span>
+              <div className="w-16 h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                <div className={cn('h-full rounded-full', m.color)} style={{ width: `${(m.tasks / 5) * 100}%` }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-3 text-right">{m.tasks}</span>
+            </div>
+          ))}
         </div>
       </div>
     </ScrollArea>
