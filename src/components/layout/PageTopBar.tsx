@@ -31,7 +31,7 @@ const iconMap: Record<PageId, React.ComponentType<any>> = {
   spreadsheet: Table2, calendar: CalendarDays, email: Mail, tasks: KanbanSquare,
   presentations: Presentation, studio3d: Box, terminal: Terminal, apistudio: Beaker,
   database: Database, dashboard: LayoutDashboard, browser: Globe, notes: StickyNote,
-  files: FolderOpen, comms: MessageCircle,
+  files: FolderOpen, comms: MessageCircle, illustrator: PenTool,
 };
 
 const labelMap: Record<PageId, string> = {
