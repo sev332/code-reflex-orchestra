@@ -238,11 +238,24 @@ export function ImageEditor() {
         <div className="flex-1 relative overflow-auto bg-[hsl(220,27%,3%)]" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, hsla(220,27%,8%,1) 0%, hsla(220,27%,3%,1) 100%)' }}>
           {currentImage ? (
             <div className="absolute inset-0 flex items-center justify-center p-8" style={{ transform: `scale(${zoom / 100})` }}>
-              <canvas
-                ref={canvasRef}
-                className="max-w-full max-h-full shadow-2xl shadow-black/50 rounded-sm"
-                style={{ filter: getFilterString() }}
-              />
+              <div className="relative">
+                <canvas
+                  ref={canvasRef}
+                  className="max-w-full max-h-full shadow-2xl shadow-black/50 rounded-sm"
+                  style={{ filter: getFilterString() }}
+                />
+                {/* Lasso overlay canvas */}
+                {activeTool === 'lasso' && (
+                  <canvas
+                    ref={overlayCanvasRef}
+                    className="absolute inset-0 w-full h-full cursor-crosshair"
+                    style={{ imageRendering: 'auto' }}
+                    onPointerDown={lasso.handlePointerDown}
+                    onPointerMove={lasso.handlePointerMove}
+                    onPointerUp={lasso.handlePointerUp}
+                  />
+                )}
+              </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
@@ -254,6 +267,31 @@ export function ImageEditor() {
                 <p className="text-sm font-medium text-muted-foreground">Drop an image or click to upload</p>
                 <p className="text-xs text-muted-foreground/60 mt-1">Supports PNG, JPG, SVG, WebP</p>
               </div>
+            </div>
+          )}
+
+          {/* Lasso status bar */}
+          {activeTool === 'lasso' && currentImage && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/30 text-xs">
+              <Lasso className="w-3.5 h-3.5 text-primary" />
+              <span className="text-muted-foreground">
+                {lasso.phase === 'idle' && 'Click & drag to draw selection'}
+                {lasso.phase === 'drawing' && `Drawing — ${lasso.vertices.length} pts`}
+                {lasso.phase === 'closed' && 'Selection closed'}
+              </span>
+              {lasso.phase === 'drawing' && (
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{
+                    backgroundColor: `hsl(${180 * lasso.confidence}, 80%, 55%)`
+                  }} />
+                  <span className="text-[10px]">{(lasso.confidence * 100).toFixed(0)}%</span>
+                </div>
+              )}
+              {lasso.phase === 'closed' && (
+                <Button variant="ghost" size="icon" className="w-5 h-5" onClick={lasso.resetLasso}>
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
             </div>
           )}
         </div>
