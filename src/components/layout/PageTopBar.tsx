@@ -40,7 +40,7 @@ const labelMap: Record<PageId, string> = {
   spreadsheet: 'Sheets', calendar: 'Calendar', email: 'Email', tasks: 'Tasks',
   presentations: 'Slides', studio3d: '3D', terminal: 'Term', apistudio: 'API',
   database: 'DB', dashboard: 'Dash', browser: 'Browse', notes: 'Notes',
-  files: 'Files', comms: 'Comms',
+  files: 'Files', comms: 'Comms', illustrator: 'Draw',
 };
 
 interface PageTopBarProps {
