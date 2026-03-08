@@ -112,6 +112,7 @@ export function IllustratorApp() {
         canvasSize.width, canvasSize.height,
         state.gridEnabled, state.gridSize,
         preview, engine.nodeOverlay, engine.computedTransformHandles,
+        engine.entityEffects,
       );
 
       animRef.current = requestAnimationFrame(render);

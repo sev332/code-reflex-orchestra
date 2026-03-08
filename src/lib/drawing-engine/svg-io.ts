@@ -1,9 +1,10 @@
 /**
  * SVG I/O Engine — Export and Import SVG
  * Sprint 1: Full SVG export with all entity types
+ * Sprint 4: Full SVG import with shape/path/text parsing
  */
 
-import { Scene, DrawableEntity, Artboard, PathData, Vec2 } from './types';
+import { Scene, DrawableEntity, Artboard, PathData, Vec2, generateId, createDefaultTransform, createDefaultBlend, createDefaultFill, createDefaultStroke } from './types';
 import { getEntityBounds } from './engine';
 
 // ============================================
