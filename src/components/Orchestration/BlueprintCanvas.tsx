@@ -119,7 +119,7 @@ const nodeTypeConfig: Record<APOENodeType, {
     ],
   },
   condense: {
-    icon: Compress,
+    icon: Minimize2,
     color: 'from-violet-600 to-purple-700',
     glow: 'shadow-violet-500/40',
     inputs: [
