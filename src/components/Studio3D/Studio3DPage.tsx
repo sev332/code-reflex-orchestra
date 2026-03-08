@@ -41,7 +41,6 @@ import {
   createClip, evaluateClipAtTime, applyAnimatedValues, getObjectPropertyValue,
   type AnimationClip, type AnimatableProperty,
 } from '@/lib/3d-engine/animation-engine';
-import { MaterialLibraryPanel, materialPresets, type PBRMaterialPreset } from './MaterialLibrary';
 
 // ─── Types ─────────────────────────────────────────
 
