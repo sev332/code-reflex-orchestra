@@ -188,97 +188,12 @@ export function CalendarPage() {
         </Button>
       </div>
 
-      {/* Body with optional mini-cal sidebar */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Mini calendar sidebar */}
-        {showMiniCal && view !== 'month' && (
-          <div className="w-56 border-r border-border/20 shrink-0 flex flex-col">
-            <div className="p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-semibold">{MONTHS[currentDate.getMonth()].slice(0, 3)} {currentDate.getFullYear()}</span>
-                <div className="flex gap-0.5">
-                  <Button variant="ghost" size="icon" className="w-5 h-5" onClick={() => { const d = new Date(currentDate); d.setMonth(d.getMonth() - 1); setCurrentDate(d); }}>
-                    <ChevronLeft className="w-3 h-3" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="w-5 h-5" onClick={() => { const d = new Date(currentDate); d.setMonth(d.getMonth() + 1); setCurrentDate(d); }}>
-                    <ChevronRight className="w-3 h-3" />
-                  </Button>
-                </div>
-              </div>
-              <div className="grid grid-cols-7 gap-0">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-                  <div key={i} className="text-center text-[9px] text-muted-foreground py-1">{d}</div>
-                ))}
-                {miniCalDays.map((day, i) => {
-                  const isCurrentMonth = day.getMonth() === currentDate.getMonth();
-                  const isToday = isSameDay(day, today);
-                  const isSelected = isSameDay(day, currentDate);
-                  const hasEvents = events.some(e => isSameDay(e.start, day));
-                  return (
-                    <button
-                      key={i}
-                      onClick={() => { setCurrentDate(day); setView('day'); }}
-                      className={cn(
-                        'text-[10px] w-7 h-7 flex flex-col items-center justify-center rounded-full transition-colors relative',
-                        !isCurrentMonth && 'opacity-30',
-                        isToday && !isSelected && 'text-primary font-bold',
-                        isSelected && 'bg-primary text-primary-foreground font-bold',
-                        !isSelected && 'hover:bg-muted/40',
-                      )}
-                    >
-                      {day.getDate()}
-                      {hasEvents && !isSelected && (
-                        <div className="absolute bottom-0.5 w-1 h-1 rounded-full bg-primary" />
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Upcoming events */}
-            <div className="flex-1 border-t border-border/20">
-              <div className="p-3">
-                <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">Upcoming</h3>
-              </div>
-              <ScrollArea className="h-[calc(100%-48px)]">
-                <div className="px-2 space-y-1.5">
-                  {events
-                    .filter(e => e.start >= today)
-                    .sort((a, b) => a.start.getTime() - b.start.getTime())
-                    .slice(0, 8)
-                    .map(ev => {
-                      const colorObj = EVENT_COLORS.find(c => c.name === ev.colorName) || EVENT_COLORS[0];
-                      return (
-                        <button
-                          key={ev.id}
-                          onClick={() => openEditEvent(ev)}
-                          className="w-full text-left flex items-start gap-2 p-1.5 rounded-md hover:bg-muted/20 transition-colors"
-                        >
-                          <div className={cn('w-2 h-2 rounded-full mt-1 shrink-0', colorObj.dot)} />
-                          <div className="min-w-0">
-                            <p className="text-[11px] font-medium truncate">{ev.title}</p>
-                            <p className="text-[9px] text-muted-foreground">
-                              {ev.start.getMonth() + 1}/{ev.start.getDate()} · {ev.start.getHours().toString().padStart(2, '0')}:{ev.start.getMinutes().toString().padStart(2, '0')}
-                              {ev.recurrence && ev.recurrence !== 'none' && <> · <Repeat className="inline w-2.5 h-2.5" /></>}
-                            </p>
-                          </div>
-                        </button>
-                      );
-                    })}
-                </div>
-              </ScrollArea>
-            </div>
-          </div>
-        )}
-
-        {/* Main grid */}
-        <div className="flex-1 overflow-hidden">
-          {view === 'month' && <MonthView currentDate={currentDate} today={today} events={events} onClickDate={(d) => { setCurrentDate(d); setView('day'); }} onClickEvent={openEditEvent} />}
-          {view === 'week' && <WeekView currentDate={currentDate} today={today} events={events} onClickHour={openNewEvent} onClickEvent={openEditEvent} />}
-          {view === 'day' && <DayView currentDate={currentDate} today={today} events={events} onClickHour={(h) => openNewEvent(currentDate, h)} onClickEvent={openEditEvent} />}
-          {view === 'agenda' && <AgendaView currentDate={currentDate} events={events} onClickEvent={openEditEvent} />}
-        </div>
+      {/* Body */}
+      <div className="flex-1 overflow-hidden">
+        {view === 'month' && <MonthView currentDate={currentDate} today={today} events={events} onClickDate={(d) => { setCurrentDate(d); setView('day'); }} onClickEvent={openEditEvent} />}
+        {view === 'week' && <WeekView currentDate={currentDate} today={today} events={events} onClickHour={openNewEvent} onClickEvent={openEditEvent} />}
+        {view === 'day' && <DayView currentDate={currentDate} today={today} events={events} onClickHour={(h) => openNewEvent(currentDate, h)} onClickEvent={openEditEvent} />}
+        {view === 'agenda' && <AgendaView currentDate={currentDate} events={events} onClickEvent={openEditEvent} />}
       </div>
 
       {/* Event Dialog */}

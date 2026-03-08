@@ -274,81 +274,64 @@ export function EmailPage() {
 
   return (
     <div className="h-full flex bg-background">
-      {/* ── Folder sidebar ── */}
-      <div className="w-52 border-r border-border/30 flex flex-col shrink-0">
-        <div className="p-2">
-          <Button className="w-full gap-1.5 h-9 text-sm" onClick={() => { setIsComposing(true); setComposeData({ to: '', cc: '', subject: '', body: '' }); }}>
-            <Plus className="w-4 h-4" /> Compose
-          </Button>
-        </div>
-        <ScrollArea className="flex-1">
-          <div className="p-1 space-y-0.5">
-            {folders.map(f => {
-              const Icon = f.icon;
-              const isActive = activeFolder === f.id && !activeLabel;
-              const count = getUnreadCount(f.id);
-              return (
-                <Button
-                  key={f.id} variant="ghost"
-                  onClick={() => { setActiveFolder(f.id); setSelectedEmail(null); setActiveLabel(null); }}
-                  className={cn('w-full justify-start h-8 px-3 text-sm', isActive && 'bg-primary/10 text-primary')}
-                >
-                  <Icon className={cn('w-4 h-4 mr-2', isActive ? 'text-primary' : 'text-muted-foreground')} />
-                  <span className="flex-1 text-left">{f.label}</span>
-                  {count > 0 && (
-                    <Badge className="bg-primary/20 text-primary text-[10px] px-1.5 h-4">{count}</Badge>
-                  )}
-                </Button>
-              );
-            })}
-          </div>
-          <div className="p-3 mt-2 border-t border-border/20">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Labels</p>
-            <div className="space-y-0.5">
-              {allLabels.map(l => (
-                <button
-                  key={l}
-                  onClick={() => { setActiveLabel(activeLabel === l ? null : l); setActiveFolder('inbox'); }}
-                  className={cn(
-                    'flex items-center gap-2 text-xs w-full px-2 py-1 rounded transition-colors',
-                    activeLabel === l ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                  )}
-                >
-                  <Tag className="w-3 h-3" />
-                  {l}
-                </button>
-              ))}
-            </div>
-          </div>
-        </ScrollArea>
-        {/* Storage indicator */}
-        <div className="p-3 border-t border-border/20">
-          <div className="w-full bg-muted/30 rounded-full h-1.5 overflow-hidden">
-            <div className="bg-primary/60 h-full rounded-full" style={{ width: '23%' }} />
-          </div>
-          <p className="text-[9px] text-muted-foreground mt-1">0.23 GB of 15 GB used</p>
-        </div>
-      </div>
-
       {/* ── Email list ── */}
       <div className="w-96 border-r border-border/30 flex flex-col shrink-0">
         <div className="p-2 border-b border-border/20 shrink-0 space-y-1.5">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search emails..."
-              value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 h-8 text-sm bg-muted/20 border-none"
-            />
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" className="h-8 gap-1.5 text-xs px-3" onClick={() => { setIsComposing(true); setComposeData({ to: '', cc: '', subject: '', body: '' }); }}>
+              <Plus className="w-3.5 h-3.5" /> Compose
+            </Button>
+            <div className="flex-1 relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search emails..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-8 text-sm bg-muted/20 border-none"
+              />
+            </div>
           </div>
-          {/* Smart filters */}
-          <div className="flex items-center gap-1">
-            {['All', 'Unread', 'Flagged', 'With Attachments'].map(f => (
-              <Button key={f} variant="ghost" size="sm" className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground">
-                {f}
-              </Button>
-            ))}
-          </div>
+
+          <ScrollArea className="w-full whitespace-nowrap">
+            <div className="flex items-center gap-1 pr-2">
+              {folders.map((f) => {
+                const isActive = activeFolder === f.id && !activeLabel;
+                const count = getUnreadCount(f.id);
+                return (
+                  <Button
+                    key={f.id}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setActiveFolder(f.id); setSelectedEmail(null); setActiveLabel(null); }}
+                    className={cn('h-6 px-2 text-[10px] gap-1', isActive && 'bg-primary/10 text-primary')}
+                  >
+                    <f.icon className="w-3 h-3" />
+                    {f.label}
+                    {count > 0 && <Badge className="bg-primary/20 text-primary text-[9px] px-1 h-4">{count}</Badge>}
+                  </Button>
+                );
+              })}
+            </div>
+          </ScrollArea>
+
+          {allLabels.length > 0 && (
+            <ScrollArea className="w-full whitespace-nowrap">
+              <div className="flex items-center gap-1 pr-2">
+                {allLabels.map((label) => (
+                  <Button
+                    key={label}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setActiveLabel(activeLabel === label ? null : label); setActiveFolder('inbox'); }}
+                    className={cn('h-6 px-2 text-[10px] gap-1', activeLabel === label && 'bg-primary/10 text-primary')}
+                  >
+                    <Tag className="w-3 h-3" />
+                    {label}
+                  </Button>
+                ))}
+              </div>
+            </ScrollArea>
+          )}
         </div>
         <ScrollArea className="flex-1">
           <div className="divide-y divide-border/15">

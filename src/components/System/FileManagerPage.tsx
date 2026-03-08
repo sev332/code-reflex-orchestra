@@ -461,69 +461,6 @@ export function FileManagerPage() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* ─── Left Sidebar (Tree + Favorites) ─── */}
-        <div className="w-52 bg-background/50 backdrop-blur-xl border-r border-border/30 flex flex-col shrink-0">
-          {/* Quick links */}
-          <div className="px-2 py-2 border-b border-border/20 space-y-0.5">
-            {[
-              { icon: Clock, label: 'Recents', color: 'text-blue-400' },
-              { icon: Star, label: 'Favorites', color: 'text-amber-400' },
-              { icon: Download, label: 'Downloads', color: 'text-emerald-400' },
-              { icon: Archive, label: 'Archive', color: 'text-purple-400' },
-            ].map(({ icon: Icon, label, color }) => (
-              <button key={label} className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs text-foreground/70 hover:bg-muted/30 hover:text-foreground transition-colors">
-                <Icon className={cn('w-3.5 h-3.5', color)} />
-                <span>{label}</span>
-              </button>
-            ))}
-          </div>
-
-          {/* Favorites */}
-          {starredFiles.length > 0 && (
-            <div className="px-2 py-2 border-b border-border/20">
-              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">Starred</p>
-              {starredFiles.map(f => {
-                const Icon = f.type === 'folder' ? Folder : getFileIcon(f.mimeType);
-                return (
-                  <button
-                    key={f.id}
-                    onClick={() => f.type === 'folder' ? navigateTo(f.path) : setPreviewFile(f)}
-                    className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs text-foreground/70 hover:bg-muted/30 hover:text-foreground transition-colors"
-                  >
-                    <Icon className={cn('w-3.5 h-3.5 shrink-0', f.type === 'folder' ? 'text-amber-400' : 'text-muted-foreground')} />
-                    <span className="truncate">{f.name}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* File tree */}
-          <div className="flex-1 overflow-hidden">
-            <div className="px-2 py-1.5">
-              <p className="text-[9px] font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-1">Explorer</p>
-            </div>
-            <ScrollArea className="h-[calc(100%-28px)]">
-              <div className="px-1 pb-4">
-                {mockFS.filter(f => f.type === 'folder').map(item => (
-                  <TreeNode key={item.id} item={item} depth={0} expanded={expandedFolders} toggleExpand={toggleExpand} onNavigate={navigateTo} activePath={currentPath} />
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-
-          {/* Storage */}
-          <div className="px-3 py-2 border-t border-border/20">
-            <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-              <HardDrive className="w-3 h-3" />
-              <span>2.4 GB / 10 GB</span>
-            </div>
-            <div className="h-1 bg-muted/30 rounded-full mt-1.5 overflow-hidden">
-              <div className="h-full bg-primary/60 rounded-full" style={{ width: '24%' }} />
-            </div>
-          </div>
-        </div>
-
         {/* ─── File Area ─── */}
         <div className="flex-1 overflow-auto">
           {searchQuery && (
