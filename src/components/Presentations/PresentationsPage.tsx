@@ -467,65 +467,6 @@ export function PresentationsPage() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* ─── Slide Thumbnails ─── */}
-        <div className="w-44 bg-background/60 backdrop-blur-xl border-r border-border/30 flex flex-col shrink-0">
-          <div className="px-2 py-1.5 border-b border-border/20 flex items-center justify-between">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Slides</span>
-            <Button variant="ghost" size="icon" onClick={() => addSlide()} className="w-5 h-5"><Plus className="w-3 h-3" /></Button>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="p-1.5 space-y-1.5">
-              {slides.map((slide, i) => (
-                <div
-                  key={slide.id}
-                  className={cn(
-                    'group relative rounded-md border-2 cursor-pointer transition-all overflow-hidden',
-                    i === currentSlideIndex ? 'border-primary shadow-md shadow-primary/20' : 'border-border/20 hover:border-border/50'
-                  )}
-                  onClick={() => { setCurrentSlideIndex(i); setSelectedElementId(null); }}
-                  draggable
-                  onDragStart={() => setDragSlide(i)}
-                  onDragOver={e => e.preventDefault()}
-                  onDrop={() => {
-                    if (dragSlide !== null && dragSlide !== i) {
-                      setSlides(prev => {
-                        const arr = [...prev];
-                        const [moved] = arr.splice(dragSlide, 1);
-                        arr.splice(i, 0, moved);
-                        return arr;
-                      });
-                      setCurrentSlideIndex(i);
-                    }
-                    setDragSlide(null);
-                  }}
-                >
-                  <ScaledSlide slide={slide} scale={0.085} />
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent flex items-end justify-between px-1.5 py-0.5">
-                    <span className="text-[9px] text-white/70 font-mono">{i + 1}</span>
-                    <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={e => { e.stopPropagation(); duplicateSlide(i); }}><Copy className="w-3 h-3 text-white/60 hover:text-white" /></button>
-                      <button onClick={e => { e.stopPropagation(); deleteSlide(i); }}><Trash2 className="w-3 h-3 text-white/60 hover:text-red-400" /></button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Template quick-add */}
-            <div className="px-2 pt-2 pb-4 border-t border-border/20 mt-2">
-              <p className="text-[9px] text-muted-foreground uppercase font-semibold mb-1.5 px-1 tracking-wider">Templates</p>
-              <div className="space-y-0.5">
-                {slideTemplates.map(t => (
-                  <button key={t.id} onClick={() => addSlide(t)} className="w-full flex items-center gap-2 px-2 py-1 rounded-md text-xs hover:bg-muted/30 transition-colors">
-                    <span className="text-sm">{t.preview}</span>
-                    <span className="text-foreground/70 text-[11px]">{t.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </ScrollArea>
-        </div>
-
         {/* ─── Canvas ─── */}
         <div className="flex-1 flex flex-col">
           <div ref={canvasRef} className="flex-1 flex items-center justify-center bg-muted/5 overflow-auto p-8" onClick={() => setSelectedElementId(null)}>
