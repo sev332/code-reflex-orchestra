@@ -141,6 +141,21 @@ export function useDrawingEngine() {
   // Sprint 3: Transform origin
   const [transformOriginPreset, setTransformOriginPreset] = useState<TransformOriginPreset>('center');
 
+  // Sprint 5: Appearance stacks per entity
+  const [entityAppearances, setEntityAppearances] = useState<Record<string, AppearanceStack>>({});
+  const [savedStyles, setSavedStyles] = useState<SavedGraphicStyle[]>([]);
+
+  // Sprint 5: Pattern library
+  const [patternLibrary, setPatternLibrary] = useState<PatternLibrary>({ patterns: [] });
+  const [activePattern, setActivePattern] = useState<PatternDef | null>(null);
+
+  // Sprint 5: Symbol library
+  const [symbolLibrary, setSymbolLibrary] = useState<SymbolLibrary>(emptySymbolLibrary);
+
+  // Sprint 5: Mesh gradient
+  const [activeMesh, setActiveMesh] = useState<MeshGrid | null>(null);
+  const [meshEditTarget, setMeshEditTarget] = useState<string | null>(null);
+
   const updateHistory = useCallback(() => {
     setCanUndo(historyRef.current.canUndo);
     setCanRedo(historyRef.current.canRedo);
