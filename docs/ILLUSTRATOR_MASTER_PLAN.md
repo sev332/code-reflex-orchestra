@@ -322,12 +322,20 @@
 19. SVG import
 20. Image Trace (basic)
 
-### Sprint 5 (Polish & Advanced)
+### Sprint 5 (Polish & Advanced) ✅
 21. Appearance panel (multi-fill/stroke)
 22. Pattern system
 23. Symbols
 24. Gradient mesh
 25. AI-powered features
+
+### Sprint 6 (Infrastructure & Acceleration) ✅
+26. Multiple artboards with presets (16 presets: print/screen/mobile/social)
+27. Auto-save & native .lucid format (IndexedDB persistence + version history)
+28. Image placement engine (file/URL loading, canvas rendering, image cache)
+29. WebGL acceleration renderer (Morton-sorted batching, GPU gaussian blur, telemetry)
+30. Image Trace (basic posterize + flood-fill region detection)
+31. PNG/SVG/Lucid export toolbar
 
 ---
 
@@ -335,39 +343,46 @@
 
 ### Architecture Principles
 - **Canvas2D primary** — proven, stable, sufficient for most operations
-- **WebGL secondary** — for GPU-accelerated rendering when >1000 objects
+- **WebGL secondary** — for GPU-accelerated rendering when >1000 objects (SAC-inspired from PRINCIPIA MORPHICA)
 - **Immutable state** — all mutations through command pattern for undo/redo
 - **Modular engines** — each subsystem (geometry, stroke, brush, text, gradient) is its own module
 - **Type-safe throughout** — full TypeScript types for all data structures
 
-### File Structure (Target)
+### File Structure (Current)
 ```
 src/lib/drawing-engine/
 ├── types.ts              ✅ Core ontology
 ├── engine.ts             ✅ State manager + command history
-├── renderer.ts           ✅ Canvas2D renderer
+├── renderer.ts           ✅ Canvas2D renderer + image rendering
 ├── geometry-core.ts      ✅ Math substrate
 ├── stroke-core.ts        ✅ Stroke expansion
 ├── brush-core.ts         ✅ Brush sessions
 ├── node-editing.ts       ✅ Direct selection
 ├── path-operations.ts    ✅ Boolean ops
-├── useDrawingEngine.ts   ✅ React hook
-├── text-engine.ts        🔲 Text layout & rendering
-├── gradient-engine.ts    🔲 Gradient creation & rendering
-├── color-system.ts       🔲 Color picker, swatches, harmonies
-├── effects-engine.ts     🔲 Drop shadow, blur, glow
-├── blend-engine.ts       🔲 Shape blending
-├── pattern-engine.ts     🔲 Pattern creation & tiling
-├── symbol-engine.ts      🔲 Symbol instances
-├── boolean-engine.ts     🔲 Proper Greiner-Hormann booleans
-├── image-trace.ts        🔲 Raster-to-vector
-├── svg-io.ts             🔲 SVG import/export
-├── smart-guides.ts       🔲 Snapping & alignment hints
-└── webgl-renderer.ts     🔲 GPU-accelerated renderer
+├── useDrawingEngine.ts   ✅ React hook (1800+ lines)
+├── text-engine.ts        ✅ Text layout & rendering
+├── gradient-engine.ts    ✅ Gradient creation & rendering
+├── color-system.ts       ✅ Color picker, swatches, harmonies
+├── effects-engine.ts     ✅ Drop shadow, blur, glow
+├── blend-engine.ts       ✅ Shape blending & clipping masks
+├── pattern-engine.ts     ✅ Pattern creation & tiling
+├── symbol-engine.ts      ✅ Symbol instances & sprayer
+├── boolean-engine.ts     ✅ Greiner-Hormann booleans
+├── svg-io.ts             ✅ SVG import/export
+├── smart-guides.ts       ✅ Snapping & alignment hints
+├── transform-engine.ts   ✅ Rotate/reflect/scale/shear
+├── reshape-engine.ts     ✅ Width tool, warp, puppet warp
+├── appearance-engine.ts  ✅ Multi-fill/stroke stacks
+├── mesh-gradient-engine.ts ✅ Bilinear mesh gradients
+├── artboard-engine.ts    ✅ Multiple artboards & presets
+├── persistence-engine.ts ✅ .lucid format, IndexedDB, versions
+├── image-engine.ts       ✅ Raster image placement & trace
+├── groups-engine.ts      ✅ Groups & isolation mode
+└── webgl-renderer.ts     ✅ GPU-accelerated renderer
 ```
 
 ### Key Metrics
-- **Current**: ~3,500 lines of engine code across 9 files
-- **Target**: ~15,000-20,000 lines across 20+ files
-- **Tools**: 16 current → 40+ target
-- **Panels**: 2 current (Properties, Layers) → 8+ target
+- **Current**: ~20,000+ lines of engine code across 28+ files
+- **Target**: ~25,000 lines across 30+ files
+- **Tools**: 17 current → 40+ target
+- **Panels**: Properties + Layers + Artboards + Document
