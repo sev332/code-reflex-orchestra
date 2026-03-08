@@ -7,8 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Globe, Plus, X, ArrowLeft, ArrowRight, RotateCcw, Lock, Search,
-  Star, BookOpen, Download, Share2, ExternalLink, ChevronRight,
-  Wand2, FileText, Clock, Bookmark, Maximize, Split,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

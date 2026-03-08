@@ -1,37 +1,16 @@
-// Full AI-powered Document Builder — main content for the Documents page
+// Full AI-powered Document Builder — center content only (uses shell drawers)
 import React, { useState, useRef, useCallback } from 'react';
 import Editor from '@monaco-editor/react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
-import { Textarea } from '@/components/ui/textarea';
 import {
-  FileText,
-  Plus,
   Save,
   Download,
-  Trash2,
-  Copy,
-  ChevronRight,
-  ChevronDown,
-  Wand2,
-  Play,
-  Pause,
-  RotateCcw,
   BookOpen,
-  Map,
-  Layers,
-  Sparkles,
   PenTool,
   Eye,
   Split,
-  Send,
-  Bot,
-  FolderTree,
   Tag,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
