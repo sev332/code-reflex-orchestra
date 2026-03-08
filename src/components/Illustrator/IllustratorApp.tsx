@@ -172,8 +172,32 @@ export function IllustratorApp() {
       return;
     }
 
-    // Select
+    // Direct Select — node editing
+    if (tool === 'direct-select') {
+      // Try node drag first
+      if (engine.nodeOverlay.enabled && engine.beginNodeDrag(world)) {
+        setIsDrawing(true);
+        return;
+      }
+      // Try to enter node edit on an entity
+      const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
+      if (hitId) {
+        engine.select([hitId]);
+        engine.enterNodeEdit(hitId);
+      } else {
+        engine.exitNodeEdit();
+        engine.select([]);
+      }
+      return;
+    }
+
+    // Select — with transform handles
     if (tool === 'select') {
+      // Try transform handle first
+      if (engine.beginTransform(world)) {
+        setIsDrawing(true);
+        return;
+      }
       const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
       if (hitId) {
         if (e.shiftKey) {
@@ -188,6 +212,8 @@ export function IllustratorApp() {
       } else {
         engine.select([]);
       }
+      // Exit node edit when switching to select
+      engine.exitNodeEdit();
       return;
     }
 
