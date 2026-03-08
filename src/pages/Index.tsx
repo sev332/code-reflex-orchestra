@@ -114,8 +114,6 @@ const Index = () => {
             onPageChange={setActivePage}
             systemStatus={isStreaming ? 'processing' : 'online'}
             activeAgents={streamingAgents?.length || 0}
-            pinnedApps={pinnedApps}
-            onOpenLauncher={() => setShowLauncher(true)}
           />
 
           <AppLauncher
