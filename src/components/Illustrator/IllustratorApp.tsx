@@ -304,8 +304,14 @@ export function IllustratorApp() {
       return;
     }
 
-    // Pen cursor tracking
-    if (tool === 'pen') {
+    // Pen handle drag
+    if (tool === 'pen' && isDrawing) {
+      engine.updatePenHandleDrag(world);
+      return;
+    }
+
+    // Pen cursor tracking (when not dragging)
+    if (tool === 'pen' && !isDrawing) {
       engine.updatePenCursor(world);
       return;
     }
