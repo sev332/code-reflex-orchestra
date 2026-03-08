@@ -49,7 +49,6 @@ const Index = () => {
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
-  const [pinnedApps, setPinnedApps] = useState<PageId[]>(DEFAULT_PINNED);
 
   const {
     isStreaming, orchestrationPlan, thinkingSteps,
