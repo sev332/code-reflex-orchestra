@@ -49,7 +49,6 @@ const Index = () => {
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
-  const [pinnedApps, setPinnedApps] = useState<PageId[]>(DEFAULT_PINNED);
 
   const {
     isStreaming, orchestrationPlan, thinkingSteps,
@@ -61,7 +60,7 @@ const Index = () => {
   }, []);
 
   const handleTogglePin = useCallback((id: PageId) => {
-    setPinnedApps(prev => prev.includes(id) ? prev.filter(p => p !== id) : [...prev, id]);
+    // no-op, kept for AppLauncher compatibility
   }, []);
 
   const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
@@ -115,15 +114,13 @@ const Index = () => {
             onPageChange={setActivePage}
             systemStatus={isStreaming ? 'processing' : 'online'}
             activeAgents={streamingAgents?.length || 0}
-            pinnedApps={pinnedApps}
-            onOpenLauncher={() => setShowLauncher(true)}
           />
 
           <AppLauncher
             isOpen={showLauncher}
             onClose={() => setShowLauncher(false)}
             onAppSelect={setActivePage}
-            pinnedApps={pinnedApps}
+            pinnedApps={DEFAULT_PINNED}
             onTogglePin={handleTogglePin}
           />
 
