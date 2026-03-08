@@ -1002,6 +1002,11 @@ export function Studio3DPage() {
               <GizmoViewport labelColor="white" axisHeadScale={1} />
             </GizmoHelper>
 
+            {/* Particle Emitters */}
+            {particleEmitters.filter(e => e.enabled).map(emitter => (
+              <ParticleEmitterMesh key={emitter.id} config={emitter} />
+            ))}
+
             {/* Post-Processing Pipeline */}
             <PostProcessingStack settings={postProcessing} />
           </Canvas>
