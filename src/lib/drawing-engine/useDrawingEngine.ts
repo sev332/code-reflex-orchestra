@@ -20,7 +20,7 @@ import {
 } from './node-editing';
 import { simplifyPath, reversePath, offsetPath } from './path-operations';
 import { createPointTextEntity, createAreaTextEntity } from './text-engine';
-import { exportSceneToSVG } from './svg-io';
+import { exportSceneToSVG, importSVG } from './svg-io';
 import {
   GradientData, LinearGradient, RadialGradient,
   createLinearGradient, createRadialGradient, createFreeformGradient,
