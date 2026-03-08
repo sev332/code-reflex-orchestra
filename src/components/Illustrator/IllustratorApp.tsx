@@ -221,7 +221,7 @@ export function IllustratorApp() {
     if (isDrawing && drawStart) {
       const tool = state.tool.activeToolId;
       if (tool === 'brush' || tool === 'pencil') {
-        setBrushPoints(prev => [...prev, { x: world.x, y: world.y, pressure: e.pressure || 0.5 }]);
+        setBrushPoints(prev => [...prev, { x: world.x, y: world.y, pressure: (e.nativeEvent as PointerEvent).pressure || 0.5 }]);
       }
       return;
     }
