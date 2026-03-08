@@ -367,51 +367,6 @@ export function IllustratorApp() {
     setDrawStart(null);
   }, [isDrawing, drawStart, isPanning, dragStart, state.tool, engine, screenToWorld]);
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-
-    if (isPanning) { setIsPanning(false); setPanStart(null); return; }
-    if (dragStart) { setDragStart(null); return; }
-
-    if (!isDrawing) return;
-
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const world = screenToWorld(sx, sy);
-    const tool = state.tool.activeToolId;
-    const { fillColor, strokeColor, strokeWidth } = state.tool;
-
-    // Brush / Pencil — finalize
-    if (tool === 'brush' || tool === 'pencil') {
-      const size = tool === 'brush' ? engine.activeBrushPreset.baseSize : 2;
-      engine.endBrushStroke(makeSample(e, world), strokeColor, size);
-    }
-
-    // Shape finalization
-    if (drawStart && tool === 'shape-rect') {
-      const x = Math.min(drawStart.x, world.x), y = Math.min(drawStart.y, world.y);
-      const w = Math.abs(world.x - drawStart.x), h = Math.abs(world.y - drawStart.y);
-      if (w > 2 && h > 2) engine.addEntity(engine.createRectEntity(x, y, w, h, fillColor, strokeColor, strokeWidth));
-      engine.endShapePreview();
-    } else if (drawStart && tool === 'shape-ellipse') {
-      const cx = (drawStart.x + world.x) / 2, cy = (drawStart.y + world.y) / 2;
-      const rx = Math.abs(world.x - drawStart.x) / 2, ry = Math.abs(world.y - drawStart.y) / 2;
-      if (rx > 2 && ry > 2) engine.addEntity(engine.createEllipseEntity(cx, cy, rx, ry, fillColor, strokeColor, strokeWidth));
-      engine.endShapePreview();
-    } else if (drawStart && tool === 'shape-line') {
-      engine.addEntity(engine.createLineEntity(drawStart.x, drawStart.y, world.x, world.y, strokeColor, strokeWidth));
-      engine.endLinePreview();
-    } else if (drawStart && (tool === 'shape-polygon' || tool === 'shape-star')) {
-      const x = Math.min(drawStart.x, world.x), y = Math.min(drawStart.y, world.y);
-      const w = Math.abs(world.x - drawStart.x), h = Math.abs(world.y - drawStart.y);
-      if (w > 2 && h > 2) engine.addEntity(engine.createRectEntity(x, y, w, h, fillColor, strokeColor, strokeWidth));
-      engine.endShapePreview();
-    }
-
-    setIsDrawing(false);
-    setDrawStart(null);
-  }, [isDrawing, drawStart, isPanning, dragStart, state.tool, engine, screenToWorld]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
