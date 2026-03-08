@@ -2,6 +2,8 @@
 // Sprint 1: Added pen handle dragging, text tool, undo/redo wiring, SVG export
 // Sprint 2: Added gradient engine, proper booleans, scissors/knife, groups, isolation mode
 // Sprint 3: Transform tools, effects engine, blend/clipping masks, reshape/warp tools
+// Sprint 4: Effects rendering, smart guides, SVG import
+// Sprint 5: Appearance panel, pattern system, symbols, gradient mesh
 import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
