@@ -1,15 +1,21 @@
-// React hook for Drawing Engine — wires BrushSession, stabilizers, live preview
-import { useState, useCallback, useRef } from 'react';
+// React hook for Drawing Engine — wires BrushSession, stabilizers, live preview, node editing, transforms
+import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
 } from './types';
 import {
   createDefaultEditorState, CommandHistory,
   createRectEntity, createEllipseEntity, createLineEntity, createBrushStrokeEntity,
-  hitTest,
+  hitTest, getEntityBounds,
 } from './engine';
-import { LivePreviewState, emptyPreview, PenAnchorPreview } from './renderer';
+import { LivePreviewState, emptyPreview, PenAnchorPreview, NodeEditOverlay, emptyNodeOverlay } from './renderer';
 import { BrushSession, BrushSessionConfig, defaultBrushSessionConfig, BUILT_IN_PRESETS, BrushPresetFull, RawInputSample } from './brush-core';
+import {
+  NodeHit, TransformHandle, TransformState, emptyTransformState,
+  hitTestNodes, moveAnchor, addAnchorOnSegment, deleteAnchor, ensurePathData,
+  getTransformHandles, hitTestTransformHandle, applyScaleTransform, applyRotateTransform,
+} from './node-editing';
+import { simplifyPath, reversePath, offsetPath, booleanUnion, booleanSubtract, booleanIntersect } from './path-operations';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
