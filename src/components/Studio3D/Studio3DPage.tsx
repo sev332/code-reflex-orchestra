@@ -699,7 +699,7 @@ export function Studio3DPage() {
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(false);
   const [environment, setEnvironment] = useState<string>('studio');
-  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural'>('inspector');
+  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural' | 'physics' | 'viewport' | 'scene'>('inspector');
   const [particleEmitters, setParticleEmitters] = useState<ParticleEmitterConfig[]>([]);
   const [selectedEmitterId, setSelectedEmitterId] = useState<string | null>(null);
   const [shaderCategory, setShaderCategory] = useState('All');
@@ -708,6 +708,7 @@ export function Studio3DPage() {
   const [undoStack, setUndoStack] = useState<SceneObject[][]>([]);
   const [postProcessing, setPostProcessing] = useState<PostProcessingSettings>(defaultPostProcessing);
   const [showTimeline, setShowTimeline] = useState(true);
+  const [showBlueprint, setShowBlueprint] = useState(false);
   const [animClip, setAnimClip] = useState<AnimationClip>(() => createClip('Animation', 5));
   const [animTime, setAnimTime] = useState(0);
   const [animPlaying, setAnimPlaying] = useState(false);
@@ -715,6 +716,23 @@ export function Studio3DPage() {
   const [baseObjects, setBaseObjects] = useState<SceneObject[] | null>(null);
   const animFrameRef = useRef<number>(0);
   const lastFrameTimeRef = useRef<number>(0);
+  // Phase 3: Physics
+  const [physicsBodies, setPhysicsBodies] = useState<PhysicsBodyConfig[]>([]);
+  const [physicsWorld, setPhysicsWorld] = useState<PhysicsWorldConfig>(defaultPhysicsWorld);
+  const [physicsConstraints, setPhysicsConstraints] = useState<PhysicsConstraint[]>([]);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const physicsEngineRef = useRef<SimplePhysicsEngine | null>(null);
+  const physicsBaseRef = useRef<SceneObject[] | null>(null);
+  // Phase 6: Viewport & Camera
+  const [viewportMode, setViewportMode] = useState<ViewportMode>('solid');
+  const [viewportLayout, setViewportLayout] = useState<ViewportLayout>('single');
+  const [cameraBookmarks, setCameraBookmarks] = useState<CameraBookmark[]>([]);
+  const [cinematic, setCinematic] = useState<CinematicSettings>(defaultCinematic);
+  // Phase 7: Scene Manager
+  const [sceneLayers, setSceneLayers] = useState<SceneLayer[]>([]);
+  const [prefabs, setPrefabs] = useState<Prefab[]>([]);
+  const [fogConfig, setFogConfig] = useState<FogConfig>(defaultFog);
+  const [skyConfig, setSkyConfig] = useState<SkyConfig>(defaultSky);
 
   const selectedObj = objects.find(o => o.id === selectedId) || null;
 
