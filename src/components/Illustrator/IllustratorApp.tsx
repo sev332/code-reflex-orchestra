@@ -32,6 +32,9 @@ import { BUILT_IN_FONTS } from '@/lib/drawing-engine/text-engine';
 import { createLinearGradient, createRadialGradient, GRADIENT_PRESETS } from '@/lib/drawing-engine/gradient-engine';
 import { EFFECT_PRESETS } from '@/lib/drawing-engine/effects-engine';
 import { WIDTH_PRESETS } from '@/lib/drawing-engine/reshape-engine';
+import { APPEARANCE_PRESETS } from '@/lib/drawing-engine/appearance-engine';
+import { PATTERN_PRESETS } from '@/lib/drawing-engine/pattern-engine';
+import { MESH_PRESETS } from '@/lib/drawing-engine/mesh-gradient-engine';
 
 // ============================================
 // TOOL DEFINITIONS
