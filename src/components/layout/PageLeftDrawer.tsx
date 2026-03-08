@@ -804,22 +804,58 @@ function UploadPanel() {
 }
 
 function FilesPanel() {
+  const openFiles = [
+    { name: 'src/pages/Index.tsx', status: 'modified' },
+    { name: 'src/components/layout/PageLeftDrawer.tsx', status: 'active' },
+    { name: 'src/components/layout/PageTopBar.tsx', status: 'clean' },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <File className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">File Explorer</p>
-      <p className="text-xs">Browse project files</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1">
+          <FolderTree className="w-3.5 h-3.5" />
+          Open Explorer
+        </Button>
+        {openFiles.map((file, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <File className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{file.name}</p>
+              <p className="text-xs text-muted-foreground">{file.status}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
 function GitSubPanel() {
+  const branches = [
+    { name: 'main', state: 'up to date' },
+    { name: 'feature/page-drawer', state: '2 commits ahead' },
+    { name: 'hotfix/ui-regression', state: 'behind by 1' },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">Git Panel</p>
-      <p className="text-xs">Branches, commits, history</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1">
+          <GitBranch className="w-3.5 h-3.5" />
+          Open Git History
+        </Button>
+        {branches.map((branch, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <GitBranch className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{branch.name}</p>
+              <p className="text-xs text-muted-foreground">{branch.state}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
@@ -1156,12 +1192,26 @@ function NotesListPanel() {
 }
 
 function NotesGraphPanel() {
+  const clusters = [
+    { name: 'Architecture', links: 18 },
+    { name: 'Research', links: 12 },
+    { name: 'Meetings', links: 9 },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">Knowledge Graph</p>
-      <p className="text-xs">Visualize note connections</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {clusters.map((cluster, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <GitBranch className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{cluster.name}</p>
+              <p className="text-xs text-muted-foreground">{cluster.links} linked notes</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
@@ -1244,12 +1294,26 @@ function FilesRecentPanel() {
 }
 
 function FilesStarredPanel() {
+  const starred = [
+    { name: 'roadmap.md', updated: '2h ago' },
+    { name: 'brand-guidelines.pdf', updated: 'yesterday' },
+    { name: 'release-notes.txt', updated: '3d ago' },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">No starred files</p>
-      <p className="text-xs">Star files for quick access</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {starred.map((file, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Star className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{file.name}</p>
+              <p className="text-xs text-muted-foreground">Updated {file.updated}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
@@ -1379,11 +1443,35 @@ function BlueprintSubPanel({ blueprint, page, sideTab }: { blueprint: DrawerBlue
 }
 
 function BlueprintFallbackPanel({ page, sideTab }: { page: string; sideTab: string }) {
-  return (
-    <div className="p-4 text-center text-muted-foreground">
-      <Layers className="w-8 h-8 mx-auto mb-2 opacity-30" />
-      <p className="text-sm capitalize font-medium">{sideTab.replace(/-/g, ' ')}</p>
-      <p className="text-xs mt-1 opacity-70">{page} • {sideTab}</p>
-    </div>
-  );
+  const config = (pageConfigs as Record<string, PageDrawerConfig>)[page] || defaultConfig;
+  const currentIcon = config.sideIcons.find((icon) => icon.id === sideTab);
+  const relatedTabs = config.subTabs[sideTab] || [];
+
+  const fallbackItems: DrawerBlueprintItem[] = relatedTabs.length > 0
+    ? relatedTabs.map((tab) => ({
+        label: tab.label,
+        meta: 'Open panel tools',
+        icon: tab.icon,
+      }))
+    : config.sideIcons
+        .filter((icon) => icon.id !== sideTab)
+        .slice(0, 3)
+        .map((icon) => ({
+          label: icon.label,
+          meta: 'Switch drawer section',
+          icon: icon.icon,
+        }));
+
+  const generatedBlueprint: DrawerBlueprint = {
+    title: currentIcon?.label || sideTab.replace(/-/g, ' '),
+    hint: `Tools for ${page} • ${sideTab.replace(/-/g, ' ')}`,
+    items: fallbackItems.length > 0
+      ? fallbackItems
+      : [
+          { label: 'Open Search', meta: 'Search this workspace', icon: Search },
+          { label: 'Open Settings', meta: 'Configure workspace defaults', icon: Settings },
+        ],
+  };
+
+  return <BlueprintSubPanel blueprint={generatedBlueprint} page={page} sideTab={sideTab} />;
 }
