@@ -1,9 +1,10 @@
 /**
  * SVG I/O Engine — Export and Import SVG
  * Sprint 1: Full SVG export with all entity types
+ * Sprint 4: Full SVG import with shape/path/text parsing
  */
 
-import { Scene, DrawableEntity, Artboard, PathData, Vec2 } from './types';
+import { Scene, DrawableEntity, Artboard, PathData, Vec2, generateId, createDefaultTransform, createDefaultBlend, createDefaultFill, createDefaultStroke } from './types';
 import { getEntityBounds } from './engine';
 
 // ============================================
@@ -349,4 +350,281 @@ export function parseSVGPath(d: string): PathData {
   }
 
   return { contours };
+}
+
+// ============================================
+// FULL SVG IMPORT — Sprint 4
+// ============================================
+
+export interface SVGImportResult {
+  entities: DrawableEntity[];
+  viewBox?: { x: number; y: number; width: number; height: number };
+  errors: string[];
+}
+
+export function importSVG(svgString: string): SVGImportResult {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(svgString, 'image/svg+xml');
+  const svg = doc.querySelector('svg');
+  const errors: string[] = [];
+  const entities: DrawableEntity[] = [];
+
+  if (!svg) {
+    return { entities: [], errors: ['No SVG element found'] };
+  }
+
+  // Parse viewBox
+  let viewBox: SVGImportResult['viewBox'];
+  const vb = svg.getAttribute('viewBox');
+  if (vb) {
+    const parts = vb.split(/[\s,]+/).map(Number);
+    if (parts.length === 4) {
+      viewBox = { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+    }
+  }
+
+  // Process all child elements recursively
+  function processElement(el: Element, parentTransform?: string) {
+    const tagName = el.tagName.toLowerCase();
+
+    switch (tagName) {
+      case 'rect': entities.push(importRect(el)); break;
+      case 'circle': entities.push(importCircle(el)); break;
+      case 'ellipse': entities.push(importEllipse(el)); break;
+      case 'line': entities.push(importLine(el)); break;
+      case 'polyline': entities.push(importPolyline(el)); break;
+      case 'polygon': entities.push(importPolygon(el)); break;
+      case 'path': entities.push(importPath(el)); break;
+      case 'text': entities.push(importText(el)); break;
+      case 'g':
+        // Process group children
+        for (const child of Array.from(el.children)) {
+          processElement(child, el.getAttribute('transform') ?? undefined);
+        }
+        break;
+      default:
+        if (!['svg', 'defs', 'title', 'desc', 'metadata', 'style'].includes(tagName)) {
+          errors.push(`Unsupported element: <${tagName}>`);
+        }
+    }
+  }
+
+  for (const child of Array.from(svg.children)) {
+    processElement(child);
+  }
+
+  return { entities, viewBox, errors };
+}
+
+function getAttr(el: Element, name: string, fallback: number = 0): number {
+  return parseFloat(el.getAttribute(name) ?? '') || fallback;
+}
+
+function getStyle(el: Element, prop: string): string | null {
+  // Check inline style first, then attribute
+  const style = el.getAttribute('style');
+  if (style) {
+    const match = style.match(new RegExp(`${prop}\\s*:\\s*([^;]+)`));
+    if (match) return match[1].trim();
+  }
+  return el.getAttribute(prop);
+}
+
+function parseFillStroke(el: Element): { fill: DrawableEntity['fill']; stroke: DrawableEntity['stroke'] } {
+  const fillColor = getStyle(el, 'fill') ?? '#4a9eff';
+  const fillOpacity = parseFloat(getStyle(el, 'fill-opacity') ?? '1');
+  const strokeColor = getStyle(el, 'stroke') ?? 'none';
+  const strokeWidth = parseFloat(getStyle(el, 'stroke-width') ?? '0');
+  const strokeOpacity = parseFloat(getStyle(el, 'stroke-opacity') ?? '1');
+
+  return {
+    fill: fillColor === 'none'
+      ? { type: 'none' as const, color: 'transparent', opacity: 0 }
+      : { type: 'solid' as const, color: fillColor, opacity: isNaN(fillOpacity) ? 1 : fillOpacity },
+    stroke: {
+      color: strokeColor === 'none' ? 'transparent' : strokeColor,
+      width: isNaN(strokeWidth) ? 0 : strokeWidth,
+      opacity: isNaN(strokeOpacity) ? 1 : strokeOpacity,
+      cap: (getStyle(el, 'stroke-linecap') as any) ?? 'round',
+      join: (getStyle(el, 'stroke-linejoin') as any) ?? 'round',
+    },
+  };
+}
+
+function parseTransform(el: Element): DrawableEntity['transform'] {
+  const t = createDefaultTransform();
+  const attr = el.getAttribute('transform');
+  if (!attr) return t;
+
+  const translateMatch = attr.match(/translate\(([^)]+)\)/);
+  if (translateMatch) {
+    const parts = translateMatch[1].split(/[\s,]+/).map(Number);
+    t.translateX = parts[0] || 0;
+    t.translateY = parts[1] || 0;
+  }
+  const rotateMatch = attr.match(/rotate\(([^)]+)\)/);
+  if (rotateMatch) {
+    t.rotation = parseFloat(rotateMatch[1]) || 0;
+  }
+  const scaleMatch = attr.match(/scale\(([^)]+)\)/);
+  if (scaleMatch) {
+    const parts = scaleMatch[1].split(/[\s,]+/).map(Number);
+    t.scaleX = parts[0] || 1;
+    t.scaleY = parts[1] ?? parts[0] ?? 1;
+  }
+  return t;
+}
+
+function importRect(el: Element): DrawableEntity {
+  const x = getAttr(el, 'x');
+  const y = getAttr(el, 'y');
+  const w = getAttr(el, 'width', 100);
+  const h = getAttr(el, 'height', 100);
+  const rx = getAttr(el, 'rx');
+  const { fill, stroke } = parseFillStroke(el);
+  const transform = parseTransform(el);
+  transform.translateX += x;
+  transform.translateY += y;
+
+  return {
+    id: generateId(), type: 'shape', name: 'Rect (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform, blend: createDefaultBlend(),
+    shapeKind: 'rectangle', shapeProps: { width: w, height: h, cornerRadius: rx },
+    fill, stroke,
+  };
+}
+
+function importCircle(el: Element): DrawableEntity {
+  const cx = getAttr(el, 'cx');
+  const cy = getAttr(el, 'cy');
+  const r = getAttr(el, 'r', 50);
+  const { fill, stroke } = parseFillStroke(el);
+  const transform = parseTransform(el);
+  transform.translateX += cx - r;
+  transform.translateY += cy - r;
+
+  return {
+    id: generateId(), type: 'shape', name: 'Circle (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform, blend: createDefaultBlend(),
+    shapeKind: 'ellipse', shapeProps: { width: r * 2, height: r * 2 },
+    fill, stroke,
+  };
+}
+
+function importEllipse(el: Element): DrawableEntity {
+  const cx = getAttr(el, 'cx');
+  const cy = getAttr(el, 'cy');
+  const rx = getAttr(el, 'rx', 50);
+  const ry = getAttr(el, 'ry', 50);
+  const { fill, stroke } = parseFillStroke(el);
+  const transform = parseTransform(el);
+  transform.translateX += cx - rx;
+  transform.translateY += cy - ry;
+
+  return {
+    id: generateId(), type: 'shape', name: 'Ellipse (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform, blend: createDefaultBlend(),
+    shapeKind: 'ellipse', shapeProps: { width: rx * 2, height: ry * 2 },
+    fill, stroke,
+  };
+}
+
+function importLine(el: Element): DrawableEntity {
+  const x1 = getAttr(el, 'x1');
+  const y1 = getAttr(el, 'y1');
+  const x2 = getAttr(el, 'x2');
+  const y2 = getAttr(el, 'y2');
+  const { fill, stroke } = parseFillStroke(el);
+
+  return {
+    id: generateId(), type: 'shape', name: 'Line (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform: createDefaultTransform(), blend: createDefaultBlend(),
+    shapeKind: 'line', shapeProps: { x1, y1, x2, y2 },
+    fill: { type: 'none', color: 'transparent', opacity: 0 },
+    stroke: { ...stroke, width: stroke.width || 2 },
+  };
+}
+
+function importPolyline(el: Element): DrawableEntity {
+  const pointsStr = el.getAttribute('points') ?? '';
+  const pathData = parsePointsToPathData(pointsStr, false);
+  const { fill, stroke } = parseFillStroke(el);
+
+  return {
+    id: generateId(), type: 'path', name: 'Polyline (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform: parseTransform(el), blend: createDefaultBlend(),
+    pathData, fill, stroke,
+  };
+}
+
+function importPolygon(el: Element): DrawableEntity {
+  const pointsStr = el.getAttribute('points') ?? '';
+  const pathData = parsePointsToPathData(pointsStr, true);
+  const { fill, stroke } = parseFillStroke(el);
+
+  return {
+    id: generateId(), type: 'path', name: 'Polygon (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform: parseTransform(el), blend: createDefaultBlend(),
+    pathData, fill, stroke,
+  };
+}
+
+function importPath(el: Element): DrawableEntity {
+  const d = el.getAttribute('d') ?? '';
+  const pathData = parseSVGPath(d);
+  const { fill, stroke } = parseFillStroke(el);
+
+  return {
+    id: generateId(), type: 'path', name: 'Path (imported)', visible: true, locked: false,
+    topologyMode: 'isolated', transform: parseTransform(el), blend: createDefaultBlend(),
+    pathData, fill, stroke,
+  };
+}
+
+function importText(el: Element): DrawableEntity {
+  const x = getAttr(el, 'x');
+  const y = getAttr(el, 'y');
+  const text = el.textContent ?? '';
+  const fontSize = parseFloat(getStyle(el, 'font-size') ?? el.getAttribute('font-size') ?? '24');
+  const fontFamily = getStyle(el, 'font-family') ?? el.getAttribute('font-family') ?? 'Inter';
+  const { fill, stroke } = parseFillStroke(el);
+  const transform = parseTransform(el);
+  transform.translateX += x;
+  transform.translateY += y;
+
+  return {
+    id: generateId(), type: 'text', name: text.substring(0, 20) || 'Text', visible: true, locked: false,
+    topologyMode: 'isolated', transform, blend: createDefaultBlend(),
+    textContent: text, fontSize, fontFamily,
+    fill, stroke,
+  };
+}
+
+function parsePointsToPathData(pointsStr: string, closed: boolean): PathData {
+  const nums = pointsStr.trim().split(/[\s,]+/).map(Number);
+  const anchors: PathData['contours'][0]['anchors'] = [];
+  
+  for (let i = 0; i < nums.length - 1; i += 2) {
+    anchors.push({
+      id: generateId(),
+      position: { x: nums[i], y: nums[i + 1] },
+      handleIn: null,
+      handleOut: null,
+    });
+  }
+
+  if (anchors.length < 2) return { contours: [] };
+
+  return {
+    contours: [{
+      id: generateId(),
+      anchors,
+      segments: anchors.slice(0, closed ? anchors.length : -1).map((a, i) => ({
+        type: 'line' as const,
+        from: a.id,
+        to: anchors[(i + 1) % anchors.length].id,
+      })),
+      closed,
+    }],
+  };
 }

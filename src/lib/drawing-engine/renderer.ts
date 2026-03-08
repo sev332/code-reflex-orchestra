@@ -1,8 +1,9 @@
-// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering
+// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering + Effects
 import { DrawableEntity, ViewportState, Scene, Vec2 } from './types';
 import { expandStroke, defaultWidthProfile, defaultPressureCurve } from './stroke-core';
 import { distance as geoDist } from './geometry-core';
 import { renderTextEntity } from './text-engine';
+import { Effect, EffectStack, applyEffectsToContext, clearEffectsFromContext } from './effects-engine';
 
 // ============================================
 // GRID RENDERER
@@ -69,6 +70,7 @@ export function renderArtboard(
 export function renderEntity(
   ctx: CanvasRenderingContext2D, entity: DrawableEntity,
   vp: ViewportState, isSelected: boolean, isHovered: boolean,
+  entityEffects?: Record<string, EffectStack>,
 ) {
   if (!entity.visible) return;
   const t = entity.transform;
@@ -77,9 +79,21 @@ export function renderEntity(
   const wx = (t.translateX + vp.panX) * vp.zoom;
   const wy = (t.translateY + vp.panY) * vp.zoom;
 
+  // Apply effects (drop shadow, glow, blur) before rendering
+  const effects = entityEffects?.[entity.id];
+  if (effects && effects.effects.length > 0) {
+    applyEffectsToContext(ctx, effects.effects, vp.zoom);
+  }
+
   if (entity.type === 'shape') renderShape(ctx, entity, wx, wy, vp.zoom);
   else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
-  else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); ctx.restore(); return; }
+  else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); clearEffectsFromContext(ctx); ctx.restore(); return; }
+  else if (entity.type === 'path') renderPathEntity(ctx, entity, vp);
+
+  // Clear effects after rendering
+  if (effects && effects.effects.length > 0) {
+    clearEffectsFromContext(ctx);
+  }
 
   if (isSelected || isHovered) renderSelectionOverlay(ctx, entity, wx, wy, vp.zoom, isSelected);
   ctx.restore();
@@ -158,6 +172,66 @@ function renderBrushStroke(ctx: CanvasRenderingContext2D, e: DrawableEntity, vp:
 }
 
 // ============================================
+// PATH ENTITY RENDERER — Bézier paths
+// ============================================
+
+function renderPathEntity(ctx: CanvasRenderingContext2D, e: DrawableEntity, vp: ViewportState) {
+  if (!e.pathData) return;
+  const { panX, panY, zoom } = vp;
+  
+  ctx.save();
+  for (const contour of e.pathData.contours) {
+    if (contour.anchors.length < 2) continue;
+    ctx.beginPath();
+    const a0 = contour.anchors[0];
+    ctx.moveTo((a0.position.x + panX) * zoom, (a0.position.y + panY) * zoom);
+    
+    for (let i = 1; i < contour.anchors.length; i++) {
+      const prev = contour.anchors[i - 1];
+      const curr = contour.anchors[i];
+      if (prev.handleOut && curr.handleIn) {
+        ctx.bezierCurveTo(
+          (prev.handleOut.x + panX) * zoom, (prev.handleOut.y + panY) * zoom,
+          (curr.handleIn.x + panX) * zoom, (curr.handleIn.y + panY) * zoom,
+          (curr.position.x + panX) * zoom, (curr.position.y + panY) * zoom,
+        );
+      } else {
+        ctx.lineTo((curr.position.x + panX) * zoom, (curr.position.y + panY) * zoom);
+      }
+    }
+    
+    if (contour.closed) {
+      const last = contour.anchors[contour.anchors.length - 1];
+      const first = contour.anchors[0];
+      if (last.handleOut && first.handleIn) {
+        ctx.bezierCurveTo(
+          (last.handleOut.x + panX) * zoom, (last.handleOut.y + panY) * zoom,
+          (first.handleIn.x + panX) * zoom, (first.handleIn.y + panY) * zoom,
+          (first.position.x + panX) * zoom, (first.position.y + panY) * zoom,
+        );
+      }
+      ctx.closePath();
+    }
+    
+    // Fill
+    if (e.fill.type !== 'none') {
+      ctx.fillStyle = e.fill.color;
+      ctx.globalAlpha = e.blend.opacity * e.fill.opacity;
+      ctx.fill();
+    }
+    // Stroke
+    if (e.stroke.width > 0) {
+      ctx.strokeStyle = e.stroke.color;
+      ctx.lineWidth = e.stroke.width * zoom;
+      ctx.lineCap = e.stroke.cap;
+      ctx.lineJoin = e.stroke.join;
+      ctx.globalAlpha = e.blend.opacity * e.stroke.opacity;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 // LIVE PREVIEW RENDERER — Renders in-progress drawing
 // ============================================
 
@@ -460,6 +534,8 @@ export function renderScene(
   preview?: LivePreviewState,
   nodeOverlay?: NodeEditOverlay,
   transformHandles?: import('./node-editing').TransformHandle[],
+  entityEffects?: Record<string, EffectStack>,
+  smartGuides?: import('./smart-guides').SmartGuide[],
 ) {
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = 'hsl(220,27%,4%)';
@@ -470,7 +546,7 @@ export function renderScene(
     if (!layer.visible) continue;
     for (const eid of layer.entities) {
       const e = scene.entities[eid];
-      if (e) renderEntity(ctx, e, vp, selectedIds.includes(eid), hoveredId === eid);
+      if (e) renderEntity(ctx, e, vp, selectedIds.includes(eid), hoveredId === eid, entityEffects);
     }
   }
   if (preview) renderLivePreview(ctx, vp, preview);
@@ -480,6 +556,11 @@ export function renderScene(
   }
   if (transformHandles && transformHandles.length > 0) {
     renderTransformHandles(ctx, transformHandles, vp);
+  }
+  // Render smart guides on top
+  if (smartGuides && smartGuides.length > 0) {
+    const { renderSmartGuides } = require('./smart-guides');
+    renderSmartGuides(ctx, smartGuides, vp);
   }
 }
 
