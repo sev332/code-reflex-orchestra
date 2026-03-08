@@ -80,7 +80,7 @@ export function IllustratorApp() {
     return () => observer.disconnect();
   }, []);
 
-  // Render loop — passes live preview to renderer
+  // Render loop — passes live preview, node overlay, and transform handles to renderer
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -105,7 +105,9 @@ export function IllustratorApp() {
         canvasSize.height,
         state.gridEnabled,
         state.gridSize,
-        preview, // ← live preview layer
+        preview,
+        engine.nodeOverlay,
+        engine.computedTransformHandles,
       );
 
       animRef.current = requestAnimationFrame(render);
@@ -113,7 +115,7 @@ export function IllustratorApp() {
 
     animRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animRef.current);
-  }, [state, canvasSize, preview]);
+  }, [state, canvasSize, preview, engine.nodeOverlay, engine.computedTransformHandles]);
 
   // Keyboard shortcuts
   useEffect(() => {
