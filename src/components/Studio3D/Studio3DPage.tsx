@@ -153,8 +153,6 @@ const createDefaultScene = (): SceneObject[] => [
 function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSelected: boolean; onClick: () => void }) {
   const meshRef = useRef<THREE.Mesh>(null);
 
-  if (!obj.visible) return null;
-
   const geometry = useMemo(() => {
     switch (obj.type) {
       case 'cube': return <boxGeometry args={[1, 1, 1]} />;
