@@ -103,6 +103,21 @@ export function useDrawingEngine() {
   const [knifePath, setKnifePath] = useState<Vec2[]>([]);
   const [isKnifeCutting, setIsKnifeCutting] = useState(false);
 
+  // Sprint 3: Effects state
+  const [entityEffects, setEntityEffects] = useState<Record<string, EffectStack>>({});
+  
+  // Sprint 3: Clipping masks
+  const [clippingMasks, setClippingMasks] = useState<ClippingMask[]>([]);
+  
+  // Sprint 3: Warp tool state
+  const [warpConfig, setWarpConfig] = useState<WarpToolConfig>(defaultWarpConfig);
+  
+  // Sprint 3: Puppet warp state
+  const [puppetWarpState, setPuppetWarpState] = useState<PuppetWarpState | null>(null);
+  
+  // Sprint 3: Transform origin
+  const [transformOriginPreset, setTransformOriginPreset] = useState<TransformOriginPreset>('center');
+
   const updateHistory = useCallback(() => {
     setCanUndo(historyRef.current.canUndo);
     setCanRedo(historyRef.current.canRedo);
