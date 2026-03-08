@@ -1294,12 +1294,26 @@ function FilesRecentPanel() {
 }
 
 function FilesStarredPanel() {
+  const starred = [
+    { name: 'roadmap.md', updated: '2h ago' },
+    { name: 'brand-guidelines.pdf', updated: 'yesterday' },
+    { name: 'release-notes.txt', updated: '3d ago' },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">No starred files</p>
-      <p className="text-xs">Star files for quick access</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {starred.map((file, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Star className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{file.name}</p>
+              <p className="text-xs text-muted-foreground">Updated {file.updated}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
