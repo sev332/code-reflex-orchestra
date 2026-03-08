@@ -66,6 +66,8 @@ const Index = () => {
       case 'audio': return <Suspense fallback={<LoadingFallback />}><AudioEditor /></Suspense>;
       case 'video': return <Suspense fallback={<LoadingFallback />}><VideoEditor /></Suspense>;
       case 'map': return <Suspense fallback={<LoadingFallback />}><GlassMapPage /></Suspense>;
+      case 'studio3d': return <Suspense fallback={<LoadingFallback />}><Studio3DPage /></Suspense>;
+      case 'presentations': return <Suspense fallback={<LoadingFallback />}><PresentationsPage /></Suspense>;
       case 'spreadsheet': return <Suspense fallback={<LoadingFallback />}><SpreadsheetPage /></Suspense>;
       case 'calendar': return <Suspense fallback={<LoadingFallback />}><CalendarPage /></Suspense>;
       case 'email': return <Suspense fallback={<LoadingFallback />}><EmailPage /></Suspense>;

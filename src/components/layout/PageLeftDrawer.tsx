@@ -184,15 +184,29 @@ const pageConfigs: Record<PageId, PageDrawerConfig> = {
       projects: [{ id: 'active', icon: Play, label: 'Active' }, { id: 'archived', icon: History, label: 'Archived' }],
     },
   },
-  presentations: defaultConfig,
+  presentations: {
+    sideIcons: [
+      { id: 'slides', icon: Presentation, label: 'Slides' },
+      { id: 'templates', icon: LayoutDashboard, label: 'Templates' },
+      { id: 'elements', icon: Layers, label: 'Elements' },
+      { id: 'ai-tools', icon: Wand2, label: 'AI Tools' },
+      { id: 'settings', icon: Settings, label: 'Settings' },
+    ],
+    subTabs: {
+      slides: [{ id: 'all', icon: Presentation, label: 'All' }, { id: 'recent', icon: Clock, label: 'Recent' }],
+    },
+  },
   studio3d: {
     sideIcons: [
       { id: 'scene', icon: Box, label: 'Scene Graph' },
       { id: 'assets', icon: Folder, label: 'Assets' },
       { id: 'shaders', icon: Palette, label: 'Shaders' },
+      { id: 'materials', icon: Layers, label: 'Materials' },
       { id: 'settings', icon: Settings, label: 'Settings' },
     ],
-    subTabs: {},
+    subTabs: {
+      assets: [{ id: 'models', icon: Box, label: 'Models' }, { id: 'textures', icon: Image, label: 'Textures' }],
+    },
   },
   terminal: {
     sideIcons: [
