@@ -217,7 +217,7 @@ export function CalendarPage() {
                   return (
                     <button
                       key={i}
-                      onClick={() => { setCurrentDate(day); if (view === 'month') setView('day'); }}
+                      onClick={() => { setCurrentDate(day); setView('day'); }}
                       className={cn(
                         'text-[10px] w-7 h-7 flex flex-col items-center justify-center rounded-full transition-colors relative',
                         !isCurrentMonth && 'opacity-30',
