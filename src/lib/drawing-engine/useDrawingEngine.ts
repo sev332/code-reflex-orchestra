@@ -1,4 +1,4 @@
-// React hook for Drawing Engine state management
+// React hook for Drawing Engine — wires BrushSession, stabilizers, live preview
 import { useState, useCallback, useRef } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
@@ -6,8 +6,10 @@ import {
 import {
   createDefaultEditorState, CommandHistory,
   createRectEntity, createEllipseEntity, createLineEntity, createBrushStrokeEntity,
-  hitTest, getEntityBounds,
+  hitTest,
 } from './engine';
+import { LivePreviewState, emptyPreview, PenAnchorPreview } from './renderer';
+import { BrushSession, BrushSessionConfig, defaultBrushSessionConfig, BUILT_IN_PRESETS, BrushPresetFull, RawInputSample } from './brush-core';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
@@ -15,35 +17,28 @@ export function useDrawingEngine() {
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
 
+  // Live preview state — updated every frame during interaction
+  const [preview, setPreview] = useState<LivePreviewState>(emptyPreview);
+
+  // Active brush session
+  const brushSessionRef = useRef<BrushSession | null>(null);
+  const [activeBrushPreset, setActiveBrushPreset] = useState<BrushPresetFull>(BUILT_IN_PRESETS[0]);
+
+  // Pen tool anchors
+  const [penAnchors, setPenAnchors] = useState<PenAnchorPreview[]>([]);
+
   const updateHistory = useCallback(() => {
     setCanUndo(historyRef.current.canUndo);
     setCanRedo(historyRef.current.canRedo);
   }, []);
 
-  const executeCommand = useCallback((label: string, doFn: (s: EditorState) => EditorState, undoState: EditorState) => {
-    const cmd: Command = {
-      id: generateId(),
-      label,
-      timestamp: Date.now(),
-      execute: () => setState(prev => doFn(prev)),
-      undo: () => setState(undoState),
-    };
-    historyRef.current.execute(cmd);
-    updateHistory();
-  }, [updateHistory]);
-
-  const undo = useCallback(() => {
-    historyRef.current.undo();
-    updateHistory();
-  }, [updateHistory]);
-
-  const redo = useCallback(() => {
-    historyRef.current.redo();
-    updateHistory();
-  }, [updateHistory]);
+  // ── State mutations ──
 
   const setTool = useCallback((toolId: ToolId) => {
     setState(prev => ({ ...prev, tool: { ...prev.tool, activeToolId: toolId } }));
+    // Reset pen anchors when switching away from pen
+    if (toolId !== 'pen') setPenAnchors([]);
+    setPreview(emptyPreview);
   }, []);
 
   const setFillColor = useCallback((color: string) => {
@@ -190,13 +185,124 @@ export function useDrawingEngine() {
     }));
   }, []);
 
+  // ── Interaction: Brush Session ──
+
+  const beginBrushStroke = useCallback((sample: RawInputSample) => {
+    const session = new BrushSession(activeBrushPreset.session);
+    session.begin(sample);
+    brushSessionRef.current = session;
+    setPreview({
+      active: true,
+      type: 'brush',
+      brushPoints: [{ x: sample.x, y: sample.y, pressure: sample.pressure }],
+      strokeColor: activeBrushPreset.color,
+      strokeWidth: activeBrushPreset.baseSize,
+    });
+  }, [activeBrushPreset]);
+
+  const updateBrushStroke = useCallback((sample: RawInputSample) => {
+    const session = brushSessionRef.current;
+    if (!session) return;
+    const pt = session.update(sample);
+    if (pt) {
+      // Update preview with all session points
+      setPreview(prev => ({
+        ...prev,
+        brushPoints: session.points.map((p, i) => ({
+          x: p.x, y: p.y, pressure: session.pressures[i] ?? 0.5,
+        })),
+      }));
+    }
+  }, []);
+
+  const endBrushStroke = useCallback((sample: RawInputSample, strokeColor: string, brushSize: number) => {
+    const session = brushSessionRef.current;
+    if (!session) return;
+    const result = session.end(sample);
+    brushSessionRef.current = null;
+    setPreview(emptyPreview);
+
+    if (result.points.length > 2) {
+      const brushPoints = result.points.map((p, i) => ({
+        x: p.x, y: p.y, pressure: result.pressures[i] ?? 0.5,
+      }));
+      addEntity(createBrushStrokeEntity(brushPoints, strokeColor, brushSize));
+    }
+  }, [addEntity]);
+
+  // ── Interaction: Shape preview ──
+
+  const beginShapePreview = useCallback((world: Vec2, shapeKind: string, fillColor: string, strokeColor: string, strokeWidth: number) => {
+    setPreview({
+      active: true,
+      type: 'shape',
+      shapeKind,
+      startWorld: world,
+      currentWorld: world,
+      fillColor,
+      strokeColor,
+      strokeWidth,
+    });
+  }, []);
+
+  const updateShapePreview = useCallback((world: Vec2) => {
+    setPreview(prev => ({ ...prev, currentWorld: world }));
+  }, []);
+
+  const endShapePreview = useCallback(() => {
+    setPreview(emptyPreview);
+  }, []);
+
+  // ── Interaction: Line preview ──
+
+  const beginLinePreview = useCallback((world: Vec2, strokeColor: string, strokeWidth: number) => {
+    setPreview({
+      active: true,
+      type: 'line',
+      startWorld: world,
+      currentWorld: world,
+      strokeColor,
+      strokeWidth,
+    });
+  }, []);
+
+  const updateLinePreview = useCallback((world: Vec2) => {
+    setPreview(prev => ({ ...prev, currentWorld: world }));
+  }, []);
+
+  const endLinePreview = useCallback(() => {
+    setPreview(emptyPreview);
+  }, []);
+
+  // ── Interaction: Pen tool ──
+
+  const addPenAnchor = useCallback((anchor: PenAnchorPreview) => {
+    setPenAnchors(prev => {
+      const next = [...prev, anchor];
+      setPreview(p => ({ ...p, active: true, type: 'pen', penAnchors: next }));
+      return next;
+    });
+  }, []);
+
+  const updatePenCursor = useCallback((world: Vec2) => {
+    setPreview(prev => ({ ...prev, currentWorld: world }));
+  }, []);
+
+  const finishPenPath = useCallback(() => {
+    setPreview(emptyPreview);
+    const anchors = penAnchors;
+    setPenAnchors([]);
+    return anchors;
+  }, [penAnchors]);
+
+  // ── Hit test ──
+
   const hitTestAtPoint = useCallback((screenPoint: Vec2): string | null => {
     const { viewport, scene } = state;
     const worldPoint: Vec2 = {
       x: screenPoint.x / viewport.zoom - viewport.panX,
       y: screenPoint.y / viewport.zoom - viewport.panY,
     };
-    // Reverse layer order for top-first hit testing
     for (let li = scene.layers.length - 1; li >= 0; li--) {
       const layer = scene.layers[li];
       if (!layer.visible || layer.locked) continue;
@@ -213,10 +319,12 @@ export function useDrawingEngine() {
   return {
     state,
     setState,
+    preview,
+    setPreview,
     canUndo,
     canRedo,
-    undo,
-    redo,
+    undo: useCallback(() => { historyRef.current.undo(); updateHistory(); }, [updateHistory]),
+    redo: useCallback(() => { historyRef.current.redo(); updateHistory(); }, [updateHistory]),
     setTool,
     setFillColor,
     setStrokeColor,
@@ -236,9 +344,30 @@ export function useDrawingEngine() {
     toggleLayerVisibility,
     toggleLayerLock,
     hitTestAtPoint,
+    // Factories
     createRectEntity,
     createEllipseEntity,
     createLineEntity,
     createBrushStrokeEntity,
+    // Brush session
+    beginBrushStroke,
+    updateBrushStroke,
+    endBrushStroke,
+    activeBrushPreset,
+    setActiveBrushPreset,
+    brushPresets: BUILT_IN_PRESETS,
+    // Shape preview
+    beginShapePreview,
+    updateShapePreview,
+    endShapePreview,
+    // Line preview
+    beginLinePreview,
+    updateLinePreview,
+    endLinePreview,
+    // Pen tool
+    addPenAnchor,
+    updatePenCursor,
+    finishPenPath,
+    penAnchors,
   };
 }
