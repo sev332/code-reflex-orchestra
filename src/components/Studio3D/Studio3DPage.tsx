@@ -1181,7 +1181,7 @@ export function Studio3DPage() {
             gl={{ antialias: true, toneMapping: THREE.NoToneMapping, outputColorSpace: THREE.SRGBColorSpace }}
             onPointerMissed={() => setSelectedId(null)}
           >
-            <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={50} />
+            <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={cinematic.fov} near={cinematic.near} far={cinematic.far} />
             <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
 
             {/* Ambient */}
@@ -1190,11 +1190,37 @@ export function Studio3DPage() {
               <Environment preset={environment as any} background={environment !== 'studio'} />
             </Suspense>
 
-            {environment === 'studio' && (
+            {/* Sky system */}
+            {skyConfig.enabled && skyConfig.type === 'procedural' && (
+              <Sky
+                distance={450000}
+                sunPosition={[
+                  Math.cos(skyConfig.elevation * Math.PI / 180) * Math.sin(skyConfig.azimuth * Math.PI / 180) * 100,
+                  Math.sin(skyConfig.elevation * Math.PI / 180) * 100,
+                  Math.cos(skyConfig.elevation * Math.PI / 180) * Math.cos(skyConfig.azimuth * Math.PI / 180) * 100,
+                ]}
+                turbidity={skyConfig.turbidity}
+                rayleigh={skyConfig.rayleigh}
+                mieCoefficient={skyConfig.mieCoefficient}
+                mieDirectionalG={skyConfig.mieDirectionalG}
+              />
+            )}
+
+            {(!skyConfig.enabled || skyConfig.type !== 'procedural') && environment === 'studio' && (
               <>
                 <Stars radius={100} depth={50} count={2000} factor={2} saturation={0} fade speed={1} />
-                <fog attach="fog" args={['#0a0a1a', 20, 60]} />
               </>
+            )}
+
+            {/* Fog */}
+            {fogConfig.enabled && fogConfig.type === 'linear' && (
+              <fog attach="fog" args={[fogConfig.color, fogConfig.near, fogConfig.far]} />
+            )}
+            {fogConfig.enabled && fogConfig.type === 'exponential' && (
+              <fogExp2 attach="fog" args={[fogConfig.color, fogConfig.density]} />
+            )}
+            {!fogConfig.enabled && environment === 'studio' && (
+              <fog attach="fog" args={['#0a0a1a', 20, 60]} />
             )}
 
             {showGrid && (
