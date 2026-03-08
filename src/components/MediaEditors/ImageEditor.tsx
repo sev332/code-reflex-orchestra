@@ -394,6 +394,71 @@ export function ImageEditor() {
               {activePanel === 'tools' && (
                 <div className="space-y-3">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active: {activeTool}</div>
+                  
+                  {activeTool === 'lasso' && (
+                    <div className="space-y-3">
+                      <div className="text-[10px] text-muted-foreground bg-muted/10 rounded-lg p-2 border border-border/20">
+                        <p className="font-medium text-foreground/80 mb-1">Boundary Instrument</p>
+                        <p>Field-assisted lasso with edge attraction, tangent flow, and confidence tracking.</p>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Mode</span>
+                          <Badge variant="outline" className="text-[9px] h-4">Field-Assisted</Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-xs">Edge Attraction</span>
+                        <Slider
+                          value={[lasso.lassoRef.current.config.motion.baseWeights.attraction * 100]}
+                          min={0} max={100} step={5}
+                          onValueChange={([v]) => lasso.setConfig({
+                            motion: {
+                              ...lasso.lassoRef.current.config.motion,
+                              baseWeights: { ...lasso.lassoRef.current.config.motion.baseWeights, attraction: v / 100 }
+                            }
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs">Spring Stiffness</span>
+                        <Slider
+                          value={[lasso.lassoRef.current.config.motion.springStiffness * 100]}
+                          min={10} max={100} step={5}
+                          onValueChange={([v]) => lasso.setConfig({
+                            motion: { ...lasso.lassoRef.current.config.motion, springStiffness: v / 100 }
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs">Feather</span>
+                        <Slider
+                          value={[lasso.lassoRef.current.config.featherRadius]}
+                          min={0} max={20} step={1}
+                          onValueChange={([v]) => lasso.setConfig({ featherRadius: v })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Show Field</span>
+                        <Button
+                          variant={lasso.lassoRef.current.config.showField ? "default" : "outline"}
+                          size="sm" className="h-6 text-[10px] px-2"
+                          onClick={() => lasso.setConfig({ showField: !lasso.lassoRef.current.config.showField })}
+                        >
+                          {lasso.lassoRef.current.config.showField ? 'On' : 'Off'}
+                        </Button>
+                      </div>
+                      {lasso.phase === 'closed' && (
+                        <Button size="sm" className="w-full text-xs gap-1" onClick={lasso.resetLasso}>
+                          <X className="w-3 h-3" /> Clear Selection
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   {activeTool === 'brush' && (
                     <div className="space-y-3">
                       <div>
