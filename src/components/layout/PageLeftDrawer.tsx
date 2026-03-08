@@ -1443,11 +1443,35 @@ function BlueprintSubPanel({ blueprint, page, sideTab }: { blueprint: DrawerBlue
 }
 
 function BlueprintFallbackPanel({ page, sideTab }: { page: string; sideTab: string }) {
-  return (
-    <div className="p-4 text-center text-muted-foreground">
-      <Layers className="w-8 h-8 mx-auto mb-2 opacity-30" />
-      <p className="text-sm capitalize font-medium">{sideTab.replace(/-/g, ' ')}</p>
-      <p className="text-xs mt-1 opacity-70">{page} • {sideTab}</p>
-    </div>
-  );
+  const config = (pageConfigs as Record<string, PageDrawerConfig>)[page] || defaultConfig;
+  const currentIcon = config.sideIcons.find((icon) => icon.id === sideTab);
+  const relatedTabs = config.subTabs[sideTab] || [];
+
+  const fallbackItems: DrawerBlueprintItem[] = relatedTabs.length > 0
+    ? relatedTabs.map((tab) => ({
+        label: tab.label,
+        meta: 'Open panel tools',
+        icon: tab.icon,
+      }))
+    : config.sideIcons
+        .filter((icon) => icon.id !== sideTab)
+        .slice(0, 3)
+        .map((icon) => ({
+          label: icon.label,
+          meta: 'Switch drawer section',
+          icon: icon.icon,
+        }));
+
+  const generatedBlueprint: DrawerBlueprint = {
+    title: currentIcon?.label || sideTab.replace(/-/g, ' '),
+    hint: `Tools for ${page} • ${sideTab.replace(/-/g, ' ')}`,
+    items: fallbackItems.length > 0
+      ? fallbackItems
+      : [
+          { label: 'Open Search', meta: 'Search this workspace', icon: Search },
+          { label: 'Open Settings', meta: 'Configure workspace defaults', icon: Settings },
+        ],
+  };
+
+  return <BlueprintSubPanel blueprint={generatedBlueprint} page={page} sideTab={sideTab} />;
 }
