@@ -1435,6 +1435,40 @@ export function useDrawingEngine() {
     distributeSelected,
     // Sprint 2: Arrange
     arrangeEntity,
+    // Sprint 3: Transform tools
+    rotateSelected,
+    reflectSelected,
+    shearSelected,
+    transformEachSelected,
+    updateEntityTransform,
+    transformOriginPreset,
+    setTransformOriginPreset,
+    getTransformPanelData,
+    // Sprint 3: Effects
+    entityEffects,
+    addEntityEffect,
+    removeEntityEffect,
+    updateEntityEffect,
+    toggleEntityEffect,
+    applyEffectPreset,
+    effectPresets: EFFECT_PRESETS,
+    createDropShadow,
+    createOuterGlow,
+    createInnerShadow,
+    createGaussianBlur,
+    createFeather,
+    // Sprint 3: Blend & Clipping
+    blendSelected,
+    makeClippingMask,
+    releaseClippingMaskById,
+    clippingMasks,
+    // Sprint 3: Warp/Reshape
+    warpConfig,
+    setWarpConfig,
+    applyWarp,
+    widthPresets: WIDTH_PRESETS,
+    // Sprint 3: Duplicate
+    duplicateSelected,
     // Export
     exportSVG,
     downloadSVG,
