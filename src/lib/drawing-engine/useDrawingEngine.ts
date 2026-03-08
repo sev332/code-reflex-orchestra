@@ -1050,6 +1050,19 @@ export function useDrawingEngine() {
     });
   }, []);
 
+  // ── Helper: get combined bounds of selection ──
+  const getSelectionBounds = (ids: string[], entities: Record<string, DrawableEntity>) => {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const id of ids) {
+      const e = entities[id];
+      if (!e) continue;
+      const b = getEntityBounds(e);
+      minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.width); maxY = Math.max(maxY, b.y + b.height);
+    }
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  };
+
   // ── SPRINT 3: Transform Tools ──
 
   const rotateSelected = useCallback((angleDeg: number, copy: boolean = false) => {
