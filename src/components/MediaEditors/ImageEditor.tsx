@@ -1,5 +1,5 @@
-// AI-Powered Image Editor with Gemini Integration
-import React, { useState, useRef, useCallback } from 'react';
+// AI-Powered Image Editor with Gemini Integration + Boundary Instrument Lasso
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -11,13 +11,15 @@ import {
   Crop, RotateCw, FlipHorizontal, FlipVertical, Palette,
   Wand2, Sparkles, Layers, Type, Eraser, Paintbrush,
   Move, Square, Circle, Triangle, Minus, Plus, Sun,
-  Contrast, Droplets, Eye, Loader2, SlidersHorizontal
+  Contrast, Droplets, Eye, Loader2, SlidersHorizontal,
+  Lasso, Scissors, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useLassoTool } from '@/lib/lasso-engine/useLassoTool';
 
-type Tool = 'select' | 'brush' | 'eraser' | 'crop' | 'text' | 'shape' | 'move';
+type Tool = 'select' | 'brush' | 'eraser' | 'crop' | 'text' | 'shape' | 'move' | 'lasso';
 
 interface AdjustmentState {
   brightness: number;
@@ -29,6 +31,7 @@ interface AdjustmentState {
 
 export function ImageEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [currentImage, setCurrentImage] = useState<string | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>('select');
@@ -41,6 +44,48 @@ export function ImageEditor() {
   const [history, setHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [activePanel, setActivePanel] = useState<'tools' | 'adjust' | 'ai' | 'layers'>('tools');
+  const animFrameRef = useRef<number>(0);
+
+  // Boundary Instrument lasso hook
+  const lasso = useLassoTool();
+
+  // Load field cache when image changes
+  const loadLassoField = useCallback(() => {
+    if (canvasRef.current && activeTool === 'lasso') {
+      lasso.loadImage(canvasRef.current);
+      toast.success('Field cache built — lasso ready');
+    }
+  }, [activeTool, lasso]);
+
+  // When switching to lasso tool, build field cache
+  useEffect(() => {
+    if (activeTool === 'lasso' && currentImage && canvasRef.current) {
+      lasso.loadImage(canvasRef.current);
+    }
+  }, [activeTool, currentImage]);
+
+  // Render lasso overlay loop
+  useEffect(() => {
+    if (activeTool !== 'lasso') return;
+    const overlay = overlayCanvasRef.current;
+    const mainCanvas = canvasRef.current;
+    if (!overlay || !mainCanvas) return;
+
+    overlay.width = mainCanvas.width;
+    overlay.height = mainCanvas.height;
+
+    const renderLoop = () => {
+      const ctx = overlay.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, overlay.width, overlay.height);
+        lasso.renderOverlay(ctx);
+      }
+      animFrameRef.current = requestAnimationFrame(renderLoop);
+    };
+    animFrameRef.current = requestAnimationFrame(renderLoop);
+
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [activeTool, lasso]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -119,6 +164,7 @@ export function ImageEditor() {
 
   const tools = [
     { id: 'select' as Tool, icon: Move, label: 'Select' },
+    { id: 'lasso' as Tool, icon: Lasso, label: 'Lasso' },
     { id: 'brush' as Tool, icon: Paintbrush, label: 'Brush' },
     { id: 'eraser' as Tool, icon: Eraser, label: 'Eraser' },
     { id: 'crop' as Tool, icon: Crop, label: 'Crop' },
@@ -192,11 +238,24 @@ export function ImageEditor() {
         <div className="flex-1 relative overflow-auto bg-[hsl(220,27%,3%)]" style={{ backgroundImage: 'radial-gradient(circle at 50% 50%, hsla(220,27%,8%,1) 0%, hsla(220,27%,3%,1) 100%)' }}>
           {currentImage ? (
             <div className="absolute inset-0 flex items-center justify-center p-8" style={{ transform: `scale(${zoom / 100})` }}>
-              <canvas
-                ref={canvasRef}
-                className="max-w-full max-h-full shadow-2xl shadow-black/50 rounded-sm"
-                style={{ filter: getFilterString() }}
-              />
+              <div className="relative">
+                <canvas
+                  ref={canvasRef}
+                  className="max-w-full max-h-full shadow-2xl shadow-black/50 rounded-sm"
+                  style={{ filter: getFilterString() }}
+                />
+                {/* Lasso overlay canvas */}
+                {activeTool === 'lasso' && (
+                  <canvas
+                    ref={overlayCanvasRef}
+                    className="absolute inset-0 w-full h-full cursor-crosshair"
+                    style={{ imageRendering: 'auto' }}
+                    onPointerDown={lasso.handlePointerDown}
+                    onPointerMove={lasso.handlePointerMove}
+                    onPointerUp={lasso.handlePointerUp}
+                  />
+                )}
+              </div>
             </div>
           ) : (
             <div className="h-full flex items-center justify-center">
@@ -208,6 +267,31 @@ export function ImageEditor() {
                 <p className="text-sm font-medium text-muted-foreground">Drop an image or click to upload</p>
                 <p className="text-xs text-muted-foreground/60 mt-1">Supports PNG, JPG, SVG, WebP</p>
               </div>
+            </div>
+          )}
+
+          {/* Lasso status bar */}
+          {activeTool === 'lasso' && currentImage && (
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-md border border-border/30 text-xs">
+              <Lasso className="w-3.5 h-3.5 text-primary" />
+              <span className="text-muted-foreground">
+                {lasso.phase === 'idle' && 'Click & drag to draw selection'}
+                {lasso.phase === 'drawing' && `Drawing — ${lasso.vertices.length} pts`}
+                {lasso.phase === 'closed' && 'Selection closed'}
+              </span>
+              {lasso.phase === 'drawing' && (
+                <div className="flex items-center gap-1">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{
+                    backgroundColor: `hsl(${180 * lasso.confidence}, 80%, 55%)`
+                  }} />
+                  <span className="text-[10px]">{(lasso.confidence * 100).toFixed(0)}%</span>
+                </div>
+              )}
+              {lasso.phase === 'closed' && (
+                <Button variant="ghost" size="icon" className="w-5 h-5" onClick={lasso.resetLasso}>
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -310,6 +394,71 @@ export function ImageEditor() {
               {activePanel === 'tools' && (
                 <div className="space-y-3">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active: {activeTool}</div>
+                  
+                  {activeTool === 'lasso' && (
+                    <div className="space-y-3">
+                      <div className="text-[10px] text-muted-foreground bg-muted/10 rounded-lg p-2 border border-border/20">
+                        <p className="font-medium text-foreground/80 mb-1">Boundary Instrument</p>
+                        <p>Field-assisted lasso with edge attraction, tangent flow, and confidence tracking.</p>
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs">Mode</span>
+                          <Badge variant="outline" className="text-[9px] h-4">Field-Assisted</Badge>
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-xs">Edge Attraction</span>
+                        <Slider
+                          value={[lasso.lassoRef.current.config.motion.baseWeights.attraction * 100]}
+                          min={0} max={100} step={5}
+                          onValueChange={([v]) => lasso.setConfig({
+                            motion: {
+                              ...lasso.lassoRef.current.config.motion,
+                              baseWeights: { ...lasso.lassoRef.current.config.motion.baseWeights, attraction: v / 100 }
+                            }
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs">Spring Stiffness</span>
+                        <Slider
+                          value={[lasso.lassoRef.current.config.motion.springStiffness * 100]}
+                          min={10} max={100} step={5}
+                          onValueChange={([v]) => lasso.setConfig({
+                            motion: { ...lasso.lassoRef.current.config.motion, springStiffness: v / 100 }
+                          })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-xs">Feather</span>
+                        <Slider
+                          value={[lasso.lassoRef.current.config.featherRadius]}
+                          min={0} max={20} step={1}
+                          onValueChange={([v]) => lasso.setConfig({ featherRadius: v })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs">Show Field</span>
+                        <Button
+                          variant={lasso.lassoRef.current.config.showField ? "default" : "outline"}
+                          size="sm" className="h-6 text-[10px] px-2"
+                          onClick={() => lasso.setConfig({ showField: !lasso.lassoRef.current.config.showField })}
+                        >
+                          {lasso.lassoRef.current.config.showField ? 'On' : 'Off'}
+                        </Button>
+                      </div>
+                      {lasso.phase === 'closed' && (
+                        <Button size="sm" className="w-full text-xs gap-1" onClick={lasso.resetLasso}>
+                          <X className="w-3 h-3" /> Clear Selection
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   {activeTool === 'brush' && (
                     <div className="space-y-3">
                       <div>
