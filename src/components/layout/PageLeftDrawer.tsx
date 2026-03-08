@@ -1192,12 +1192,26 @@ function NotesListPanel() {
 }
 
 function NotesGraphPanel() {
+  const clusters = [
+    { name: 'Architecture', links: 18 },
+    { name: 'Research', links: 12 },
+    { name: 'Meetings', links: 9 },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">Knowledge Graph</p>
-      <p className="text-xs">Visualize note connections</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {clusters.map((cluster, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <GitBranch className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{cluster.name}</p>
+              <p className="text-xs text-muted-foreground">{cluster.links} linked notes</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
