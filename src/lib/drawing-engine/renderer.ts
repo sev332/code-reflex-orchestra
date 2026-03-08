@@ -1,7 +1,8 @@
-// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW
+// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering
 import { DrawableEntity, ViewportState, Scene, Vec2 } from './types';
 import { expandStroke, defaultWidthProfile, defaultPressureCurve } from './stroke-core';
 import { distance as geoDist } from './geometry-core';
+import { renderTextEntity } from './text-engine';
 
 // ============================================
 // GRID RENDERER
@@ -78,6 +79,7 @@ export function renderEntity(
 
   if (entity.type === 'shape') renderShape(ctx, entity, wx, wy, vp.zoom);
   else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
+  else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); ctx.restore(); return; }
 
   if (isSelected || isHovered) renderSelectionOverlay(ctx, entity, wx, wy, vp.zoom, isSelected);
   ctx.restore();

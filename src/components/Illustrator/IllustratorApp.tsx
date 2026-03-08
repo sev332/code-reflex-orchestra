@@ -1,5 +1,5 @@
 // Illustrator App — Dark Pro Studio Drawing Engine
-// Full Blueprint: Canvas + Pen + Brush + Shapes + Layers + Live Preview
+// Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -7,6 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   MousePointer2, Pencil, PenTool, Paintbrush, Eraser, Square, Circle,
   Hexagon, Star, Minus, Type, Pipette, Hand, ZoomIn, PaintBucket,
@@ -20,6 +21,8 @@ import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
 import { renderScene } from '@/lib/drawing-engine/renderer';
 import { ToolId, Vec2 } from '@/lib/drawing-engine/types';
 import type { RawInputSample } from '@/lib/drawing-engine/brush-core';
+import { ColorPicker } from './ColorPicker';
+import { BUILT_IN_FONTS } from '@/lib/drawing-engine/text-engine';
 
 // ============================================
 // TOOL DEFINITIONS
@@ -217,9 +220,16 @@ export function IllustratorApp() {
       return;
     }
 
-    // Pen tool — click to add anchor
+    // Pen tool — pointerDown starts anchor + handle drag
     if (tool === 'pen') {
-      engine.addPenAnchor({ x: world.x, y: world.y });
+      engine.beginPenHandleDrag({ x: world.x, y: world.y });
+      setIsDrawing(true);
+      return;
+    }
+
+    // Text tool — click to create text
+    if (tool === 'text') {
+      engine.addTextEntity(world.x, world.y);
       return;
     }
 
@@ -294,8 +304,14 @@ export function IllustratorApp() {
       return;
     }
 
-    // Pen cursor tracking
-    if (tool === 'pen') {
+    // Pen handle drag
+    if (tool === 'pen' && isDrawing) {
+      engine.updatePenHandleDrag(world);
+      return;
+    }
+
+    // Pen cursor tracking (when not dragging)
+    if (tool === 'pen' && !isDrawing) {
       engine.updatePenCursor(world);
       return;
     }
@@ -313,6 +329,13 @@ export function IllustratorApp() {
     if (dragStart) { setDragStart(null); return; }
 
     const tool = state.tool.activeToolId;
+
+    // End pen handle drag
+    if (tool === 'pen' && isDrawing) {
+      engine.endPenHandleDrag();
+      setIsDrawing(false);
+      return;
+    }
 
     // End node drag
     if (tool === 'direct-select' && isDrawing) {
@@ -418,11 +441,11 @@ export function IllustratorApp() {
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" title="Import SVG">
             <Upload className="w-3 h-3" /> Import
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-            <Download className="w-3 h-3" /> Export
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadSVG()}>
+            <Download className="w-3 h-3" /> SVG
           </Button>
         </div>
       </div>
@@ -572,7 +595,17 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
       <div>
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Appearance</div>
         <div className="space-y-1.5 mb-3">
-          <div className="text-[10px] text-muted-foreground">Fill</div>
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] text-muted-foreground">Fill</div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="w-6 h-6 rounded border border-[hsl(220,15%,20%)] cursor-pointer" style={{ backgroundColor: state.tool.fillColor }} />
+              </PopoverTrigger>
+              <PopoverContent side="left" className="w-56 bg-[hsl(220,27%,6%)] border-[hsl(220,15%,15%)] p-3">
+                <ColorPicker color={state.tool.fillColor} onChange={engine.setFillColor} showOpacity showHarmony />
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="flex flex-wrap gap-1">
             {PRESET_COLORS.map(color => (
               <button
@@ -588,7 +621,17 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           </div>
         </div>
         <div className="space-y-1.5">
-          <div className="text-[10px] text-muted-foreground">Stroke</div>
+          <div className="flex items-center justify-between">
+            <div className="text-[10px] text-muted-foreground">Stroke</div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="w-6 h-6 rounded border border-[hsl(220,15%,20%)] cursor-pointer" style={{ backgroundColor: state.tool.strokeColor }} />
+              </PopoverTrigger>
+              <PopoverContent side="left" className="w-56 bg-[hsl(220,27%,6%)] border-[hsl(220,15%,15%)] p-3">
+                <ColorPicker color={state.tool.strokeColor} onChange={engine.setStrokeColor} showOpacity />
+              </PopoverContent>
+            </Popover>
+          </div>
           <div className="flex flex-wrap gap-1">
             {PRESET_COLORS.map(color => (
               <button
@@ -614,6 +657,29 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           </div>
         </div>
       </div>
+
+      {/* Text properties */}
+      {state.tool.activeToolId === 'text' && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Text</div>
+          <div className="space-y-2">
+            <select
+              value={state.tool.fontFamily}
+              onChange={e => engine.setFontFamily(e.target.value)}
+              className="w-full h-7 text-[10px] bg-[hsl(220,15%,8%)] border border-[hsl(220,15%,15%)] rounded px-1 text-foreground"
+            >
+              {BUILT_IN_FONTS.map(f => (
+                <option key={f.family} value={f.family}>{f.family}</option>
+              ))}
+            </select>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-8">Size</span>
+              <Slider value={[state.tool.fontSize]} min={8} max={200} step={1} onValueChange={([v]) => engine.setFontSize(v)} className="flex-1" />
+              <span className="text-[10px] font-mono w-8 text-right">{state.tool.fontSize}px</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Brush presets */}
       {(state.tool.activeToolId === 'brush' || state.tool.activeToolId === 'pencil') && (
