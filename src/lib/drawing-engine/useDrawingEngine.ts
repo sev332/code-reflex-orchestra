@@ -1,5 +1,6 @@
 // React hook for Drawing Engine — wires BrushSession, stabilizers, live preview, node editing, transforms
 // Sprint 1: Added pen handle dragging, text tool, undo/redo wiring, SVG export
+// Sprint 2: Added gradient engine, proper booleans, scissors/knife, groups, isolation mode
 import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
@@ -16,9 +17,25 @@ import {
   hitTestNodes, moveAnchor, addAnchorOnSegment, deleteAnchor, ensurePathData,
   getTransformHandles, hitTestTransformHandle, applyScaleTransform, applyRotateTransform,
 } from './node-editing';
-import { simplifyPath, reversePath, offsetPath, booleanUnion, booleanSubtract, booleanIntersect } from './path-operations';
+import { simplifyPath, reversePath, offsetPath } from './path-operations';
 import { createPointTextEntity, createAreaTextEntity } from './text-engine';
 import { exportSceneToSVG } from './svg-io';
+import {
+  GradientData, LinearGradient, RadialGradient,
+  createLinearGradient, createRadialGradient, createFreeformGradient,
+  applyGradientToEntity, GRADIENT_PRESETS,
+} from './gradient-engine';
+import {
+  pathfinderUnite, pathfinderMinusFront, pathfinderMinusBack,
+  pathfinderIntersect, pathfinderExclude, pathfinderDivide,
+  scissorsAtPoint, knifeCut,
+} from './boolean-engine';
+import {
+  createGroup, ungroup, deepUngroup,
+  IsolationState, emptyIsolation, enterIsolation, exitIsolation,
+  alignEntities, distributeEntities,
+  bringToFront, sendToBack, bringForward, sendBackward,
+} from './groups-engine';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
@@ -48,6 +65,17 @@ export function useDrawingEngine() {
   // Text editing state
   const [editingTextId, setEditingTextId] = useState<string | null>(null);
 
+  // Gradient editing state
+  const [activeGradient, setActiveGradient] = useState<GradientData | null>(null);
+  const [gradientEditTarget, setGradientEditTarget] = useState<string | null>(null);
+
+  // Isolation mode state
+  const [isolation, setIsolation] = useState<IsolationState>(emptyIsolation);
+
+  // Scissors/Knife state
+  const [knifePath, setKnifePath] = useState<Vec2[]>([]);
+  const [isKnifeCutting, setIsKnifeCutting] = useState(false);
+
   const updateHistory = useCallback(() => {
     setCanUndo(historyRef.current.canUndo);
     setCanRedo(historyRef.current.canRedo);
@@ -71,6 +99,10 @@ export function useDrawingEngine() {
     if (toolId !== 'pen') setPenAnchors([]);
     setPreview(emptyPreview);
     setEditingTextId(null);
+    setActiveGradient(null);
+    setGradientEditTarget(null);
+    setKnifePath([]);
+    setIsKnifeCutting(false);
   }, []);
 
   const setFillColor = useCallback((color: string) => {
@@ -120,10 +152,8 @@ export function useDrawingEngine() {
 
   const addEntity = useCallback((entity: DrawableEntity) => {
     const entityId = entity.id;
-    let capturedState: EditorState | null = null;
 
     setState(prev => {
-      capturedState = prev;
       const scene = { ...prev.scene };
       scene.entities = { ...scene.entities, [entity.id]: entity };
       const activeLayer = scene.layers.find(l => l.id === scene.activeLayerId);
@@ -135,14 +165,11 @@ export function useDrawingEngine() {
       return { ...prev, scene, selection: { ...prev.selection, selectedIds: [entity.id] } };
     });
 
-    // Register with command history for undo
     historyRef.current.execute({
       id: generateId(),
       label: `Add ${entity.name}`,
       timestamp: Date.now(),
-      execute: () => {
-        // Already executed above
-      },
+      execute: () => {},
       undo: () => {
         setState(prev => {
           const entities = { ...prev.scene.entities };
@@ -166,8 +193,7 @@ export function useDrawingEngine() {
     setState(prev => {
       const ids = prev.selection.selectedIds;
       if (ids.length === 0) return prev;
-      
-      // Capture for undo
+
       const deletedEntities = ids.map(id => prev.scene.entities[id]).filter(Boolean);
       const deletedLayerMap = new Map<string, string[]>();
       prev.scene.layers.forEach(l => {
@@ -377,17 +403,14 @@ export function useDrawingEngine() {
 
   const addPenAnchor = useCallback((anchor: PenAnchorPreview) => {
     setPenAnchors(prev => {
-      // Check if clicking first anchor to close path
       if (prev.length >= 3) {
         const first = prev[0];
         const dist = Math.sqrt((anchor.x - first.x) ** 2 + (anchor.y - first.y) ** 2);
         if (dist < 8) {
-          // Close the path — create entity from pen anchors
           finishPenPathAsEntity(prev, true);
           return [];
         }
       }
-
       const next = [...prev, anchor];
       setPreview(p => ({ ...p, active: true, type: 'pen', penAnchors: next }));
       return next;
@@ -409,7 +432,6 @@ export function useDrawingEngine() {
       if (prev.length === 0) return prev;
       const updated = [...prev];
       const last = { ...updated[updated.length - 1] };
-      // Mirror handle: handleOut goes toward cursor, handleIn goes opposite
       last.handleOut = { x: world.x, y: world.y };
       last.handleIn = {
         x: last.x - (world.x - last.x),
@@ -669,7 +691,7 @@ export function useDrawingEngine() {
     setTransformState(emptyTransformState);
   }, []);
 
-  // ── Path operations ──
+  // ── Path operations (legacy wrappers) ──
 
   const pathSimplify = useCallback((tolerance?: number) => {
     setState(prev => {
@@ -704,38 +726,285 @@ export function useDrawingEngine() {
     });
   }, []);
 
-  const pathBoolean = useCallback((op: 'union' | 'subtract' | 'intersect') => {
+  // ── SPRINT 2: Proper Pathfinder Boolean Operations ──
+
+  const pathBoolean = useCallback((op: 'union' | 'subtract' | 'intersect' | 'exclude' | 'divide' | 'minus-back') => {
     setState(prev => {
       const ids = prev.selection.selectedIds;
       if (ids.length < 2) return prev;
-      let a = ensurePathData(prev.scene.entities[ids[0]]);
-      let b = ensurePathData(prev.scene.entities[ids[1]]);
+      const a = ensurePathData(prev.scene.entities[ids[0]]);
+      const b = ensurePathData(prev.scene.entities[ids[1]]);
       if (!a || !b) return prev;
 
-      let result: DrawableEntity;
+      let results: DrawableEntity[];
       switch (op) {
-        case 'union': result = booleanUnion(a, b); break;
-        case 'subtract': result = booleanSubtract(a, b); break;
-        case 'intersect': result = booleanIntersect(a, b); break;
+        case 'union': results = [pathfinderUnite(a, b)]; break;
+        case 'subtract': results = [pathfinderMinusFront(a, b)]; break;
+        case 'minus-back': results = [pathfinderMinusBack(a, b)]; break;
+        case 'intersect': results = [pathfinderIntersect(a, b)]; break;
+        case 'exclude': results = [pathfinderExclude(a, b)]; break;
+        case 'divide': results = pathfinderDivide(a, b); break;
+        default: return prev;
       }
 
       const entities = { ...prev.scene.entities };
       delete entities[ids[0]];
       delete entities[ids[1]];
-      entities[result.id] = result;
+      results.forEach(r => { entities[r.id] = r; });
 
       const layers = prev.scene.layers.map(l => ({
         ...l,
         entities: l.entities.filter(eid => !ids.includes(eid)),
       }));
       const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
-      if (activeLayer) activeLayer.entities.push(result.id);
+      if (activeLayer) results.forEach(r => activeLayer.entities.push(r.id));
 
       return {
         ...prev,
         scene: { ...prev.scene, entities, layers },
-        selection: { ...prev.selection, selectedIds: [result.id] },
+        selection: { ...prev.selection, selectedIds: results.map(r => r.id) },
       };
+    });
+  }, []);
+
+  // ── SPRINT 2: Scissors Tool ──
+
+  const applyScissors = useCallback((worldPoint: Vec2) => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length !== 1) return prev;
+      const entity = prev.scene.entities[ids[0]];
+      if (!entity) return prev;
+
+      const converted = ensurePathData(entity);
+      const results = scissorsAtPoint(converted, worldPoint);
+      if (results.length <= 1 && results[0]?.id === converted.id) return prev;
+
+      const entities = { ...prev.scene.entities };
+      delete entities[ids[0]];
+      results.forEach(r => { entities[r.id] = r; });
+
+      const layers = prev.scene.layers.map(l => ({
+        ...l,
+        entities: l.entities.filter(eid => eid !== ids[0]),
+      }));
+      const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
+      if (activeLayer) results.forEach(r => activeLayer.entities.push(r.id));
+
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: results.map(r => r.id) },
+      };
+    });
+  }, []);
+
+  // ── SPRINT 2: Knife Tool ──
+
+  const beginKnifeCut = useCallback((world: Vec2) => {
+    setKnifePath([world]);
+    setIsKnifeCutting(true);
+  }, []);
+
+  const updateKnifeCut = useCallback((world: Vec2) => {
+    if (!isKnifeCutting) return;
+    setKnifePath(prev => [...prev, world]);
+  }, [isKnifeCutting]);
+
+  const endKnifeCut = useCallback(() => {
+    setIsKnifeCutting(false);
+    if (knifePath.length < 2) { setKnifePath([]); return; }
+
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length !== 1) return prev;
+      const entity = prev.scene.entities[ids[0]];
+      if (!entity) return prev;
+
+      const converted = ensurePathData(entity);
+      const results = knifeCut(converted, knifePath);
+      if (results.length <= 1) return prev;
+
+      const entities = { ...prev.scene.entities };
+      delete entities[ids[0]];
+      results.forEach(r => { entities[r.id] = r; });
+
+      const layers = prev.scene.layers.map(l => ({
+        ...l,
+        entities: l.entities.filter(eid => eid !== ids[0]),
+      }));
+      const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
+      if (activeLayer) results.forEach(r => activeLayer.entities.push(r.id));
+
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: results.map(r => r.id) },
+      };
+    });
+
+    setKnifePath([]);
+  }, [knifePath, isKnifeCutting]);
+
+  // ── SPRINT 2: Groups ──
+
+  const groupSelected = useCallback(() => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length < 2) return prev;
+
+      const selectedEntities = ids.map(id => prev.scene.entities[id]).filter(Boolean);
+      const { group, removedIds } = createGroup(selectedEntities);
+
+      const entities = { ...prev.scene.entities };
+      // Keep children in entities dict (they're referenced by group.children)
+      selectedEntities.forEach(e => { entities[e.id] = { ...e, parentId: group.id }; });
+      entities[group.id] = group;
+
+      // Replace children in layer with group
+      const layers = prev.scene.layers.map(l => {
+        const filtered = l.entities.filter(eid => !removedIds.includes(eid));
+        if (l.id === prev.scene.activeLayerId) {
+          return { ...l, entities: [...filtered, group.id] };
+        }
+        return { ...l, entities: filtered };
+      });
+
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: [group.id] },
+      };
+    });
+  }, []);
+
+  const ungroupSelected = useCallback(() => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length !== 1) return prev;
+      const group = prev.scene.entities[ids[0]];
+      if (!group || group.type !== 'group') return prev;
+
+      const { restoredEntities, removedGroupId } = ungroup(group, prev.scene.entities);
+
+      const entities = { ...prev.scene.entities };
+      delete entities[removedGroupId];
+      restoredEntities.forEach(e => { entities[e.id] = e; });
+
+      const layers = prev.scene.layers.map(l => {
+        const filtered = l.entities.filter(eid => eid !== removedGroupId);
+        if (l.id === prev.scene.activeLayerId) {
+          return { ...l, entities: [...filtered, ...restoredEntities.map(e => e.id)] };
+        }
+        return { ...l, entities: filtered };
+      });
+
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: restoredEntities.map(e => e.id) },
+      };
+    });
+  }, []);
+
+  // ── SPRINT 2: Isolation Mode ──
+
+  const enterIsolationMode = useCallback((groupId: string) => {
+    const newIsolation = enterIsolation(groupId, state.scene.entities, state.scene.layers, isolation);
+    setIsolation(newIsolation);
+  }, [state.scene, isolation]);
+
+  const exitIsolationMode = useCallback(() => {
+    const newIsolation = exitIsolation(isolation, state.scene.entities, state.scene.layers);
+    setIsolation(newIsolation);
+  }, [isolation, state.scene]);
+
+  // ── SPRINT 2: Gradient Tool ──
+
+  const applyGradient = useCallback((entityId: string, gradient: GradientData) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      const updated = applyGradientToEntity(entity, gradient);
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities: { ...prev.scene.entities, [entityId]: updated } },
+      };
+    });
+  }, []);
+
+  // ── SPRINT 2: Alignment ──
+
+  const alignSelected = useCallback((alignment: 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom') => {
+    setState(prev => {
+      const entities = prev.selection.selectedIds.map(id => prev.scene.entities[id]).filter(Boolean);
+      if (entities.length === 0) return prev;
+
+      const ab = prev.scene.artboards[0];
+      const moves = alignEntities(
+        entities, alignment,
+        entities.length === 1 && ab ? 'artboard' : 'selection',
+        ab ? { x: ab.x, y: ab.y, width: ab.width, height: ab.height } : undefined
+      );
+
+      const updatedEntities = { ...prev.scene.entities };
+      for (const [id, pos] of moves) {
+        const e = updatedEntities[id];
+        if (e) {
+          updatedEntities[id] = {
+            ...e,
+            transform: { ...e.transform, translateX: pos.x, translateY: pos.y },
+          };
+        }
+      }
+
+      return { ...prev, scene: { ...prev.scene, entities: updatedEntities } };
+    });
+  }, []);
+
+  const distributeSelected = useCallback((axis: 'horizontal' | 'vertical') => {
+    setState(prev => {
+      const entities = prev.selection.selectedIds.map(id => prev.scene.entities[id]).filter(Boolean);
+      if (entities.length < 3) return prev;
+
+      const moves = distributeEntities(entities, axis);
+      const updatedEntities = { ...prev.scene.entities };
+      for (const [id, pos] of moves) {
+        const e = updatedEntities[id];
+        if (e) {
+          updatedEntities[id] = {
+            ...e,
+            transform: { ...e.transform, translateX: pos.x, translateY: pos.y },
+          };
+        }
+      }
+
+      return { ...prev, scene: { ...prev.scene, entities: updatedEntities } };
+    });
+  }, []);
+
+  // ── SPRINT 2: Arrange ──
+
+  const arrangeEntity = useCallback((action: 'front' | 'back' | 'forward' | 'backward') => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length !== 1) return prev;
+      const entityId = ids[0];
+
+      const layers = prev.scene.layers.map(l => {
+        if (!l.entities.includes(entityId)) return l;
+        let newEntities: string[];
+        switch (action) {
+          case 'front': newEntities = bringToFront(l.entities, entityId); break;
+          case 'back': newEntities = sendToBack(l.entities, entityId); break;
+          case 'forward': newEntities = bringForward(l.entities, entityId); break;
+          case 'backward': newEntities = sendBackward(l.entities, entityId); break;
+          default: newEntities = l.entities;
+        }
+        return { ...l, entities: newEntities };
+      });
+
+      return { ...prev, scene: { ...prev.scene, layers } };
     });
   }, []);
 
@@ -766,12 +1035,8 @@ export function useDrawingEngine() {
     canvas.height = ab.height * scale;
     const ctx = canvas.getContext('2d')!;
     ctx.scale(scale, scale);
-
-    // Minimal render for export
     ctx.fillStyle = ab.backgroundColor;
     ctx.fillRect(0, 0, ab.width, ab.height);
-
-    // Import renderScene is circular, so we use the native scene data
     const link = document.createElement('a');
     link.download = 'design.png';
     link.href = canvas.toDataURL('image/png');
@@ -863,6 +1128,32 @@ export function useDrawingEngine() {
     pathReverse,
     pathOffset,
     pathBoolean,
+    // Sprint 2: Scissors/Knife
+    applyScissors,
+    beginKnifeCut,
+    updateKnifeCut,
+    endKnifeCut,
+    knifePath,
+    isKnifeCutting,
+    // Sprint 2: Groups
+    groupSelected,
+    ungroupSelected,
+    // Sprint 2: Isolation
+    isolation,
+    enterIsolationMode,
+    exitIsolationMode,
+    // Sprint 2: Gradient
+    activeGradient,
+    setActiveGradient,
+    gradientEditTarget,
+    setGradientEditTarget,
+    applyGradient,
+    gradientPresets: GRADIENT_PRESETS,
+    // Sprint 2: Alignment
+    alignSelected,
+    distributeSelected,
+    // Sprint 2: Arrange
+    arrangeEntity,
     // Export
     exportSVG,
     downloadSVG,
