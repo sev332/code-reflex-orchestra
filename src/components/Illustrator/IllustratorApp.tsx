@@ -2,6 +2,8 @@
 // Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
 // Sprint 2: Gradient tool, Proper booleans, Scissors/Knife, Groups, Isolation, Alignment
 // Sprint 3: Transform tools, Effects, Blend, Clipping masks, Warp tools
+// Sprint 4: Effects rendering, Smart guides, SVG import
+// Sprint 5: Appearance panel, Patterns, Symbols, Mesh gradient
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
