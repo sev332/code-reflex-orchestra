@@ -1,6 +1,6 @@
 // 3D Studio — Unreal-class scene editor built on React Three Fiber
-// Phase 1: Post-Processing Pipeline + Advanced PBR Materials
-import React, { useState, useCallback, useRef, useMemo, Suspense } from 'react';
+// Phase 1+2: Post-Processing Pipeline + PBR + Animation Timeline
+import React, { useState, useCallback, useRef, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
   OrbitControls, TransformControls, Grid, GizmoHelper, GizmoViewport,
@@ -36,6 +36,11 @@ import {
 import { cn } from '@/lib/utils';
 import { RenderSettingsPanel, defaultPostProcessing, type PostProcessingSettings } from './RenderSettings';
 import { MaterialLibraryPanel, materialPresets, type PBRMaterialPreset } from './MaterialLibrary';
+import { AnimationTimeline } from './AnimationTimeline';
+import {
+  createClip, evaluateClipAtTime, applyAnimatedValues, getObjectPropertyValue,
+  type AnimationClip, type AnimatableProperty,
+} from '@/lib/3d-engine/animation-engine';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -575,8 +580,86 @@ export function Studio3DPage() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [undoStack, setUndoStack] = useState<SceneObject[][]>([]);
   const [postProcessing, setPostProcessing] = useState<PostProcessingSettings>(defaultPostProcessing);
+  const [showTimeline, setShowTimeline] = useState(true);
+  const [animClip, setAnimClip] = useState<AnimationClip>(() => createClip('Animation', 5));
+  const [animTime, setAnimTime] = useState(0);
+  const [animPlaying, setAnimPlaying] = useState(false);
+  const [selectedTrackId, setSelectedTrackId] = useState<string | null>(null);
+  const [baseObjects, setBaseObjects] = useState<SceneObject[] | null>(null);
+  const animFrameRef = useRef<number>(0);
+  const lastFrameTimeRef = useRef<number>(0);
 
   const selectedObj = objects.find(o => o.id === selectedId) || null;
+
+  // Animation playback loop
+  useEffect(() => {
+    if (!animPlaying) {
+      lastFrameTimeRef.current = 0;
+      return;
+    }
+    // Store base state when starting playback
+    if (!baseObjects) {
+      setBaseObjects(objects.map(o => ({ ...o })));
+    }
+    const tick = (timestamp: number) => {
+      if (lastFrameTimeRef.current === 0) lastFrameTimeRef.current = timestamp;
+      const delta = (timestamp - lastFrameTimeRef.current) / 1000 * animClip.speed;
+      lastFrameTimeRef.current = timestamp;
+      setAnimTime(prev => {
+        let next = prev + delta;
+        if (next >= animClip.duration) {
+          if (animClip.loop) {
+            next = next % animClip.duration;
+          } else {
+            setAnimPlaying(false);
+            return animClip.duration;
+          }
+        }
+        return next;
+      });
+      animFrameRef.current = requestAnimationFrame(tick);
+    };
+    animFrameRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [animPlaying, animClip.duration, animClip.loop, animClip.speed]);
+
+  // Apply animation values to objects
+  useEffect(() => {
+    if (animClip.tracks.length === 0) return;
+    const animated = evaluateClipAtTime(animClip, animTime);
+    if (animated.size === 0) return;
+    const base = baseObjects || objects;
+    setObjects(prev => prev.map(o => {
+      const values = animated.get(o.id);
+      if (!values) return o;
+      return applyAnimatedValues(baseObjects ? base.find(b => b.id === o.id) || o : o, values);
+    }));
+  }, [animTime, animClip]);
+
+  const handleAnimPlayToggle = useCallback(() => {
+    if (!animPlaying) {
+      setBaseObjects(objects.map(o => ({ ...o })));
+    } else {
+      // Restore base state when stopping
+      if (baseObjects) {
+        setObjects(baseObjects);
+        setBaseObjects(null);
+      }
+    }
+    setAnimPlaying(v => !v);
+  }, [animPlaying, objects, baseObjects]);
+
+  const sceneObjectRefs = useMemo(() =>
+    objects.filter(o => !o.type.startsWith('light-') || o.type === 'light-directional' || o.type === 'light-point' || o.type === 'light-spot')
+      .map(o => ({ id: o.id, name: o.name, type: o.type })),
+    [objects]
+  );
+
+  const getObjPropValue = useCallback((objectId: string, property: AnimatableProperty) => {
+    const obj = objects.find(o => o.id === objectId);
+    if (!obj) return 0;
+    return getObjectPropertyValue(obj, property);
+  }, [objects]);
 
   const pushUndo = useCallback(() => {
     setUndoStack(prev => [...prev.slice(-20), objects.map(o => ({ ...o }))]);
@@ -804,6 +887,16 @@ export function Studio3DPage() {
           </SelectContent>
         </Select>
 
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setShowTimeline(v => !v)}
+              className={cn('w-8 h-8', showTimeline && 'text-primary')}>
+              <Layers className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Timeline</TooltipContent>
+        </Tooltip>
+
         <Button variant="ghost" size="icon" onClick={() => setIsPlaying(v => !v)} className="w-8 h-8">
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
@@ -1007,6 +1100,22 @@ export function Studio3DPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── Animation Timeline ─── */}
+      {showTimeline && (
+        <AnimationTimeline
+          clip={animClip}
+          onClipChange={setAnimClip}
+          currentTime={animTime}
+          onTimeChange={setAnimTime}
+          isPlaying={animPlaying}
+          onPlayToggle={handleAnimPlayToggle}
+          sceneObjects={sceneObjectRefs}
+          getObjectProperty={getObjPropValue}
+          selectedTrackId={selectedTrackId}
+          onSelectTrack={setSelectedTrackId}
+        />
+      )}
     </div>
   );
 }
