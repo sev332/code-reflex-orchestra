@@ -579,7 +579,9 @@ export function Studio3DPage() {
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(false);
   const [environment, setEnvironment] = useState<string>('studio');
-  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render'>('inspector');
+  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural'>('inspector');
+  const [particleEmitters, setParticleEmitters] = useState<ParticleEmitterConfig[]>([]);
+  const [selectedEmitterId, setSelectedEmitterId] = useState<string | null>(null);
   const [shaderCategory, setShaderCategory] = useState('All');
   const [shaderSearch, setShaderSearch] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
