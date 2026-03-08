@@ -60,6 +60,27 @@ import {
   OpacityMask, createOpacityMask,
 } from './blend-engine';
 import {
+  AppearanceStack, emptyAppearanceStack, AppearanceEntry,
+  addAppearanceEntry, removeAppearanceEntry, updateAppearanceEntry,
+  toggleAppearanceEntry, reorderAppearanceEntry,
+  createFillEntry, createStrokeEntry, entityToAppearanceStack,
+  APPEARANCE_PRESETS, SavedGraphicStyle, createSavedStyle,
+} from './appearance-engine';
+import {
+  PatternDef, PatternPreset, PATTERN_PRESETS, createPattern, PatternLibrary,
+} from './pattern-engine';
+import {
+  SymbolDef, SymbolInstance, SymbolLibrary, emptySymbolLibrary,
+  createSymbolDef, createSymbolInstance, convertToSymbol, expandInstance,
+  addSymbolToLibrary, removeSymbolFromLibrary, addInstanceToLibrary,
+  spraySymbol, defaultSprayerConfig, SprayerConfig,
+} from './symbol-engine';
+import {
+  MeshGrid, createMeshGrid, setMeshPointColor, moveMeshPoint,
+  addMeshRow, addMeshCol, renderMeshGradient, hitTestMeshPoint,
+  MESH_PRESETS,
+} from './mesh-gradient-engine';
+import {
   WarpToolConfig, defaultWarpConfig, applyWarpAtPoint,
   WidthProfile, WIDTH_PRESETS, addWidthPoint, getWidthAtPosition,
   EnvelopeMesh, createEnvelopeMesh, applyEnvelopeDistort,
