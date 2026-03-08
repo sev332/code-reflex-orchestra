@@ -33,10 +33,13 @@ export function useDrawingEngine() {
   // Pen tool anchors
   const [penAnchors, setPenAnchors] = useState<PenAnchorPreview[]>([]);
 
-  const updateHistory = useCallback(() => {
-    setCanUndo(historyRef.current.canUndo);
-    setCanRedo(historyRef.current.canRedo);
-  }, []);
+  // Node editing state (direct-select)
+  const [nodeOverlay, setNodeOverlay] = useState<NodeEditOverlay>(emptyNodeOverlay);
+  const [activeNodeHit, setActiveNodeHit] = useState<NodeHit | null>(null);
+  const nodeDragRef = useRef<{ hit: NodeHit; lastWorld: Vec2 } | null>(null);
+
+  // Transform state (select tool)
+  const [transformState, setTransformState] = useState<TransformState>(emptyTransformState);
 
   // ── State mutations ──
 
