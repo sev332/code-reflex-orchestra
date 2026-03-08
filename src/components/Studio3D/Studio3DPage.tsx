@@ -1,5 +1,5 @@
 // 3D Studio — Unreal-class scene editor built on React Three Fiber
-// Phase 1+2: Post-Processing Pipeline + PBR + Animation Timeline
+// Phases 1-8: Full Unreal-class engine
 import React, { useState, useCallback, useRef, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
@@ -31,7 +31,7 @@ import {
   ChevronDown, Layers, Sun, Moon, Palette, Wand2, Download, Upload,
   Settings, Play, Pause, SkipBack, Code2, Search, Grid3x3, Magnet,
   Maximize, Minimize, Lightbulb, Camera, Undo2, Redo2, MousePointer,
-  Square, Hexagon, Cone, Sparkles, SlidersHorizontal,
+  Square, Hexagon, Cone, Sparkles, SlidersHorizontal, Zap, Mountain, Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RenderSettingsPanel, defaultPostProcessing, type PostProcessingSettings } from './RenderSettings';
@@ -46,6 +46,11 @@ import type { ParticleEmitterConfig } from '@/lib/3d-engine/particle-system';
 import { interpolateColorOverLife } from '@/lib/3d-engine/particle-system';
 import { ProceduralToolsPanel } from './ProceduralTools';
 import { generateTerrainGeometry, generateProceduralGeometry, type TerrainConfig, type ProceduralConfig } from '@/lib/3d-engine/terrain-generator';
+import { PhysicsPanel } from './PhysicsPanel';
+import { type PhysicsBodyConfig, type PhysicsWorldConfig, type PhysicsConstraint, defaultPhysicsWorld, SimplePhysicsEngine } from '@/lib/3d-engine/physics-config';
+import { ViewportManagerPanel, type ViewportMode, type ViewportLayout, type CameraBookmark, type CinematicSettings, type ScreenshotConfig, defaultCinematic } from './ViewportManager';
+import { SceneManagerPanel, type SceneLayer, type Prefab, type FogConfig, type SkyConfig, defaultFog, defaultSky } from './SceneManager';
+import { BlueprintEditor } from './BlueprintEditor';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -694,7 +699,7 @@ export function Studio3DPage() {
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(false);
   const [environment, setEnvironment] = useState<string>('studio');
-  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural'>('inspector');
+  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural' | 'physics' | 'viewport' | 'scene'>('inspector');
   const [particleEmitters, setParticleEmitters] = useState<ParticleEmitterConfig[]>([]);
   const [selectedEmitterId, setSelectedEmitterId] = useState<string | null>(null);
   const [shaderCategory, setShaderCategory] = useState('All');
@@ -703,6 +708,7 @@ export function Studio3DPage() {
   const [undoStack, setUndoStack] = useState<SceneObject[][]>([]);
   const [postProcessing, setPostProcessing] = useState<PostProcessingSettings>(defaultPostProcessing);
   const [showTimeline, setShowTimeline] = useState(true);
+  const [showBlueprint, setShowBlueprint] = useState(false);
   const [animClip, setAnimClip] = useState<AnimationClip>(() => createClip('Animation', 5));
   const [animTime, setAnimTime] = useState(0);
   const [animPlaying, setAnimPlaying] = useState(false);
@@ -710,6 +716,23 @@ export function Studio3DPage() {
   const [baseObjects, setBaseObjects] = useState<SceneObject[] | null>(null);
   const animFrameRef = useRef<number>(0);
   const lastFrameTimeRef = useRef<number>(0);
+  // Phase 3: Physics
+  const [physicsBodies, setPhysicsBodies] = useState<PhysicsBodyConfig[]>([]);
+  const [physicsWorld, setPhysicsWorld] = useState<PhysicsWorldConfig>(defaultPhysicsWorld);
+  const [physicsConstraints, setPhysicsConstraints] = useState<PhysicsConstraint[]>([]);
+  const [isSimulating, setIsSimulating] = useState(false);
+  const physicsEngineRef = useRef<SimplePhysicsEngine | null>(null);
+  const physicsBaseRef = useRef<SceneObject[] | null>(null);
+  // Phase 6: Viewport & Camera
+  const [viewportMode, setViewportMode] = useState<ViewportMode>('solid');
+  const [viewportLayout, setViewportLayout] = useState<ViewportLayout>('single');
+  const [cameraBookmarks, setCameraBookmarks] = useState<CameraBookmark[]>([]);
+  const [cinematic, setCinematic] = useState<CinematicSettings>(defaultCinematic);
+  // Phase 7: Scene Manager
+  const [sceneLayers, setSceneLayers] = useState<SceneLayer[]>([]);
+  const [prefabs, setPrefabs] = useState<Prefab[]>([]);
+  const [fogConfig, setFogConfig] = useState<FogConfig>(defaultFog);
+  const [skyConfig, setSkyConfig] = useState<SkyConfig>(defaultSky);
 
   const selectedObj = objects.find(o => o.id === selectedId) || null;
 
@@ -908,6 +931,87 @@ export function Studio3DPage() {
     setSelectedId(id);
   }, [pushUndo]);
 
+  // Phase 3: Physics simulation
+  const startPhysics = useCallback(() => {
+    physicsBaseRef.current = objects.map(o => ({ ...o }));
+    const engine = new SimplePhysicsEngine(physicsWorld);
+    physicsBodies.forEach(body => {
+      const obj = objects.find(o => o.id === body.objectId);
+      if (obj) engine.addBody(body, obj.position, obj.rotation);
+    });
+    physicsEngineRef.current = engine;
+    setIsSimulating(true);
+  }, [objects, physicsBodies, physicsWorld]);
+
+  const pausePhysics = useCallback(() => setIsSimulating(false), []);
+
+  const resetPhysics = useCallback(() => {
+    setIsSimulating(false);
+    physicsEngineRef.current = null;
+    if (physicsBaseRef.current) {
+      setObjects(physicsBaseRef.current);
+      physicsBaseRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isSimulating || !physicsEngineRef.current) return;
+    let raf: number;
+    const tick = () => {
+      const results = physicsEngineRef.current!.step();
+      setObjects(prev => prev.map(o => {
+        const r = results.get(o.id);
+        if (!r) return o;
+        return { ...o, position: r.position, rotation: r.rotation };
+      }));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isSimulating]);
+
+  // Phase 6: Screenshot handler
+  const handleScreenshot = useCallback((config: ScreenshotConfig) => {
+    // Canvas screenshot via toDataURL
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `render-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, []);
+
+  const handleRestoreBookmark = useCallback((bm: CameraBookmark) => {
+    setCinematic(prev => ({ ...prev, fov: bm.fov }));
+  }, []);
+
+  // Phase 7: Save as prefab
+  const handleSaveAsPrefab = useCallback(() => {
+    if (!selectedId) return;
+    const obj = objects.find(o => o.id === selectedId);
+    if (!obj) return;
+    const prefab: Prefab = {
+      id: `prefab-${Date.now()}`,
+      name: obj.name,
+      category: 'Custom',
+      objectData: [obj],
+      thumbnail: obj.type === 'sphere' ? '🔵' : obj.type === 'cube' ? '🟦' : '📦',
+      createdAt: Date.now(),
+    };
+    setPrefabs(prev => [...prev, prefab]);
+  }, [selectedId, objects]);
+
+  const handleInstantiatePrefab = useCallback((prefab: Prefab) => {
+    pushUndo();
+    const newObjs = prefab.objectData.map((data: any) => ({
+      ...data,
+      id: `${data.type}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      position: [data.position[0] + 2, data.position[1], data.position[2]] as [number, number, number],
+    }));
+    setObjects(prev => [...prev, ...newObjs]);
+    if (newObjs.length > 0) setSelectedId(newObjs[0].id);
+  }, [pushUndo]);
+
   return (
     <div className="h-full flex flex-col bg-background/30">
       {/* ─── Top Toolbar ─── */}
@@ -1048,6 +1152,16 @@ export function Studio3DPage() {
           <TooltipContent side="bottom">Timeline</TooltipContent>
         </Tooltip>
 
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setShowBlueprint(v => !v)}
+              className={cn('w-8 h-8', showBlueprint && 'text-primary')}>
+              <Zap className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Blueprint</TooltipContent>
+        </Tooltip>
+
         <Button variant="ghost" size="icon" onClick={() => setIsPlaying(v => !v)} className="w-8 h-8">
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
@@ -1067,7 +1181,7 @@ export function Studio3DPage() {
             gl={{ antialias: true, toneMapping: THREE.NoToneMapping, outputColorSpace: THREE.SRGBColorSpace }}
             onPointerMissed={() => setSelectedId(null)}
           >
-            <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={50} />
+            <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={cinematic.fov} near={cinematic.near} far={cinematic.far} />
             <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
 
             {/* Ambient */}
@@ -1076,11 +1190,37 @@ export function Studio3DPage() {
               <Environment preset={environment as any} background={environment !== 'studio'} />
             </Suspense>
 
-            {environment === 'studio' && (
+            {/* Sky system */}
+            {skyConfig.enabled && skyConfig.type === 'procedural' && (
+              <Sky
+                distance={450000}
+                sunPosition={[
+                  Math.cos(skyConfig.elevation * Math.PI / 180) * Math.sin(skyConfig.azimuth * Math.PI / 180) * 100,
+                  Math.sin(skyConfig.elevation * Math.PI / 180) * 100,
+                  Math.cos(skyConfig.elevation * Math.PI / 180) * Math.cos(skyConfig.azimuth * Math.PI / 180) * 100,
+                ]}
+                turbidity={skyConfig.turbidity}
+                rayleigh={skyConfig.rayleigh}
+                mieCoefficient={skyConfig.mieCoefficient}
+                mieDirectionalG={skyConfig.mieDirectionalG}
+              />
+            )}
+
+            {(!skyConfig.enabled || skyConfig.type !== 'procedural') && environment === 'studio' && (
               <>
                 <Stars radius={100} depth={50} count={2000} factor={2} saturation={0} fade speed={1} />
-                <fog attach="fog" args={['#0a0a1a', 20, 60]} />
               </>
+            )}
+
+            {/* Fog */}
+            {fogConfig.enabled && fogConfig.type === 'linear' && (
+              <fog attach="fog" args={[fogConfig.color, fogConfig.near, fogConfig.far]} />
+            )}
+            {fogConfig.enabled && fogConfig.type === 'exponential' && (
+              <fogExp2 attach="fog" args={[fogConfig.color, fogConfig.density]} />
+            )}
+            {!fogConfig.enabled && environment === 'studio' && (
+              <fog attach="fog" args={['#0a0a1a', 20, 60]} />
             )}
 
             {showGrid && (
@@ -1166,6 +1306,9 @@ export function Studio3DPage() {
               { id: 'render' as const, icon: Sparkles, label: 'Render' },
               { id: 'particles' as const, icon: Wand2, label: 'Particles' },
               { id: 'procedural' as const, icon: Hexagon, label: 'Procedural' },
+              { id: 'physics' as const, icon: Zap, label: 'Physics' },
+              { id: 'viewport' as const, icon: Camera, label: 'Viewport' },
+              { id: 'scene' as const, icon: Globe, label: 'Scene' },
             ] as const).map(({ id, icon: Icon, label }) => (
               <Tooltip key={id} delayDuration={200}>
                 <TooltipTrigger asChild>
@@ -1271,12 +1414,65 @@ export function Studio3DPage() {
                 onAddProcedural={handleAddProcedural}
               />
             )}
+
+            {rightPanel === 'physics' && (
+              <PhysicsPanel
+                worldConfig={physicsWorld}
+                onWorldChange={setPhysicsWorld}
+                bodies={physicsBodies}
+                onBodiesChange={setPhysicsBodies}
+                constraints={physicsConstraints}
+                onConstraintsChange={setPhysicsConstraints}
+                selectedObjectId={selectedId}
+                sceneObjects={sceneObjectRefs}
+                onSimulate={startPhysics}
+                onPause={pausePhysics}
+                onReset={resetPhysics}
+                isSimulating={isSimulating}
+              />
+            )}
+
+            {rightPanel === 'viewport' && (
+              <ViewportManagerPanel
+                viewportMode={viewportMode}
+                onViewportModeChange={setViewportMode}
+                layout={viewportLayout}
+                onLayoutChange={setViewportLayout}
+                bookmarks={cameraBookmarks}
+                onBookmarksChange={setCameraBookmarks}
+                onRestoreBookmark={handleRestoreBookmark}
+                cinematic={cinematic}
+                onCinematicChange={setCinematic}
+                onScreenshot={handleScreenshot}
+              />
+            )}
+
+            {rightPanel === 'scene' && (
+              <SceneManagerPanel
+                layers={sceneLayers}
+                onLayersChange={setSceneLayers}
+                prefabs={prefabs}
+                onPrefabsChange={setPrefabs}
+                onInstantiatePrefab={handleInstantiatePrefab}
+                fog={fogConfig}
+                onFogChange={setFogConfig}
+                sky={skyConfig}
+                onSkyChange={setSkyConfig}
+                selectedObjectId={selectedId}
+                onSaveAsPrefab={handleSaveAsPrefab}
+              />
+            )}
           </div>
         </div>
       </div>
 
+      {/* ─── Blueprint Editor ─── */}
+      {showBlueprint && (
+        <BlueprintEditor className="h-64 border-t border-border/30" />
+      )}
+
       {/* ─── Animation Timeline ─── */}
-      {showTimeline && (
+      {showTimeline && !showBlueprint && (
         <AnimationTimeline
           clip={animClip}
           onClipChange={setAnimClip}
