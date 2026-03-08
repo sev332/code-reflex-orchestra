@@ -146,11 +146,17 @@ const Index = () => {
           />
 
           <main
-            className="transition-all duration-300 pt-12 relative z-10 h-[calc(100vh-3rem)]"
+            className="transition-all duration-300 pt-12 relative z-10 h-[calc(100vh-3rem-2rem)]"
             style={{ marginLeft: leftWidth, marginRight: rightWidth }}
           >
             {renderMainContent()}
           </main>
+
+          <BottomDock
+            activePage={activePage}
+            leftWidth={leftWidth}
+            rightWidth={rightWidth}
+          />
 
           {showFullDiscord && (
             <FullDiscordView
