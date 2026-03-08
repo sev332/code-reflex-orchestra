@@ -804,22 +804,58 @@ function UploadPanel() {
 }
 
 function FilesPanel() {
+  const openFiles = [
+    { name: 'src/pages/Index.tsx', status: 'modified' },
+    { name: 'src/components/layout/PageLeftDrawer.tsx', status: 'active' },
+    { name: 'src/components/layout/PageTopBar.tsx', status: 'clean' },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <File className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">File Explorer</p>
-      <p className="text-xs">Browse project files</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1">
+          <FolderTree className="w-3.5 h-3.5" />
+          Open Explorer
+        </Button>
+        {openFiles.map((file, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <File className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{file.name}</p>
+              <p className="text-xs text-muted-foreground">{file.status}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
 function GitSubPanel() {
+  const branches = [
+    { name: 'main', state: 'up to date' },
+    { name: 'feature/page-drawer', state: '2 commits ahead' },
+    { name: 'hotfix/ui-regression', state: 'behind by 1' },
+  ];
+
   return (
-    <div className="p-4 text-center text-muted-foreground">
-      <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm">Git Panel</p>
-      <p className="text-xs">Branches, commits, history</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1">
+          <GitBranch className="w-3.5 h-3.5" />
+          Open Git History
+        </Button>
+        {branches.map((branch, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <GitBranch className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{branch.name}</p>
+              <p className="text-xs text-muted-foreground">{branch.state}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
