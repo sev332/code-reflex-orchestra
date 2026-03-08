@@ -1,6 +1,7 @@
 // React hook for Drawing Engine — wires BrushSession, stabilizers, live preview, node editing, transforms
 // Sprint 1: Added pen handle dragging, text tool, undo/redo wiring, SVG export
 // Sprint 2: Added gradient engine, proper booleans, scissors/knife, groups, isolation mode
+// Sprint 3: Transform tools, effects engine, blend/clipping masks, reshape/warp tools
 import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
@@ -36,6 +37,32 @@ import {
   alignEntities, distributeEntities,
   bringToFront, sendToBack, bringForward, sendBackward,
 } from './groups-engine';
+// Sprint 3 imports
+import {
+  rotateEntity, reflectEntity, scaleEntity, shearEntity,
+  transformEach, defaultTransformEachOptions, TransformEachOptions,
+  getTransformPanelData, applyTransformPanelData, TransformPanelData,
+  TransformOriginPreset, getOriginFromPreset,
+} from './transform-engine';
+import {
+  Effect, EffectStack, emptyEffectStack,
+  addEffect, removeEffect, updateEffect, toggleEffect,
+  createDropShadow, createOuterGlow, createInnerShadow, createInnerGlow,
+  createGaussianBlur, createFeather,
+  EFFECT_PRESETS, EffectPreset,
+  GraphicStyle, createGraphicStyle, applyGraphicStyle,
+} from './effects-engine';
+import {
+  createBlend, BlendOptions, defaultBlendOptions,
+  ClippingMask, createClippingMask, releaseClippingMask,
+  OpacityMask, createOpacityMask,
+} from './blend-engine';
+import {
+  WarpToolConfig, defaultWarpConfig, applyWarpAtPoint,
+  WidthProfile, WIDTH_PRESETS, addWidthPoint, getWidthAtPosition,
+  EnvelopeMesh, createEnvelopeMesh, applyEnvelopeDistort,
+  PuppetWarpState, PuppetPin, createPuppetPin, movePuppetPin, applyPuppetWarp,
+} from './reshape-engine';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
