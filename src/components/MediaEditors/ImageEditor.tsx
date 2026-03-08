@@ -1,5 +1,5 @@
-// AI-Powered Image Editor with Gemini Integration
-import React, { useState, useRef, useCallback } from 'react';
+// AI-Powered Image Editor with Gemini Integration + Boundary Instrument Lasso
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -11,13 +11,15 @@ import {
   Crop, RotateCw, FlipHorizontal, FlipVertical, Palette,
   Wand2, Sparkles, Layers, Type, Eraser, Paintbrush,
   Move, Square, Circle, Triangle, Minus, Plus, Sun,
-  Contrast, Droplets, Eye, Loader2, SlidersHorizontal
+  Contrast, Droplets, Eye, Loader2, SlidersHorizontal,
+  Lasso, Scissors, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useLassoTool } from '@/lib/lasso-engine/useLassoTool';
 
-type Tool = 'select' | 'brush' | 'eraser' | 'crop' | 'text' | 'shape' | 'move';
+type Tool = 'select' | 'brush' | 'eraser' | 'crop' | 'text' | 'shape' | 'move' | 'lasso';
 
 interface AdjustmentState {
   brightness: number;
