@@ -12,7 +12,7 @@ import {
   MessageSquare, Zap, FileText, Code2, Image, Music, Video, Map,
   Table2, CalendarDays, Mail, KanbanSquare, MessageCircle,
   Box, LayoutDashboard, Database, Terminal, Globe, StickyNote,
-  FolderOpen, Presentation, Beaker,
+  FolderOpen, Presentation, Beaker, PenTool,
   User, Settings, LogOut, Bell, Wifi, WifiOff, Activity,
   LayoutGrid,
 } from 'lucide-react';
