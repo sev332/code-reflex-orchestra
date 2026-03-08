@@ -21,7 +21,7 @@ import {
   AlertCircle, ArrowUp, ArrowRight, ArrowDown, Eye, EyeOff, Lock, Unlock,
   Paintbrush, PenTool, MousePointer2, Square, Type, Pipette, Hand,
   ZoomIn, Eraser, Grid3X3, Magnet, FileJson, FileCode, FileImage,
-  MoreHorizontal, Copy, Download, GripVertical,
+  MoreHorizontal, Copy, Download, GripVertical, Sparkles,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { emitPageDrawerAction } from '@/lib/page-drawer-events';
