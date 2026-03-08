@@ -310,27 +310,15 @@ export interface LivePreviewState {
 
 export const emptyPreview: LivePreviewState = { active: false, type: 'shape' };
 
-// ============================================
-// SELECTION OVERLAY
-// ============================================
-
 function renderSelectionOverlay(ctx: CanvasRenderingContext2D, e: DrawableEntity, wx: number, wy: number, z: number, sel: boolean) {
+  // Only show simple overlay if not in node-edit mode
   const p = e.shapeProps ?? { width: 100, height: 100 };
   const w = (p.width ?? 100) * z, h = (p.height ?? 100) * z;
   ctx.save();
   ctx.strokeStyle = sel ? 'hsl(193,100%,50%)' : 'hsla(193,100%,50%,0.4)';
-  ctx.lineWidth = sel ? 2 : 1;
+  ctx.lineWidth = sel ? 1.5 : 1;
   ctx.setLineDash(sel ? [] : [4, 4]);
-  ctx.strokeRect(wx - 4, wy - 4, w + 8, h + 8);
-  if (sel) {
-    ctx.fillStyle = 'hsl(193,100%,50%)';
-    ctx.strokeStyle = 'hsl(220,27%,4%)';
-    ctx.lineWidth = 1.5; ctx.setLineDash([]);
-    for (const [cx, cy] of [[wx - 4, wy - 4], [wx + w + 4, wy - 4], [wx - 4, wy + h + 4], [wx + w + 4, wy + h + 4], [wx + w / 2, wy - 4], [wx + w / 2, wy + h + 4], [wx - 4, wy + h / 2], [wx + w + 4, wy + h / 2]]) {
-      ctx.fillRect(cx - 4, cy - 4, 8, 8);
-      ctx.strokeRect(cx - 4, cy - 4, 8, 8);
-    }
-  }
+  ctx.strokeRect(wx - 2, wy - 2, w + 4, h + 4);
   ctx.restore();
 }
 
