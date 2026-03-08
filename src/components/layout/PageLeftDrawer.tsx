@@ -471,6 +471,43 @@ function LeftDrawerContent({ page, sideTab, subTab, onNavigate }: { page: PageId
       if (sideTab === 'files') return <FilesPanel />;
       if (sideTab === 'git') return <GitSubPanel />;
       break;
+    case 'calendar':
+      if (sideTab === 'calendars') return <CalendarListPanel />;
+      if (sideTab === 'events') return <UpcomingEventsPanel />;
+      if (sideTab === 'people') return <PeoplePanel />;
+      break;
+    case 'email':
+      if (sideTab === 'inbox') return <EmailFoldersPanel />;
+      if (sideTab === 'compose') return <ComposePanel />;
+      if (sideTab === 'sent') return <EmailSentPanel />;
+      if (sideTab === 'labels') return <EmailLabelsPanel />;
+      break;
+    case 'apistudio':
+      if (sideTab === 'collections') return <APICollectionsPanel />;
+      if (sideTab === 'history') return <APIHistoryPanel />;
+      if (sideTab === 'environments') return <APIEnvironmentsPanel />;
+      break;
+    case 'database':
+      if (sideTab === 'tables') return <DBTablesPanel />;
+      if (sideTab === 'queries') return <DBQueriesPanel />;
+      if (sideTab === 'schema') return <DBSchemaPanel />;
+      break;
+    case 'notes':
+      if (sideTab === 'notes') return <NotesListPanel />;
+      if (sideTab === 'graph') return <NotesGraphPanel />;
+      if (sideTab === 'tags') return <NotesTagsPanel />;
+      break;
+    case 'files':
+      if (sideTab === 'browse') return <FilesBrowsePanel />;
+      if (sideTab === 'recent') return <FilesRecentPanel />;
+      if (sideTab === 'starred') return <FilesStarredPanel />;
+      if (sideTab === 'cloud') return <FilesCloudPanel />;
+      break;
+    case 'comms':
+      if (sideTab === 'channels') return <CommsChannelsPanel />;
+      if (sideTab === 'dms') return <CommsDMsPanel />;
+      if (sideTab === 'threads') return <CommsThreadsPanel />;
+      break;
   }
 
   return <PlaceholderSubPanel page={page} subTab={sideTab} />;
@@ -694,6 +731,522 @@ function GitSubPanel() {
       <p className="text-sm">Git Panel</p>
       <p className="text-xs">Branches, commits, history</p>
     </div>
+  );
+}
+
+// ─── Calendar panels ──────────
+function CalendarListPanel() {
+  const calendars = [
+    { name: 'Personal', color: 'bg-blue-500', count: 12 },
+    { name: 'Work', color: 'bg-green-500', count: 8 },
+    { name: 'Holidays', color: 'bg-red-500', count: 24 },
+    { name: 'Birthdays', color: 'bg-purple-500', count: 6 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Calendar</Button>
+        {calendars.map((c, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+            <div className={cn('w-3 h-3 rounded-full mr-2', c.color)} />
+            <span className="flex-1 text-left text-sm">{c.name}</span>
+            <Badge variant="secondary" className="text-[10px]">{c.count}</Badge>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function UpcomingEventsPanel() {
+  const events = [
+    { title: 'Team Standup', time: '9:00 AM', calendar: 'Work' },
+    { title: 'Design Review', time: '11:30 AM', calendar: 'Work' },
+    { title: 'Lunch with Alex', time: '1:00 PM', calendar: 'Personal' },
+    { title: 'Sprint Planning', time: '3:00 PM', calendar: 'Work' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Today</p>
+        {events.map((e, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{e.title}</p>
+              <p className="text-xs text-muted-foreground">{e.time} • {e.calendar}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function PeoplePanel() {
+  const people = [
+    { name: 'Alex Chen', email: 'alex@example.com' },
+    { name: 'Sarah Kim', email: 'sarah@example.com' },
+    { name: 'Jordan Lee', email: 'jordan@example.com' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {people.map((p, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Users className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{p.name}</p>
+              <p className="text-xs text-muted-foreground">{p.email}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ─── Email panels ──────────
+function EmailFoldersPanel() {
+  const folders = [
+    { name: 'Inbox', count: 24, icon: Inbox },
+    { name: 'Starred', count: 5, icon: Star },
+    { name: 'Drafts', count: 2, icon: FileText },
+    { name: 'Sent', count: 0, icon: Send },
+    { name: 'Archive', count: 0, icon: FolderOpen },
+    { name: 'Spam', count: 3, icon: Filter },
+    { name: 'Trash', count: 1, icon: Folder },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> Compose</Button>
+        {folders.map((f, i) => {
+          const Icon = f.icon;
+          return (
+            <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+              <Icon className="w-4 h-4 mr-2 text-muted-foreground" />
+              <span className="flex-1 text-left text-sm">{f.name}</span>
+              {f.count > 0 && <Badge variant="secondary" className="text-[10px]">{f.count}</Badge>}
+            </Button>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function ComposePanel() {
+  return (
+    <div className="p-3 space-y-3">
+      <Input placeholder="To..." className="bg-muted/30 border-none h-8 text-sm" />
+      <Input placeholder="Subject..." className="bg-muted/30 border-none h-8 text-sm" />
+      <p className="text-xs text-muted-foreground">Compose your email in the main area.</p>
+    </div>
+  );
+}
+
+function EmailSentPanel() {
+  const sent = [
+    { to: 'alex@example.com', subject: 'Project Update', time: '2h ago' },
+    { to: 'team@example.com', subject: 'Meeting Notes', time: '1d ago' },
+    { to: 'sarah@example.com', subject: 'Re: Design Review', time: '2d ago' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {sent.map((s, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{s.subject}</p>
+              <p className="text-xs text-muted-foreground">To: {s.to} • {s.time}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function EmailLabelsPanel() {
+  const labels = [
+    { name: 'Important', color: 'bg-red-500' },
+    { name: 'Work', color: 'bg-blue-500' },
+    { name: 'Personal', color: 'bg-green-500' },
+    { name: 'Finance', color: 'bg-yellow-500' },
+    { name: 'Newsletter', color: 'bg-purple-500' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Label</Button>
+        {labels.map((l, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+            <div className={cn('w-3 h-3 rounded-full mr-2', l.color)} />
+            <span className="flex-1 text-left text-sm">{l.name}</span>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ─── API Studio panels ──────────
+function APICollectionsPanel() {
+  const collections = [
+    { name: 'User API', count: 8, method: 'REST' },
+    { name: 'Auth Service', count: 5, method: 'REST' },
+    { name: 'GraphQL Queries', count: 12, method: 'GQL' },
+    { name: 'WebSocket Events', count: 3, method: 'WS' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Collection</Button>
+        {collections.map((c, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Folder className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{c.name}</p>
+              <p className="text-xs text-muted-foreground">{c.count} requests • {c.method}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function APIHistoryPanel() {
+  const history = [
+    { method: 'GET', url: '/api/users', status: 200, time: '2m ago' },
+    { method: 'POST', url: '/api/auth/login', status: 200, time: '5m ago' },
+    { method: 'PUT', url: '/api/users/1', status: 404, time: '10m ago' },
+    { method: 'DELETE', url: '/api/sessions', status: 204, time: '1h ago' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {history.map((h, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Badge variant={h.status < 300 ? 'default' : 'destructive'} className="text-[10px] mr-2 shrink-0">{h.method}</Badge>
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate font-mono">{h.url}</p>
+              <p className="text-xs text-muted-foreground">{h.status} • {h.time}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function APIEnvironmentsPanel() {
+  const envs = [
+    { name: 'Development', url: 'http://localhost:3000', active: true },
+    { name: 'Staging', url: 'https://staging.api.com', active: false },
+    { name: 'Production', url: 'https://api.example.com', active: false },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Environment</Button>
+        {envs.map((e, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <div className={cn('w-2 h-2 rounded-full mr-2', e.active ? 'bg-green-500' : 'bg-muted-foreground/30')} />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{e.name}</p>
+              <p className="text-xs text-muted-foreground font-mono truncate">{e.url}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ─── Database Explorer panels ──────────
+function DBTablesPanel() {
+  const tables = [
+    { name: 'users', rows: '2.4k', icon: Database },
+    { name: 'agents', rows: '156', icon: Database },
+    { name: 'tasks', rows: '892', icon: Database },
+    { name: 'messages', rows: '12.3k', icon: Database },
+    { name: 'documents', rows: '234', icon: Database },
+    { name: 'dream_sessions', rows: '67', icon: Database },
+    { name: 'memory_entries', rows: '5.1k', icon: Database },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3">
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Search tables..." className="pl-8 h-8 text-sm bg-muted/30 border-none" />
+        </div>
+        <div className="space-y-0.5">
+          {tables.map((t, i) => (
+            <Button key={i} variant="ghost" className="w-full justify-start h-8 px-2 font-mono text-xs">
+              <Database className="w-3.5 h-3.5 mr-2 text-primary shrink-0" />
+              <span className="flex-1 text-left truncate">{t.name}</span>
+              <span className="text-muted-foreground text-[10px]">{t.rows}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+function DBQueriesPanel() {
+  const queries = [
+    { name: 'All users', sql: 'SELECT * FROM users', time: '5m ago' },
+    { name: 'Active agents', sql: 'SELECT * FROM agents WHERE status...', time: '12m ago' },
+    { name: 'Recent tasks', sql: 'SELECT * FROM tasks ORDER BY...', time: '1h ago' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Query</Button>
+        {queries.map((q, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Code2 className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{q.name}</p>
+              <p className="text-xs text-muted-foreground font-mono truncate">{q.sql}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function DBSchemaPanel() {
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-2">
+        <p className="text-xs font-medium text-muted-foreground mb-2">Schema: public</p>
+        {['Tables', 'Views', 'Functions', 'Enums', 'Extensions'].map((s, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+            <GitBranch className="w-4 h-4 mr-2 text-muted-foreground" />
+            <span className="text-sm">{s}</span>
+            <ChevronRight className="w-4 h-4 ml-auto text-muted-foreground" />
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ─── Notes panels ──────────
+function NotesListPanel() {
+  const notes = [
+    { title: 'Architecture Decisions', date: 'Today', tags: ['dev', 'arch'] },
+    { title: 'Meeting Notes - Sprint 4', date: 'Yesterday', tags: ['meeting'] },
+    { title: 'Research: Vector DBs', date: '3 days ago', tags: ['research'] },
+    { title: 'UI Canon Spec', date: '1 week ago', tags: ['design'] },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Note</Button>
+        {notes.map((n, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <StickyNote className="w-4 h-4 mr-2 text-primary shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{n.title}</p>
+              <div className="flex items-center gap-1 mt-0.5">
+                <span className="text-xs text-muted-foreground">{n.date}</span>
+                {n.tags.map(t => <Badge key={t} variant="outline" className="text-[9px] px-1 h-4">{t}</Badge>)}
+              </div>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function NotesGraphPanel() {
+  return (
+    <div className="p-4 text-center text-muted-foreground">
+      <GitBranch className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <p className="text-sm">Knowledge Graph</p>
+      <p className="text-xs">Visualize note connections</p>
+    </div>
+  );
+}
+
+function NotesTagsPanel() {
+  const tags = [
+    { name: 'dev', count: 24 },
+    { name: 'research', count: 12 },
+    { name: 'design', count: 8 },
+    { name: 'meeting', count: 15 },
+    { name: 'arch', count: 6 },
+    { name: 'ideas', count: 19 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {tags.map((t, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-8 px-2">
+            <Tag className="w-3.5 h-3.5 mr-2 text-primary" />
+            <span className="flex-1 text-left text-sm">{t.name}</span>
+            <Badge variant="secondary" className="text-[10px]">{t.count}</Badge>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ─── Files panels ──────────
+function FilesBrowsePanel() {
+  const items = [
+    { name: 'Documents', type: 'folder', size: '24 items' },
+    { name: 'Downloads', type: 'folder', size: '12 items' },
+    { name: 'Projects', type: 'folder', size: '8 items' },
+    { name: 'Images', type: 'folder', size: '156 items' },
+    { name: 'readme.md', type: 'file', size: '4.2 KB' },
+    { name: 'config.json', type: 'file', size: '1.1 KB' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3">
+        <div className="relative mb-3">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Search files..." className="pl-8 h-8 text-sm bg-muted/30 border-none" />
+        </div>
+        <div className="space-y-0.5">
+          {items.map((f, i) => (
+            <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+              {f.type === 'folder' ? <Folder className="w-4 h-4 mr-2 text-primary" /> : <File className="w-4 h-4 mr-2 text-muted-foreground" />}
+              <span className="flex-1 text-left text-sm truncate">{f.name}</span>
+              <span className="text-xs text-muted-foreground">{f.size}</span>
+            </Button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+function FilesRecentPanel() {
+  const recent = [
+    { name: 'report.pdf', time: '2m ago', size: '2.4 MB' },
+    { name: 'screenshot.png', time: '1h ago', size: '890 KB' },
+    { name: 'notes.md', time: '3h ago', size: '12 KB' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {recent.map((f, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <Clock className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{f.name}</p>
+              <p className="text-xs text-muted-foreground">{f.time} • {f.size}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function FilesStarredPanel() {
+  return (
+    <div className="p-4 text-center text-muted-foreground">
+      <Star className="w-8 h-8 mx-auto mb-2 opacity-50" />
+      <p className="text-sm">No starred files</p>
+      <p className="text-xs">Star files for quick access</p>
+    </div>
+  );
+}
+
+function FilesCloudPanel() {
+  return (
+    <div className="p-3 space-y-2">
+      <Card className="p-3 border-border/30">
+        <div className="flex items-center gap-2 mb-2">
+          <Cloud className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Cloud Storage</span>
+        </div>
+        <div className="h-1.5 bg-muted/30 rounded-full mb-1">
+          <div className="h-full bg-primary rounded-full" style={{ width: '34%' }} />
+        </div>
+        <p className="text-xs text-muted-foreground">3.4 GB of 10 GB used</p>
+      </Card>
+    </div>
+  );
+}
+
+// ─── Comms panels ──────────
+function CommsChannelsPanel() {
+  const channels = [
+    { name: 'general', unread: 5 },
+    { name: 'engineering', unread: 12 },
+    { name: 'design', unread: 0 },
+    { name: 'random', unread: 3 },
+    { name: 'announcements', unread: 1 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        <Button variant="outline" size="sm" className="w-full mb-2 gap-1"><Plus className="w-3.5 h-3.5" /> New Channel</Button>
+        {channels.map((c, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+            <MessageCircle className="w-4 h-4 mr-2 text-muted-foreground" />
+            <span className="flex-1 text-left text-sm">#{c.name}</span>
+            {c.unread > 0 && <Badge variant="destructive" className="text-[10px] h-5 min-w-5 justify-center">{c.unread}</Badge>}
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function CommsDMsPanel() {
+  const dms = [
+    { name: 'Alex Chen', status: 'online', unread: 2 },
+    { name: 'Sarah Kim', status: 'away', unread: 0 },
+    { name: 'Jordan Lee', status: 'offline', unread: 0 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {dms.map((d, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-9 px-2">
+            <div className={cn('w-2 h-2 rounded-full mr-2', d.status === 'online' ? 'bg-green-500' : d.status === 'away' ? 'bg-yellow-500' : 'bg-muted-foreground/30')} />
+            <span className="flex-1 text-left text-sm">{d.name}</span>
+            {d.unread > 0 && <Badge variant="destructive" className="text-[10px] h-5 min-w-5 justify-center">{d.unread}</Badge>}
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+function CommsThreadsPanel() {
+  const threads = [
+    { title: 'API v2 discussion', replies: 8, channel: '#engineering' },
+    { title: 'New logo options', replies: 14, channel: '#design' },
+    { title: 'Sprint retrospective', replies: 6, channel: '#general' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-1">
+        {threads.map((t, i) => (
+          <Button key={i} variant="ghost" className="w-full justify-start h-auto py-2 px-2">
+            <GitBranch className="w-4 h-4 mr-2 text-muted-foreground shrink-0" />
+            <div className="text-left min-w-0 flex-1">
+              <p className="text-sm truncate">{t.title}</p>
+              <p className="text-xs text-muted-foreground">{t.replies} replies • {t.channel}</p>
+            </div>
+          </Button>
+        ))}
+      </div>
+    </ScrollArea>
   );
 }
 
