@@ -213,6 +213,10 @@ function PostProcessingStack({ settings }: { settings: PostProcessingSettings })
           luminanceInfluence={0.5}
           samples={21}
           rings={4}
+          worldDistanceThreshold={1}
+          worldDistanceFalloff={0.1}
+          worldProximityThreshold={0.5}
+          worldProximityFalloff={0.1}
         />
       )}
       {settings.bloomEnabled && (
