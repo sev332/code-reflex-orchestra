@@ -364,6 +364,7 @@ export function CalendarUpcomingPanel() {
         ))}
       </div>
     </ScrollArea>
+  );
 }
 
 
