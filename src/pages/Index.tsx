@@ -81,6 +81,14 @@ const Index = () => {
       case 'calendar': return <Suspense fallback={<LoadingFallback />}><CalendarPage /></Suspense>;
       case 'email': return <Suspense fallback={<LoadingFallback />}><EmailPage /></Suspense>;
       case 'tasks': return <Suspense fallback={<LoadingFallback />}><TasksPage /></Suspense>;
+      case 'terminal': return <Suspense fallback={<LoadingFallback />}><TerminalPage /></Suspense>;
+      case 'apistudio': return <Suspense fallback={<LoadingFallback />}><APIStudioPage /></Suspense>;
+      case 'database': return <Suspense fallback={<LoadingFallback />}><DatabaseExplorerPage /></Suspense>;
+      case 'dashboard': return <Suspense fallback={<LoadingFallback />}><DashboardBuilderPage /></Suspense>;
+      case 'browser': return <Suspense fallback={<LoadingFallback />}><BrowserPage /></Suspense>;
+      case 'notes': return <Suspense fallback={<LoadingFallback />}><NotesPage /></Suspense>;
+      case 'files': return <Suspense fallback={<LoadingFallback />}><FileManagerPage /></Suspense>;
+      case 'comms': return <Suspense fallback={<LoadingFallback />}><CommsHubPage /></Suspense>;
       default: return <PlaceholderPage name={activePage} />;
     }
   };
