@@ -80,7 +80,7 @@ export function renderEntity(
   if (entity.type === 'shape') renderShape(ctx, entity, wx, wy, vp.zoom);
   else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
   else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); ctx.restore(); return; }
-  else if (entity.type === 'path') renderPathEntity(ctx, entity, vp);
+  else if (entity.type === 'path') renderPathData(ctx, entity, vp);
 
   if (isSelected || isHovered) renderSelectionOverlay(ctx, entity, wx, wy, vp.zoom, isSelected);
   ctx.restore();
