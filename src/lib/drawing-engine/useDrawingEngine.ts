@@ -86,6 +86,25 @@ import {
   EnvelopeMesh, createEnvelopeMesh, applyEnvelopeDistort,
   PuppetWarpState, PuppetPin, createPuppetPin, movePuppetPin, applyPuppetWarp,
 } from './reshape-engine';
+// Sprint 6 imports
+import {
+  createArtboard, createArtboardFromPreset, duplicateArtboard,
+  resizeArtboard, moveArtboard, renameArtboard,
+  rearrangeArtboards, hitTestArtboard, fitArtboardToViewport, fitAllArtboardsToViewport,
+  getEntitiesOnArtboard, ARTBOARD_PRESETS, ArtboardPreset, ArtboardLayout,
+} from './artboard-engine';
+import {
+  autoSave, saveVersion, loadDocument, listDocuments, deleteDocument,
+  downloadLucidFile, uploadLucidFile, serializeToLucid, deserializeLucid,
+  getVersionHistory, LucidFile, SavedDocument, DocumentVersion,
+} from './persistence-engine';
+import {
+  createImageEntity, loadImageFromFile, renderImageEntity,
+  getCachedImage, setCachedImage, removeCachedImage,
+} from './image-engine';
+import {
+  TelemetryTracker, shouldUseWebGL, buildRenderBatch,
+} from './webgl-renderer';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
