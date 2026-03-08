@@ -7,7 +7,7 @@ import {
   MessageSquare, Zap, FileText, Code2, Image, Music, Video, Map,
   Table2, CalendarDays, Mail, KanbanSquare, MessageCircle,
   Box, LayoutDashboard, Database, Terminal, Globe, StickyNote,
-  FolderOpen, Presentation, Beaker, Search, X,
+  FolderOpen, Presentation, Beaker, Search, X, PenTool,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { PageId } from './PageTopBar';
