@@ -417,19 +417,6 @@ export function IllustratorApp() {
           )}
         </div>
 
-        {/* Right panel */}
-        <div className="w-56 border-l border-[hsl(220,15%,12%)] bg-[hsl(220,27%,5%)] flex flex-col shrink-0">
-          <div className="flex border-b border-[hsl(220,15%,12%)]">
-            {(['properties', 'layers'] as const).map(tab => (
-              <button key={tab} className={cn('flex-1 py-2 text-[11px] font-medium transition-colors',
-                activePanel === tab ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
-              )} onClick={() => setActivePanel(tab)}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
-            ))}
-          </div>
-          <ScrollArea className="flex-1">
-            {activePanel === 'properties' ? <PropertiesPanel engine={engine} selectedEntity={selectedEntity} /> : <LayersPanel engine={engine} />}
-          </ScrollArea>
-        </div>
       </div>
     </div>
   );

@@ -272,33 +272,6 @@ export function AudioEditor() {
           </Button>
         </div>
 
-        {/* Right panel content */}
-        {rightPanel && (
-          <div className="w-64 shrink-0 border-l border-border/20 flex flex-col bg-background/40 backdrop-blur-sm">
-            {rightPanel === 'mixer' && (
-              <AudioMixerPanel
-                tracks={tracks}
-                masterVolume={masterVolume}
-                onTrackUpdate={updateTrack}
-                onMasterVolumeChange={setMasterVolume}
-              />
-            )}
-            {rightPanel === 'effects' && (
-              <AudioEffectsChain
-                trackName={selectedTrack?.name || 'No track'}
-                className="flex-1"
-              />
-            )}
-            {rightPanel === 'spectrogram' && (
-              <AudioSpectrogram
-                isPlaying={isPlaying}
-                currentTime={currentTime}
-                duration={duration}
-                className="flex-1"
-              />
-            )}
-          </div>
-        )}
       </div>
 
       {/* AI Panel — bottom */}

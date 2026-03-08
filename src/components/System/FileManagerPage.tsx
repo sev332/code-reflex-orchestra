@@ -653,34 +653,6 @@ export function FileManagerPage() {
           )}
         </div>
 
-        {/* ─── Preview Panel ─── */}
-        {showPreview && previewFile && (
-          <div className="w-64 bg-background/50 backdrop-blur-xl border-l border-border/30 flex flex-col shrink-0">
-            <div className="px-3 py-2 border-b border-border/20 flex items-center justify-between">
-              <span className="text-xs font-semibold">Inspector</span>
-              <Button variant="ghost" size="icon" onClick={() => setShowPreview(false)} className="w-6 h-6">
-                <X className="w-3.5 h-3.5" />
-              </Button>
-            </div>
-            <ScrollArea className="flex-1">
-              <PreviewContent file={previewFile} />
-            </ScrollArea>
-            {/* Quick actions */}
-            <div className="p-2 border-t border-border/20 grid grid-cols-4 gap-1">
-              {[
-                { icon: ExternalLink, label: 'Open' },
-                { icon: Copy, label: 'Copy' },
-                { icon: Pencil, label: 'Rename' },
-                { icon: Trash2, label: 'Delete' },
-              ].map(({ icon: Icon, label }) => (
-                <button key={label} className="flex flex-col items-center gap-0.5 p-1.5 rounded-md hover:bg-muted/30 transition-colors">
-                  <Icon className="w-3.5 h-3.5 text-muted-foreground" />
-                  <span className="text-[8px] text-muted-foreground">{label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* ─── Status Bar ─── */}

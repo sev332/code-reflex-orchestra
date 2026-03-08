@@ -151,11 +151,6 @@ export function VideoEditor() {
           onPreviewSizeChange={setPreviewSize}
           className="flex-1"
         />
-        <VideoInspector
-          selectedClip={selectedClip}
-          onAiAction={(prompt) => processWithAI(prompt)}
-          className="w-52 shrink-0 border-l border-border/20"
-        />
       </div>
 
       {/* Bottom panel tabs */}
