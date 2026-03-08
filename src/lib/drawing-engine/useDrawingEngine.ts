@@ -1698,5 +1698,35 @@ export function useDrawingEngine() {
     downloadSVG,
     downloadPNG,
     importSVGFile,
+    // Sprint 5: Appearance
+    entityAppearances,
+    addEntityAppearance,
+    removeEntityAppearance,
+    toggleEntityAppearance,
+    applyAppearancePreset,
+    savedStyles,
+    saveGraphicStyle,
+    appearancePresets: APPEARANCE_PRESETS,
+    createFillEntry,
+    createStrokeEntry,
+    // Sprint 5: Patterns
+    patternLibrary,
+    activePattern,
+    setActivePattern,
+    patternPresets: PATTERN_PRESETS,
+    // Sprint 5: Symbols
+    symbolLibrary,
+    createSymbolFromSelection,
+    placeSymbolInstance,
+    expandSymbolInstance,
+    // Sprint 5: Mesh Gradient
+    activeMesh,
+    meshEditTarget,
+    createMeshOnEntity,
+    updateMeshColor,
+    moveMeshPt,
+    addMeshRowAt,
+    addMeshColAt,
+    meshPresets: MESH_PRESETS,
   };
 }
