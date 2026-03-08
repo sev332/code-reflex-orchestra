@@ -49,7 +49,7 @@ const pageDB: Record<string, { title: string; content: string; sections?: { h: s
     sections: [
       { h: 'Components', text: 'React components are JavaScript functions that return markup. They can be as small as a button, or as large as an entire page.' },
       { h: 'Props', text: 'React components use props to communicate with each other. Every parent component can pass information to its child components by giving them props.' },
-      { h: 'State', text: 'Components often need to change what's on the screen as a result of an interaction. State is like a component\'s personal memory.' },
+      { h: 'State', text: "Components often need to change what's on the screen as a result of an interaction. State is like a component's personal memory." },
       { h: 'Hooks', text: 'Functions starting with use are called Hooks. useState and useEffect are built-in Hooks. You can also create your own.' },
       { h: 'Server Components', text: 'React Server Components let you write UI that can be rendered and optionally cached on the server, combining the best of server and client rendering.' },
     ],
