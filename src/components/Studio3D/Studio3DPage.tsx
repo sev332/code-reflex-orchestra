@@ -36,6 +36,12 @@ import {
 import { cn } from '@/lib/utils';
 import { RenderSettingsPanel, defaultPostProcessing, type PostProcessingSettings } from './RenderSettings';
 import { MaterialLibraryPanel, materialPresets, type PBRMaterialPreset } from './MaterialLibrary';
+import { AnimationTimeline } from './AnimationTimeline';
+import {
+  createClip, evaluateClipAtTime, applyAnimatedValues, getObjectPropertyValue,
+  type AnimationClip, type AnimatableProperty,
+} from '@/lib/3d-engine/animation-engine';
+import { MaterialLibraryPanel, materialPresets, type PBRMaterialPreset } from './MaterialLibrary';
 
 // ─── Types ─────────────────────────────────────────
 
