@@ -86,6 +86,25 @@ import {
   EnvelopeMesh, createEnvelopeMesh, applyEnvelopeDistort,
   PuppetWarpState, PuppetPin, createPuppetPin, movePuppetPin, applyPuppetWarp,
 } from './reshape-engine';
+// Sprint 6 imports
+import {
+  createArtboard, createArtboardFromPreset, duplicateArtboard,
+  resizeArtboard, moveArtboard, renameArtboard,
+  rearrangeArtboards, hitTestArtboard, fitArtboardToViewport, fitAllArtboardsToViewport,
+  getEntitiesOnArtboard, ARTBOARD_PRESETS, ArtboardPreset, ArtboardLayout,
+} from './artboard-engine';
+import {
+  autoSave, saveVersion, loadDocument, listDocuments, deleteDocument,
+  downloadLucidFile, uploadLucidFile, serializeToLucid, deserializeLucid,
+  getVersionHistory, LucidFile, SavedDocument, DocumentVersion,
+} from './persistence-engine';
+import {
+  createImageEntity, loadImageFromFile, renderImageEntity,
+  getCachedImage, setCachedImage, removeCachedImage,
+} from './image-engine';
+import {
+  TelemetryTracker, shouldUseWebGL, buildRenderBatch,
+} from './webgl-renderer';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
@@ -1548,6 +1567,101 @@ export function useDrawingEngine() {
     setActiveMesh(prev => prev ? addMeshCol(prev, afterCol) : null);
   }, []);
 
+  // ── SPRINT 6: Artboard Management ──
+
+  const addArtboard = useCallback((preset?: ArtboardPreset) => {
+    setState(prev => {
+      const existingAbs = prev.scene.artboards;
+      const lastAb = existingAbs[existingAbs.length - 1];
+      const x = lastAb ? lastAb.x + lastAb.width + 50 : 0;
+      const newAb = preset
+        ? createArtboardFromPreset(preset, x, lastAb?.y ?? 0)
+        : createArtboard(x, lastAb?.y ?? 0, 800, 600);
+      return {
+        ...prev,
+        scene: { ...prev.scene, artboards: [...prev.scene.artboards, newAb], activeArtboardId: newAb.id },
+      };
+    });
+  }, []);
+
+  const removeArtboard = useCallback((artboardId: string) => {
+    setState(prev => {
+      const artboards = prev.scene.artboards.filter(a => a.id !== artboardId);
+      if (artboards.length === 0) return prev;
+      return { ...prev, scene: { ...prev.scene, artboards, activeArtboardId: artboards[0].id } };
+    });
+  }, []);
+
+  const selectArtboard = useCallback((artboardId: string) => {
+    setState(prev => ({ ...prev, scene: { ...prev.scene, activeArtboardId: artboardId } }));
+  }, []);
+
+  const duplicateArtboardById = useCallback((artboardId: string) => {
+    setState(prev => {
+      const ab = prev.scene.artboards.find(a => a.id === artboardId);
+      if (!ab) return prev;
+      const dup = duplicateArtboard(ab);
+      return { ...prev, scene: { ...prev.scene, artboards: [...prev.scene.artboards, dup], activeArtboardId: dup.id } };
+    });
+  }, []);
+
+  const fitToArtboard = useCallback((artboardId: string, cw: number, ch: number) => {
+    const ab = state.scene.artboards.find(a => a.id === artboardId);
+    if (!ab) return;
+    const vp = fitArtboardToViewport(ab, cw, ch);
+    setState(prev => ({ ...prev, viewport: { ...prev.viewport, ...vp } }));
+  }, [state.scene.artboards]);
+
+  const fitToAllArtboards = useCallback((cw: number, ch: number) => {
+    const vp = fitAllArtboardsToViewport(state.scene.artboards, cw, ch);
+    setState(prev => ({ ...prev, viewport: { ...prev.viewport, ...vp } }));
+  }, [state.scene.artboards]);
+
+  const rearrangeAllArtboards = useCallback((layout: ArtboardLayout) => {
+    setState(prev => ({
+      ...prev,
+      scene: { ...prev.scene, artboards: rearrangeArtboards(prev.scene.artboards, layout) },
+    }));
+  }, []);
+
+  // ── SPRINT 6: Persistence ──
+
+  const documentIdRef = useRef(`doc_${Date.now()}`);
+  const [documentName, setDocumentName] = useState('Untitled');
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+
+  const saveDocument = useCallback(async () => {
+    await autoSave(documentIdRef.current, state, documentName);
+    setLastSaved(new Date().toISOString());
+  }, [state, documentName]);
+
+  const downloadLucid = useCallback(() => {
+    downloadLucidFile(state, documentName);
+  }, [state, documentName]);
+
+  const uploadLucid = useCallback(async () => {
+    const file = await uploadLucidFile();
+    if (!file) return;
+    setState(prev => ({
+      ...prev,
+      scene: file.scene,
+      viewport: { ...prev.viewport, ...file.viewport },
+      gridEnabled: file.settings.gridEnabled,
+      gridSize: file.settings.gridSize,
+      snapEnabled: file.settings.snapEnabled,
+    }));
+    setDocumentName(file.metadata.name);
+  }, []);
+
+  // ── SPRINT 6: Image Placement ──
+
+  const placeImage = useCallback(async (file: File, x?: number, y?: number) => {
+    const result = await loadImageFromFile(file);
+    const entity = createImageEntity(result.src, result.width, result.height, x ?? 100, y ?? 100);
+    setCachedImage(entity.id, result.element);
+    addEntity(entity);
+  }, [addEntity]);
+
   return {
     state,
     setState,
@@ -1728,5 +1842,23 @@ export function useDrawingEngine() {
     addMeshRowAt,
     addMeshColAt,
     meshPresets: MESH_PRESETS,
+    // Sprint 6: Artboards
+    addArtboard,
+    removeArtboard,
+    selectArtboard,
+    duplicateArtboardById,
+    fitToArtboard,
+    fitToAllArtboards,
+    rearrangeAllArtboards,
+    artboardPresets: ARTBOARD_PRESETS,
+    // Sprint 6: Persistence
+    documentName,
+    setDocumentName,
+    lastSaved,
+    saveDocument,
+    downloadLucid,
+    uploadLucid,
+    // Sprint 6: Image placement
+    placeImage,
   };
 }

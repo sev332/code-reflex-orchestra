@@ -4,6 +4,7 @@
 // Sprint 3: Transform tools, Effects, Blend, Clipping masks, Warp tools
 // Sprint 4: Effects rendering, Smart guides, SVG import
 // Sprint 5: Appearance panel, Patterns, Symbols, Mesh gradient
+// Sprint 6: Artboards, Persistence, Image placement, WebGL acceleration
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -20,7 +21,7 @@ import {
   Download, Upload, Maximize2, RotateCw, FlipHorizontal, FlipVertical,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, Palette,
-  Blend, Sparkles, Move, RotateCcw, Layers,
+  Blend, Sparkles, Move, RotateCcw, Layers, Save, FolderOpen, Image, Layout,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
@@ -35,6 +36,7 @@ import { WIDTH_PRESETS } from '@/lib/drawing-engine/reshape-engine';
 import { APPEARANCE_PRESETS } from '@/lib/drawing-engine/appearance-engine';
 import { PATTERN_PRESETS } from '@/lib/drawing-engine/pattern-engine';
 import { MESH_PRESETS } from '@/lib/drawing-engine/mesh-gradient-engine';
+import { ARTBOARD_PRESETS } from '@/lib/drawing-engine/artboard-engine';
 
 // ============================================
 // TOOL DEFINITIONS
@@ -323,6 +325,18 @@ export function IllustratorApp() {
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Image placement */}
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (file) engine.placeImage(file);
+            };
+            input.click();
+          }}><Image className="w-3 h-3" /> Image</Button>
+          {/* SVG Import */}
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -332,8 +346,15 @@ export function IllustratorApp() {
               if (file) file.text().then(text => engine.importSVGFile(text));
             };
             input.click();
-          }}><Upload className="w-3 h-3" /> Import</Button>
+          }}><Upload className="w-3 h-3" /> SVG</Button>
+          {/* Export */}
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadSVG()}><Download className="w-3 h-3" /> SVG</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadPNG()}><Download className="w-3 h-3" /> PNG</Button>
+          <div className="w-px h-5 bg-[hsl(220,15%,15%)]" />
+          {/* Save/Load .lucid */}
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.saveDocument()}><Save className="w-3 h-3" /> Save</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadLucid()}><Download className="w-3 h-3" /> .lucid</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.uploadLucid()}><FolderOpen className="w-3 h-3" /> Open</Button>
         </div>
       </div>
 
@@ -783,6 +804,52 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
               </div>
             ))}
           </div>
+        )}
+      </div>
+
+      {/* Artboards (Sprint 6) */}
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Artboards</div>
+        <div className="flex gap-1 mb-1">
+          <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1" onClick={() => engine.addArtboard()}>+ Artboard</Button>
+        </div>
+        <div className="grid grid-cols-2 gap-1 mb-1">
+          {engine.artboardPresets.slice(0, 8).map(preset => (
+            <Button key={preset.name} variant="ghost" size="sm" className="h-6 text-[8px] truncate"
+              onClick={() => engine.addArtboard(preset)}>
+              {preset.name}
+            </Button>
+          ))}
+        </div>
+        {state.scene.artboards.length > 0 && (
+          <div className="space-y-0.5">
+            {state.scene.artboards.map(ab => (
+              <div key={ab.id}
+                className={cn('flex items-center justify-between text-[9px] px-1 py-0.5 rounded cursor-pointer',
+                  state.scene.activeArtboardId === ab.id ? 'bg-primary/15 text-primary' : 'bg-[hsl(220,15%,8%)] text-muted-foreground hover:text-foreground'
+                )}
+                onClick={() => engine.selectArtboard(ab.id)}>
+                <span className="truncate flex-1">{ab.name}</span>
+                <span className="text-[7px] text-muted-foreground/60">{ab.width}×{ab.height}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {state.scene.artboards.length > 1 && (
+          <div className="flex gap-1 mt-1">
+            <Button variant="ghost" size="sm" className="h-5 text-[8px] flex-1" onClick={() => engine.rearrangeAllArtboards('horizontal')}>H Layout</Button>
+            <Button variant="ghost" size="sm" className="h-5 text-[8px] flex-1" onClick={() => engine.rearrangeAllArtboards('grid')}>Grid</Button>
+          </div>
+        )}
+      </div>
+
+      {/* Document Info (Sprint 6) */}
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Document</div>
+        <Input value={engine.documentName} onChange={e => engine.setDocumentName(e.target.value)}
+          className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)] mb-1" placeholder="Document name" />
+        {engine.lastSaved && (
+          <p className="text-[8px] text-muted-foreground/60">Saved: {new Date(engine.lastSaved).toLocaleTimeString()}</p>
         )}
       </div>
 

@@ -1,9 +1,10 @@
-// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering + Effects
+// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering + Effects + Images
 import { DrawableEntity, ViewportState, Scene, Vec2 } from './types';
 import { expandStroke, defaultWidthProfile, defaultPressureCurve } from './stroke-core';
 import { distance as geoDist } from './geometry-core';
 import { renderTextEntity } from './text-engine';
 import { Effect, EffectStack, applyEffectsToContext, clearEffectsFromContext } from './effects-engine';
+import { renderImageEntity } from './image-engine';
 
 // ============================================
 // GRID RENDERER
@@ -89,6 +90,7 @@ export function renderEntity(
   else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
   else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); clearEffectsFromContext(ctx); ctx.restore(); return; }
   else if (entity.type === 'path') renderPathEntity(ctx, entity, vp);
+  else if (entity.type === 'image') { renderImageEntity(ctx, entity, vp); }
 
   // Clear effects after rendering
   if (effects && effects.effects.length > 0) {
