@@ -931,7 +931,88 @@ export function Studio3DPage() {
     setSelectedId(id);
   }, [pushUndo]);
 
-  return (
+  // Phase 3: Physics simulation
+  const startPhysics = useCallback(() => {
+    physicsBaseRef.current = objects.map(o => ({ ...o }));
+    const engine = new SimplePhysicsEngine(physicsWorld);
+    physicsBodies.forEach(body => {
+      const obj = objects.find(o => o.id === body.objectId);
+      if (obj) engine.addBody(body, obj.position, obj.rotation);
+    });
+    physicsEngineRef.current = engine;
+    setIsSimulating(true);
+  }, [objects, physicsBodies, physicsWorld]);
+
+  const pausePhysics = useCallback(() => setIsSimulating(false), []);
+
+  const resetPhysics = useCallback(() => {
+    setIsSimulating(false);
+    physicsEngineRef.current = null;
+    if (physicsBaseRef.current) {
+      setObjects(physicsBaseRef.current);
+      physicsBaseRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isSimulating || !physicsEngineRef.current) return;
+    let raf: number;
+    const tick = () => {
+      const results = physicsEngineRef.current!.step();
+      setObjects(prev => prev.map(o => {
+        const r = results.get(o.id);
+        if (!r) return o;
+        return { ...o, position: r.position, rotation: r.rotation };
+      }));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [isSimulating]);
+
+  // Phase 6: Screenshot handler
+  const handleScreenshot = useCallback((config: ScreenshotConfig) => {
+    // Canvas screenshot via toDataURL
+    const canvas = document.querySelector('canvas');
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = `render-${Date.now()}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, []);
+
+  const handleRestoreBookmark = useCallback((bm: CameraBookmark) => {
+    setCinematic(prev => ({ ...prev, fov: bm.fov }));
+  }, []);
+
+  // Phase 7: Save as prefab
+  const handleSaveAsPrefab = useCallback(() => {
+    if (!selectedId) return;
+    const obj = objects.find(o => o.id === selectedId);
+    if (!obj) return;
+    const prefab: Prefab = {
+      id: `prefab-${Date.now()}`,
+      name: obj.name,
+      category: 'Custom',
+      objectData: [obj],
+      thumbnail: obj.type === 'sphere' ? '🔵' : obj.type === 'cube' ? '🟦' : '📦',
+      createdAt: Date.now(),
+    };
+    setPrefabs(prev => [...prev, prefab]);
+  }, [selectedId, objects]);
+
+  const handleInstantiatePrefab = useCallback((prefab: Prefab) => {
+    pushUndo();
+    const newObjs = prefab.objectData.map((data: any) => ({
+      ...data,
+      id: `${data.type}-${Date.now()}-${Math.random().toString(36).slice(2, 5)}`,
+      position: [data.position[0] + 2, data.position[1], data.position[2]] as [number, number, number],
+    }));
+    setObjects(prev => [...prev, ...newObjs]);
+    if (newObjs.length > 0) setSelectedId(newObjs[0].id);
+  }, [pushUndo]);
+
+
     <div className="h-full flex flex-col bg-background/30">
       {/* ─── Top Toolbar ─── */}
       <div className="h-10 bg-background/80 backdrop-blur-xl border-b border-border/30 flex items-center px-2 gap-1 shrink-0">
