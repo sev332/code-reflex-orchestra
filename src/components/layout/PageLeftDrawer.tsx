@@ -1339,12 +1339,51 @@ function CommsThreadsPanel() {
   );
 }
 
-function PlaceholderSubPanel({ page, subTab }: { page: string; subTab: string }) {
+function BlueprintSubPanel({ blueprint, page, sideTab }: { blueprint: DrawerBlueprint; page: string; sideTab: string }) {
+  const handleClick = (item: DrawerBlueprintItem) => {
+    emitPageDrawerAction({ page, action: sideTab, value: item.label });
+  };
+
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-3">
+        {/* Header hint */}
+        <p className="text-xs text-muted-foreground leading-relaxed">{blueprint.hint}</p>
+
+        {/* Items */}
+        <div className="space-y-0.5">
+          {blueprint.items.map((item, i) => {
+            const Icon = item.icon;
+            return (
+              <Button
+                key={i}
+                variant="ghost"
+                className="w-full justify-start h-auto py-2.5 px-2 group"
+                onClick={() => handleClick(item)}
+              >
+                <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center mr-2.5 shrink-0 group-hover:bg-primary/20 transition-colors">
+                  <Icon className="w-3.5 h-3.5 text-primary" />
+                </div>
+                <div className="text-left min-w-0 flex-1">
+                  <p className="text-sm font-medium truncate">{item.label}</p>
+                  <p className="text-xs text-muted-foreground">{item.meta}</p>
+                </div>
+                <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/50 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+function BlueprintFallbackPanel({ page, sideTab }: { page: string; sideTab: string }) {
   return (
     <div className="p-4 text-center text-muted-foreground">
-      <Wand2 className="w-8 h-8 mx-auto mb-2 opacity-50" />
-      <p className="text-sm capitalize">{subTab}</p>
-      <p className="text-xs">{page} — {subTab} panel</p>
+      <Layers className="w-8 h-8 mx-auto mb-2 opacity-30" />
+      <p className="text-sm capitalize font-medium">{sideTab.replace(/-/g, ' ')}</p>
+      <p className="text-xs mt-1 opacity-70">{page} • {sideTab}</p>
     </div>
   );
 }
