@@ -12,8 +12,8 @@ import {
   MessageSquare, Zap, FileText, Code2, Image, Music, Video, Map,
   Table2, CalendarDays, Mail, KanbanSquare, MessageCircle,
   Box, LayoutDashboard, Database, Terminal, Globe, StickyNote,
-  FolderOpen, Presentation, Beaker, PenTool,
-  User, Settings, LogOut, Bell, Wifi, WifiOff, Activity,
+  FolderOpen, Presentation, Beaker, PenTool, Settings,
+  User, LogOut, Bell, Wifi, WifiOff, Activity, Command,
 } from 'lucide-react';
 import { LucidLogo } from '@/components/ui/LucidLogo';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ export type PageId =
   | 'chat' | 'orchestration' | 'documents' | 'ide' | 'image' | 'audio' | 'video' | 'map'
   | 'spreadsheet' | 'calendar' | 'email' | 'tasks'
   | 'presentations' | 'studio3d' | 'terminal' | 'apistudio' | 'database' | 'dashboard'
-  | 'browser' | 'notes' | 'files' | 'comms' | 'illustrator';
+  | 'browser' | 'notes' | 'files' | 'comms' | 'illustrator' | 'settings';
 
 const iconMap: Record<PageId, React.ComponentType<any>> = {
   chat: MessageSquare, orchestration: Zap, documents: FileText, ide: Code2,
@@ -30,7 +30,7 @@ const iconMap: Record<PageId, React.ComponentType<any>> = {
   spreadsheet: Table2, calendar: CalendarDays, email: Mail, tasks: KanbanSquare,
   presentations: Presentation, studio3d: Box, terminal: Terminal, apistudio: Beaker,
   database: Database, dashboard: LayoutDashboard, browser: Globe, notes: StickyNote,
-  files: FolderOpen, comms: MessageCircle, illustrator: PenTool,
+  files: FolderOpen, comms: MessageCircle, illustrator: PenTool, settings: Settings,
 };
 
 const labelMap: Record<PageId, string> = {
@@ -39,7 +39,7 @@ const labelMap: Record<PageId, string> = {
   spreadsheet: 'Sheets', calendar: 'Calendar', email: 'Email', tasks: 'Tasks',
   presentations: 'Slides', studio3d: '3D', terminal: 'Terminal', apistudio: 'API Studio',
   database: 'Database', dashboard: 'Dashboard', browser: 'Browser', notes: 'Notes',
-  files: 'Files', comms: 'Comms', illustrator: 'Illustrator',
+  files: 'Files', comms: 'Comms', illustrator: 'Illustrator', settings: 'Settings',
 };
 
 // Grouped app categories
@@ -56,6 +56,9 @@ interface PageTopBarProps {
   onPageChange: (page: PageId) => void;
   systemStatus?: 'online' | 'processing' | 'offline';
   activeAgents?: number;
+  onOpenNotifications?: () => void;
+  onOpenCommandPalette?: () => void;
+  unreadNotifications?: number;
   pinnedApps?: PageId[];
   onOpenLauncher?: () => void;
   className?: string;
@@ -63,6 +66,7 @@ interface PageTopBarProps {
 
 export function PageTopBar({
   activePage, onPageChange, systemStatus = 'online', activeAgents = 0,
+  onOpenNotifications, onOpenCommandPalette, unreadNotifications = 0,
   className,
 }: PageTopBarProps) {
   const statusColors = {
@@ -122,8 +126,18 @@ export function PageTopBar({
 
       <div className="w-px h-5 bg-border/40 shrink-0 mx-1" />
 
-      {/* Status + Account */}
-      <div className="flex items-center gap-1.5 shrink-0">
+      {/* Status + Actions */}
+      <div className="flex items-center gap-1 shrink-0">
+        {/* Command Palette trigger */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-7 h-7 hover:bg-white/5" onClick={onOpenCommandPalette}>
+              <Command className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Command Palette (⌘K)</TooltipContent>
+        </Tooltip>
+
         <div className="hidden md:flex items-center gap-1 text-xs text-muted-foreground">
           <div className={cn('w-1.5 h-1.5 rounded-full', statusColors[systemStatus])} />
         </div>
@@ -134,12 +148,29 @@ export function PageTopBar({
           </Badge>
         )}
 
-        <Button variant="ghost" size="icon" className="w-7 h-7 relative hover:bg-white/5">
+        {/* Notifications */}
+        <Button variant="ghost" size="icon" className="w-7 h-7 relative hover:bg-white/5" onClick={onOpenNotifications}>
           <Bell className="w-3.5 h-3.5" />
+          {unreadNotifications > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-primary rounded-full text-[8px] text-primary-foreground flex items-center justify-center font-bold">
+              {unreadNotifications > 9 ? '9+' : unreadNotifications}
+            </span>
+          )}
         </Button>
+
         <Button variant="ghost" size="icon" className="w-7 h-7 hover:bg-white/5">
           {systemStatus === 'offline' ? <WifiOff className="w-3.5 h-3.5 text-destructive" /> : <Wifi className="w-3.5 h-3.5 text-emerald-400" />}
         </Button>
+
+        {/* Settings shortcut */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-7 h-7 hover:bg-white/5" onClick={() => onPageChange('settings' as PageId)}>
+              <Settings className="w-3.5 h-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom" className="text-xs">Settings</TooltipContent>
+        </Tooltip>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -153,7 +184,7 @@ export function PageTopBar({
             <DropdownMenuLabel>My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem><User className="w-4 h-4 mr-2" />Profile</DropdownMenuItem>
-            <DropdownMenuItem><Settings className="w-4 h-4 mr-2" />Settings</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onPageChange('settings' as PageId)}><Settings className="w-4 h-4 mr-2" />Settings</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-destructive"><LogOut className="w-4 h-4 mr-2" />Log out</DropdownMenuItem>
           </DropdownMenuContent>
