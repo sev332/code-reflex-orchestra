@@ -21,7 +21,7 @@ import {
   Download, Upload, Maximize2, RotateCw, FlipHorizontal, FlipVertical,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical,
   ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, Palette,
-  Blend, Sparkles, Move, RotateCcw, Layers,
+  Blend, Sparkles, Move, RotateCcw, Layers, Save, FolderOpen, Image, Layout,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
