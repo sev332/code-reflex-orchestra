@@ -28,18 +28,13 @@ export const CentralWorkspaceOverlay: React.FC<CentralWorkspaceOverlayProps> = (
 }) => {
   if (!workspaceType) return null;
 
-  const workspaceIcon = useMemo(() => {
-    switch (workspaceType) {
-      case 'document-ide':
-        return <FileText className="w-5 h-5 text-primary" />;
-      case 'code-builder':
-        return <Code2 className="w-5 h-5 text-primary" />;
-      case 'dream-mode':
-        return <Brain className="w-5 h-5 text-primary" />;
-      default:
-        return <Sparkles className="w-5 h-5 text-primary" />;
-    }
-  }, [workspaceType]);
+  const workspaceIcon = workspaceType === 'document-ide'
+    ? <FileText className="w-5 h-5 text-primary" />
+    : workspaceType === 'code-builder'
+      ? <Code2 className="w-5 h-5 text-primary" />
+      : workspaceType === 'dream-mode'
+        ? <Brain className="w-5 h-5 text-primary" />
+        : <Sparkles className="w-5 h-5 text-primary" />;
 
   const workspaceTitle = title
     ?? (workspaceType === 'document-ide'
