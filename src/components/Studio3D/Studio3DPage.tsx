@@ -570,6 +570,121 @@ function MaterialInspector({ obj, onUpdate }: { obj: SceneObject; onUpdate: (upd
   );
 }
 
+// ─── GPU Particle Emitter (Instanced) ──────────────
+
+function ParticleEmitterMesh({ config }: { config: ParticleEmitterConfig }) {
+  const meshRef = useRef<THREE.InstancedMesh>(null);
+  const particlesRef = useRef<Array<{
+    position: THREE.Vector3; velocity: THREE.Vector3;
+    age: number; lifetime: number; startSize: number; endSize: number;
+  }>>([]);
+  const emitAccum = useRef(0);
+  const dummy = useMemo(() => new THREE.Object3D(), []);
+  const colorArray = useMemo(() => new Float32Array(config.maxParticles * 3), [config.maxParticles]);
+
+  useFrame((_, delta) => {
+    if (!meshRef.current) return;
+    const particles = particlesRef.current;
+    const dt = Math.min(delta, 0.05);
+
+    // Emit new particles
+    if (config.emissionRate > 0) {
+      emitAccum.current += config.emissionRate * dt;
+      while (emitAccum.current >= 1 && particles.length < config.maxParticles) {
+        emitAccum.current -= 1;
+        const lt = config.lifetime[0] + Math.random() * (config.lifetime[1] - config.lifetime[0]);
+        const speed = config.speed[0] + Math.random() * (config.speed[1] - config.speed[0]);
+        const dir = new THREE.Vector3(...config.direction).normalize();
+        if (config.spread > 0) {
+          const theta = Math.random() * Math.PI * 2;
+          const phi = Math.random() * config.spread;
+          const up = new THREE.Vector3(0, 1, 0);
+          const quat = new THREE.Quaternion().setFromUnitVectors(up, dir);
+          dir.set(Math.sin(phi) * Math.cos(theta), Math.cos(phi), Math.sin(phi) * Math.sin(theta)).applyQuaternion(quat);
+        }
+        const pos = new THREE.Vector3(...config.position);
+        if (config.emitterShape === 'sphere') {
+          const r = Math.cbrt(Math.random()) * config.shapeRadius;
+          const t2 = Math.random() * Math.PI * 2;
+          const p2 = Math.acos(2 * Math.random() - 1);
+          pos.add(new THREE.Vector3(r * Math.sin(p2) * Math.cos(t2), r * Math.sin(p2) * Math.sin(t2), r * Math.cos(p2)));
+        } else if (config.emitterShape === 'box') {
+          pos.add(new THREE.Vector3(
+            (Math.random() - 0.5) * config.shapeSize[0],
+            (Math.random() - 0.5) * config.shapeSize[1],
+            (Math.random() - 0.5) * config.shapeSize[2],
+          ));
+        }
+        particles.push({
+          position: pos,
+          velocity: dir.multiplyScalar(speed),
+          age: 0, lifetime: lt,
+          startSize: config.startSize[0] + Math.random() * (config.startSize[1] - config.startSize[0]),
+          endSize: config.endSize[0] + Math.random() * (config.endSize[1] - config.endSize[0]),
+        });
+      }
+    }
+
+    // Update particles
+    const gravity = new THREE.Vector3(...config.gravity);
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i];
+      p.age += dt;
+      if (p.age >= p.lifetime) { particles.splice(i, 1); continue; }
+      p.velocity.addScaledVector(gravity, dt);
+      p.velocity.multiplyScalar(1 - config.drag * dt);
+      if (config.turbulence > 0) {
+        p.velocity.add(new THREE.Vector3(
+          (Math.random() - 0.5) * config.turbulence * dt,
+          (Math.random() - 0.5) * config.turbulence * dt,
+          (Math.random() - 0.5) * config.turbulence * dt,
+        ));
+      }
+      p.position.addScaledVector(p.velocity, dt);
+    }
+
+    // Update instances
+    const mesh = meshRef.current;
+    for (let i = 0; i < config.maxParticles; i++) {
+      if (i < particles.length) {
+        const p = particles[i];
+        const t = p.age / p.lifetime;
+        const size = p.startSize + (p.endSize - p.startSize) * t;
+        dummy.position.copy(p.position);
+        dummy.scale.setScalar(size);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+        const col = interpolateColorOverLife(config.colorOverLife, t);
+        colorArray[i * 3] = col[0];
+        colorArray[i * 3 + 1] = col[1];
+        colorArray[i * 3 + 2] = col[2];
+      } else {
+        dummy.position.set(0, -1000, 0);
+        dummy.scale.setScalar(0);
+        dummy.updateMatrix();
+        mesh.setMatrixAt(i, dummy.matrix);
+      }
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    else {
+      mesh.instanceColor = new THREE.InstancedBufferAttribute(colorArray, 3);
+    }
+  });
+
+  return (
+    <instancedMesh ref={meshRef} args={[undefined, undefined, config.maxParticles]}>
+      <sphereGeometry args={[1, 6, 6]} />
+      <meshBasicMaterial
+        transparent
+        opacity={config.opacity}
+        depthWrite={false}
+        blending={config.blendMode === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending}
+      />
+    </instancedMesh>
+  );
+}
+
 // ─── Main 3D Studio Component ──────────────────────
 
 export function Studio3DPage() {
