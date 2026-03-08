@@ -1,0 +1,6751 @@
+# The Ultimate Drawing Engine
+
+## Blueprint, Encyclopedia, and Builder Doctrine
+
+### Authoring Draft v1
+
+---
+
+# Preface
+
+This document is the foundational book for the design and implementation of an advanced next-generation drawing engine: a unified system that fuses the strongest properties of precision vector design, expressive linework, live shape topology, region-aware fill systems, procedural geometry, brush simulation, and editor-scale interaction architecture.
+
+The goal is not to imitate any single existing application.
+
+The goal is to define and build a **superset drawing engine** that can power:
+
+* precision vector illustration
+* expressive line-based drawing
+* motion-oriented shape authoring
+* topology-aware region editing
+* browser-native infinite canvas tooling
+* advanced UI and graphics editors
+* procedural authoring environments
+* future hybrid raster/vector/animation systems
+
+This book serves six purposes at once:
+
+1. define the canonical engine thesis
+2. compare and extract the strongest ideas from existing systems
+3. lock the ontology and governing laws of the engine
+4. specify the architecture and subsystem boundaries
+5. define the implementation roadmap and builder plan
+6. provide a permanent doctrinal reference for future development
+
+This is not a marketing document.
+This is not a vague product memo.
+This is the operating canon for the drawing engine.
+
+---
+
+# Part I — Executive Thesis
+
+## 1.1 The central problem
+
+Most drawing software evolved inside local maxima.
+
+Some systems became strong at precise path construction but weak at expressive linework.
+Some became strong at natural brush input but structurally weak for later editing.
+Some became strong at topology interaction but poor at maintaining object discipline.
+Some became strong at browser interaction but shallow in geometry.
+
+As a result, modern drawing and graphics software is fragmented into separate tribes:
+
+* vector editors
+* animation-stage editors
+* line illustration tools
+* node/path laboratories
+* brush simulators
+* infinite-canvas systems
+* low-level rendering libraries
+
+Each category carries useful ideas.
+Each category also carries old constraints.
+
+The real opportunity is to stop treating these as separate categories and instead identify the deeper engine layers they were each solving.
+
+## 1.2 The answer
+
+The ultimate drawing engine must be built as a **multi-representation, topology-aware, brush-capable, region-native geometry system**.
+
+It must support fluid conversion and coexistence between:
+
+* gesture
+* path
+* stroke
+* fill
+* region
+* mergeable geometry
+* isolated object
+* vector network
+* procedural effect output
+* symbol/component instance
+
+That is the core insight.
+
+The engine must not collapse these representations into one muddy abstraction.
+It must preserve their identity while allowing them to interact coherently.
+
+## 1.3 The master thesis
+
+The strongest drawing engine will not be the one with the most tools.
+It will be the one with the clearest and most powerful **ontology**.
+
+That ontology must distinguish:
+
+* authoring intent
+* geometric structure
+* topological behavior
+* rendered appearance
+* procedural transformation
+* interaction semantics
+* scene/editor state
+
+When those layers are separated correctly, tools become composable, workflows become intuitive, and the system can scale from quick sketching to surgical vector construction without breaking its own logic.
+
+---
+
+# Part II — Comparative Canon of Existing Systems
+
+## 2.1 Why comparison matters
+
+We are not studying existing systems to imitate them blindly.
+We are studying them to identify the real breakthroughs they contributed.
+
+The important question is not:
+
+**Which app is best?**
+
+The important question is:
+
+**What engine pattern did each system discover?**
+
+---
+
+## 2.2 Illustrator — the path/object/appearance canon
+
+Illustrator represents one of the clearest historical expressions of path-first vector construction.
+
+Its core strengths include:
+
+* explicit path editing
+* anchor and tangent handle discipline
+* separation of fill and stroke appearance
+* brush-applied stroked paths
+* blob-style direct filled-shape painting
+* region-oriented fill workflows
+* strong compound and boolean shape editing
+
+### Illustrator’s deepest lesson
+
+A path is not the same thing as a stroke.
+A stroke is not the same thing as a fill.
+A fill is not merely a cosmetic property if the system is going to support live region workflows or shape merging.
+
+Illustrator’s most useful contribution is therefore not “the Pen tool.”
+Its real contribution is the preservation of **structural distinctions** between geometric entities.
+
+### What we take
+
+We take:
+
+* explicit path ownership
+* appearance separation
+* brush-path distinction
+* fill/stroke clarity
+* object discipline
+
+### What we reject
+
+We reject:
+
+* hidden state that confuses newcomers
+* brittle mode transitions
+* overreliance on precision-first authoring for all drawing tasks
+
+---
+
+## 2.3 Animate — the topology and stage-geometry canon
+
+Animate contributes one of the most important ideas in drawing software: the distinction between **mergeable stage geometry** and **isolated object geometry**.
+
+This is more profound than it first appears.
+
+In a merge-oriented system:
+
+* shapes can cut each other
+* overlapping geometry can merge
+* fills and strokes can behave as live stage matter
+* editing feels immediate and material
+
+In an isolated-object system:
+
+* each element is self-contained
+* interactions are more stable and predictable
+* editing preserves object identity more rigidly
+
+### Animate’s deepest lesson
+
+Drawing systems need an explicit **topology mode**.
+
+Users must be able to work in:
+
+* live-merge geometry mode
+* isolated object mode
+
+without ambiguity.
+
+### What we take
+
+We take:
+
+* topology-aware editing
+* merge vs isolated semantics
+* stage-oriented geometry interaction
+* separation of fill and stroke as selectable elements in merge shapes
+
+### What we reject
+
+We reject:
+
+* outdated fragmentation between animation-stage semantics and modern vector workflows
+* unclear object-state visibility
+
+---
+
+## 2.4 Figma — the vector network and editor-shell canon
+
+Figma’s major conceptual contribution is not simply that it has vector editing.
+Its major contribution is the more modern framing of vectors as **networks**, not only as isolated contours.
+
+That matters because many real-world drawing problems naturally involve:
+
+* branching structures
+* junctions
+* region generation inside non-traditional contour arrangements
+* combined network editing and local region filling
+
+### Figma’s deepest lesson
+
+The path model is not enough by itself.
+A next-generation engine must also support **branching vector networks** and derive regions, edits, and appearances from them.
+
+### What we take
+
+We take:
+
+* vector networks
+* multi-tool vector edit shells
+* region-aware network editing
+* a modern interaction surface for mixed edit operations
+
+### What we reject
+
+We reject:
+
+* shallow geometry assumptions that break down under more advanced expressive drawing workloads
+* design-system bias if it undermines raw drawing power
+
+---
+
+## 2.5 Inkscape — the procedural path doctrine
+
+Inkscape matters because it pushes node editing and live path effects into a strongly non-destructive, geometry-centric workflow.
+
+### Inkscape’s deepest lesson
+
+The engine should preserve:
+
+* the original authored path
+* the authoring mode or curve interpretation
+* the procedural effect stack that transforms it
+
+This means the engine must support **non-destructive geometry programs** layered on top of canonical authored shapes.
+
+### What we take
+
+We take:
+
+* node-centric edit power
+* multiple curve construction modes
+* live, non-destructive path effects
+* preservation of authoring intent
+
+### What we reject
+
+We reject:
+
+* UI complexity that becomes physically unpleasant to use
+* procedurality without clarity
+
+---
+
+## 2.6 Clip Studio Paint — the expressive vector linework canon
+
+Clip Studio contributes a crucial and often neglected insight:
+
+Vector structure does not have to mean cold, sterile design geometry.
+
+Its vector layers preserve editable line structure while supporting expressive illustration workflows.
+This includes:
+
+* editable brush-based vector lines
+* post-draw line correction
+* vector eraser logic
+* line thickness adjustment
+* splitting and reconnecting vector linework
+
+### Clip Studio’s deepest lesson
+
+Expressive line drawing can remain structurally editable if the engine is built for it.
+
+### What we take
+
+We take:
+
+* editable expressive vector linework
+* line correction tools
+* vector-aware erasing behavior
+* post-authoring width adjustment
+
+### What we reject
+
+We reject:
+
+* any assumption that expressive drawing must be permanently destructive or raster-only
+
+---
+
+## 2.7 Krita — the brush-engine doctrine
+
+Krita stands as one of the clearest examples that brush input is not one algorithm.
+It is an entire family of possible simulation and deposition systems.
+
+### Krita’s deepest lesson
+
+Brush behavior must be a first-class subsystem with modular control over:
+
+* smoothing
+* stabilizing
+* lag and drag
+* pressure mapping
+* tilt mapping
+* texture deposition
+* stamp distribution
+* opacity and blending behavior
+
+### What we take
+
+We take:
+
+* modular brush engines
+* serious stroke input conditioning
+* expressive draw-feel as a first-class design concern
+
+### What we reject
+
+We reject:
+
+* fake brush systems that are just polylines with decorative thickness
+
+---
+
+## 2.8 Skia — the rendering substrate canon
+
+Skia matters not as a user-facing editor but as a rendering foundation.
+It demonstrates a disciplined model for:
+
+* paths
+* contours
+* fills
+* stroke rendering
+* paint state
+* rasterization behavior
+
+### Skia’s deepest lesson
+
+A great editor still needs a stable rendering substrate.
+The interaction layer must sit on top of a deterministic geometry and rasterization kernel.
+
+### What we take
+
+We take:
+
+* explicit path/fill/stroke rendering concepts
+* disciplined low-level paint state
+* substrate thinking rather than UI-first thinking
+
+---
+
+## 2.9 tldraw, Fabric, Konva — the browser editor architecture canon
+
+These systems matter because they solve the editor-side problem:
+
+* object state
+* hit testing
+* transforms
+* scene graphs
+* shape behavior classes
+* serialization
+* interaction loops
+* infinite canvas systems
+
+### Their deepest lesson
+
+Geometry alone is not enough.
+A modern drawing engine must also define the architecture of:
+
+* the scene
+* the selection system
+* the interaction model
+* the command and undo system
+* the behavior binding layer
+
+### What we take
+
+We take:
+
+* explicit editor architecture
+* shape behavior abstraction
+* browser-native interaction discipline
+* infinite-canvas readiness
+
+---
+
+# Part III — The Canonical Synthesis
+
+## 3.1 The missing synthesis
+
+No existing system fully unifies the following in one coherent engine:
+
+* path-based precision vector construction
+* mergeable live topology editing
+* branching vector networks
+* expressive editable vector linework
+* modular brush engines
+* non-destructive procedural path effects
+* browser-scale editor architecture
+* fluid conversion between all of the above
+
+That missing synthesis is the space this engine occupies.
+
+## 3.2 The final synthesis statement
+
+The drawing engine shall be built as a layered system with eight coordinated cores:
+
+1. Geometry Core
+2. Topology Core
+3. Stroke Core
+4. Fill / Region Core
+5. Brush Core
+6. Procedural Effects Core
+7. Interaction Core
+8. Editor / Scene Core
+
+These cores shall remain conceptually distinct while interoperating through stable conversion rules and shared canonical data types.
+
+---
+
+# Part IV — Engine Laws
+
+## 4.1 Law 1 — Path, stroke, and fill must never be confused
+
+A path is authoring geometry.
+A stroke is appearance or stroke-geometry derived from a centerline or network edge.
+A fill is region geometry.
+
+They may be linked.
+They may be convertible.
+They must not be treated as identical.
+
+## 4.2 Law 2 — Topology mode must always be explicit
+
+Every drawable entity must have a clear topology behavior such as:
+
+* isolated object
+* merge shape
+* live network
+* region set
+* procedural output
+* symbol/component
+
+The user must not be left guessing what kind of object they created.
+
+## 4.3 Law 3 — Brush simulation is a first-class subsystem
+
+Brush feel is not surface decoration.
+It is an authoring substrate.
+
+## 4.4 Law 4 — Region solving is first-class
+
+Region extraction, region fill, adjacency, and fill containment must be native concerns of the engine.
+Not a post-hoc bucket hack.
+
+## 4.5 Law 5 — Authoring intent must be preservable
+
+The engine should preserve not only final geometry but also:
+
+* original paths
+* construction mode
+* curve semantics
+* procedural effect inputs
+* editable stroke logic
+
+## 4.6 Law 6 — Interaction state must be visible
+
+The editor must visibly communicate object type, topology mode, selection state, edit mode, and conversion state.
+
+## 4.7 Law 7 — Precision and expressive drawing must coexist
+
+Neither design-vector workflows nor expressive illustration workflows may be treated as second-class citizens.
+
+## 4.8 Law 8 — The engine must be representation-fluid
+
+The user must be able to move between gesture, path, stroke, fill, region, merge geometry, isolated object, and procedural output with as little friction as the geometry permits.
+
+---
+
+# Part V — Canonical Ontology
+
+## 5.1 Why ontology comes first
+
+Implementation should not begin with tool code.
+Implementation should begin with the canonical type system.
+
+If the ontology is sloppy, the editor becomes a pile of mutually incompatible hacks.
+
+## 5.2 Primary entity classes
+
+The engine shall recognize at minimum the following core classes:
+
+### Point
+
+A spatial coordinate in a chosen working space.
+
+### Anchor
+
+A control point that defines geometric structure in a path or network.
+
+### Handle
+
+A tangent or curvature control associated with an anchor.
+
+### Segment
+
+A primitive connection between anchors.
+May be a line, quadratic, cubic, arc, spline span, or future procedural span.
+
+### Contour
+
+An ordered chain of segments forming an open or closed boundary.
+
+### Path
+
+One or more contours with shared ownership, edit semantics, and style links.
+
+### Network
+
+A branching graph of edges and nodes allowing non-manifold vector structures.
+
+### Stroke Skeleton
+
+The centerline or edge path from which a visible stroke is derived.
+
+### Stroke Appearance
+
+The visual rendering configuration of a stroke:
+
+* width
+* variable width profile
+* cap
+* join
+* dash/pattern
+* brush profile
+* pressure modulation
+
+### Expanded Stroke Shape
+
+Boundary geometry generated from a stroke skeleton and appearance.
+
+### Region
+
+A bounded fillable area derived from contours, networks, merge geometry, or painted shape masses.
+
+### Fill Appearance
+
+Color, gradient, texture, pattern, shader, or procedural fill material.
+
+### Merge Shape
+
+Topology-aware editable geometry that interacts materially with overlapping merge shapes.
+
+### Isolated Object
+
+Self-contained drawable entity that maintains identity independent of overlap.
+
+### Procedural Effect Stack
+
+A sequence of non-destructive transformations applied to canonical geometry.
+
+### Symbol / Component
+
+Reusable referenced drawable structure with local overrides and instance semantics.
+
+### Binding / Constraint
+
+A relationship connecting one object’s behavior or state to another.
+
+---
+
+## 5.3 Representation families
+
+The engine must support multiple parallel representation families:
+
+1. gesture representation
+2. path representation
+3. network representation
+4. stroke representation
+5. expanded boundary representation
+6. region representation
+7. merge-topology representation
+8. isolated-object representation
+9. procedural representation
+10. symbol-instance representation
+
+These are not all the same thing.
+They are coordinated views or realizations of authored content.
+
+## 5.4 Conversion doctrine
+
+Conversions between representations shall be supported where coherent, such as:
+
+* gesture → path
+* gesture → stroke
+* stroke → expanded boundary
+* contour set → regions
+* merge geometry → isolated object
+* isolated object → merge geometry
+* path → procedural effect output
+* network → region extraction
+* region boundary → editable path
+
+Each conversion must declare whether it is:
+
+* reversible
+* lossy
+* partially reversible
+* baked
+* live-linked
+
+This must not be hidden from the user.
+
+---
+
+# Part VI — The Eight Core Subsystems
+
+## 6.1 Geometry Core
+
+The Geometry Core owns canonical structure.
+
+Responsibilities:
+
+* points, anchors, handles, segments, contours, paths, networks
+* curve evaluation
+* contour closure
+* numerical robustness
+* intersection calculation
+* offsetting
+* simplification
+* flattening where necessary
+* boolean preparation
+
+The Geometry Core must be deterministic and test-heavy.
+It is the bedrock.
+
+---
+
+## 6.2 Topology Core
+
+The Topology Core owns how geometry behaves relationally.
+
+Responsibilities:
+
+* merge mode semantics
+* isolated object semantics
+* overlap classification
+* segmentation rules
+* region adjacency graphs
+* network connectivity
+* non-manifold awareness where supported
+* contact-driven topology updates
+
+This is one of the most important differentiators in the whole engine.
+
+---
+
+## 6.3 Stroke Core
+
+The Stroke Core owns visible line realization.
+
+Responsibilities:
+
+* skeleton interpretation
+* width profiles
+* pressure curves
+* tapering
+* caps and joins
+* textured or procedural stroke rendering
+* expansion into fill geometry
+* stroke simplification and correction
+
+The Stroke Core must support both:
+
+* precision design strokes
+* expressive illustration strokes
+
+---
+
+## 6.4 Fill / Region Core
+
+The Fill / Region Core owns bounded area logic.
+
+Responsibilities:
+
+* contour-derived region extraction
+* network-derived region extraction
+* merge-shape region behavior
+* fill assignment
+* gap tolerance logic
+* adjacency queries
+* hole topology
+* compound region behavior
+
+This core allows the system to move beyond primitive bucket-fill thinking.
+
+---
+
+## 6.5 Brush Core
+
+The Brush Core owns input-to-mark transformation.
+
+Responsibilities:
+
+* smoothing
+* stabilizers
+* lag / drag modes
+* pressure and tilt mapping
+* velocity interpretation
+* dab/stamp deposition
+* texture modulation
+* raster brush capture
+* vector brush capture
+* hybrid brush capture
+
+The Brush Core must be modular.
+One brush algorithm is not enough.
+
+---
+
+## 6.6 Procedural Effects Core
+
+The Procedural Effects Core owns non-destructive geometric transformation.
+
+Responsibilities:
+
+* offset
+* bend
+* warp
+* pattern-along-path
+* repeat
+* noise/jitter
+* envelope transforms
+* width remapping
+* corner treatments
+* path interpolation
+* simplification as a controlled effect
+
+It must preserve original authoring inputs wherever possible.
+
+---
+
+## 6.7 Interaction Core
+
+The Interaction Core owns tool grammar and edit behavior.
+
+Responsibilities:
+
+* Pen
+* Curvature
+* Pencil
+* Brush
+* Ink / Blob
+* Node Edit
+* Shape Builder
+* Fill Wand / Region Paint
+* Correct Line
+* Vector Eraser
+* Cut / Split / Slice
+* Bend / Contour Push
+* Lasso / smart local selection tools
+* Transform / align / distribute tools
+
+This core converts user intention into geometry and state transitions.
+
+---
+
+## 6.8 Editor / Scene Core
+
+The Editor / Scene Core owns the application-scale interaction system.
+
+Responsibilities:
+
+* scene graph or document graph
+* object state
+* selection model
+* transform model
+* viewports and infinite canvas
+* hit testing
+* undo/redo
+* commands and transactions
+* serialization
+* symbol/component references
+* binding/constraint systems
+* collaboration hooks
+
+Without this core, the geometry engine remains a lab specimen rather than a usable editor.
+
+---
+
+# Part VII — Interaction Philosophy
+
+## 7.1 The two great authoring grammars
+
+The engine must support two broad families of drawing grammar.
+
+### Constructed vector grammar
+
+For exact, deliberate shape construction.
+This includes:
+
+* Pen-style authoring
+* anchor and tangent editing
+* precise closure control
+* constrained shape building
+* boolean composition
+
+### Direct shape ink grammar
+
+For intuitive and immediate drawing.
+This includes:
+
+* freehand line capture
+* direct filled-shape painting
+* mergeable painted regions
+* pressure-responsive linework
+* contact-driven editing
+
+The engine must allow users to move between these grammars without feeling they have crossed into a separate universe.
+
+## 7.2 The three species of line
+
+The system shall distinguish three different line concepts:
+
+### Skeleton line
+
+The authoring centerline.
+
+### Rendered stroke
+
+The visible stroke appearance over that centerline.
+
+### Expanded ink shape
+
+The filled contour geometry derived from the stroke.
+
+This distinction is mandatory.
+
+## 7.3 The four product-facing modes
+
+The final system should feel like four editors sharing one engine:
+
+1. Precision Vector Mode
+2. Expressive Linework Mode
+3. Live Shape Topology Mode
+4. Infinite Canvas System Mode
+
+These are not separate codebases.
+They are separate interaction shells over a unified kernel.
+
+---
+
+# Part VIII — Builder Plan
+
+## 8.1 Phase 0 — canonical doctrine freeze
+
+Before implementation, freeze:
+
+* engine laws
+* type system
+* representation families
+* conversion doctrine
+* subsystem boundaries
+
+Deliverables:
+
+* canonical schema draft
+* terminology glossary
+* conversion matrix
+* non-negotiable laws
+
+## 8.2 Phase 1 — geometry and topology kernel
+
+Build:
+
+* path engine
+* contour engine
+* network graph engine
+* intersection solver
+* region extraction core
+* basic boolean support
+* topology mode semantics
+
+Deliverables:
+
+* deterministic test suite
+* golden geometry corpus
+* benchmark harness
+
+## 8.3 Phase 2 — stroke and brush kernel
+
+Build:
+
+* width profile system
+* pressure interpretation
+* stroke expansion
+* vector line correction
+* modular brush pipelines
+* stabilizers and smoothing systems
+
+Deliverables:
+
+* expressive stroke sandbox
+* pressure replay harness
+* comparative brush behavior lab
+
+## 8.4 Phase 3 — interaction shell
+
+Build:
+
+* Pen
+* Curvature
+* Pencil
+* Brush
+* Ink / Blob
+* Node Edit
+* Region Paint
+* Shape Builder
+* Correct Line
+* Vector Eraser
+* Cut / Split tools
+
+Deliverables:
+
+* unified editor prototype
+* tool state machine specification
+* gesture grammar tests
+
+## 8.5 Phase 4 — scene/editor runtime
+
+Build:
+
+* document graph
+* selection and transform systems
+* command history
+* serialization
+* symbols/components
+* bindings and constraints
+* viewport and infinite-canvas systems
+
+Deliverables:
+
+* persistent editor runtime
+* document interchange layer
+* plugin or extension surface draft
+
+## 8.6 Phase 5 — advanced effects and future systems
+
+Build:
+
+* live procedural path effects
+* hybrid raster/vector brushes
+* topology-aware animation hooks
+* collaborative editing semantics
+* GPU-accelerated geometry workflows where appropriate
+
+Deliverables:
+
+* advanced feature stack
+* performance roadmap
+* future-facing extensibility doctrine
+
+---
+
+# Part IX — Implementation Warnings
+
+## 9.1 Do not start from tools
+
+Starting from tool code before ontology is frozen leads to contradictory behaviors and permanent technical debt.
+
+## 9.2 Do not collapse topological distinctions
+
+Treating mergeable geometry and isolated objects as the same thing under the hood will create constant ambiguity.
+
+## 9.3 Do not fake region systems
+
+A bucket tool layered over weak region logic is not a real fill engine.
+
+## 9.4 Do not trivialize brush feel
+
+Brush behavior heavily determines whether the engine feels alive or dead.
+
+## 9.5 Do not over-bake destructive conversions
+
+Preserve authoring intent and reversibility where possible.
+
+## 9.6 Do not hide state from the user
+
+The engine should reveal what kind of thing an object is and how it will behave.
+
+---
+
+# Part X — The Development Mission
+
+This engine exists to solve a long-standing fragmentation in creative software.
+
+The mission is to build a drawing system that is:
+
+* structurally rigorous
+* intuitively fluent
+* topologically aware
+* linework-capable
+* brush-serious
+* region-native
+* non-destructive where practical
+* browser-deployable
+* extensible into UI, animation, illustration, and future procedural graphics systems
+
+This is not a matter of adding more tools.
+It is a matter of building the correct engine beneath them.
+
+---
+
+# Appendix A — Initial Table of Contents for the Full Book
+
+The full book should expand into the following major volumes:
+
+## Volume I — Core Ontology and Engine Laws
+
+* philosophy
+* terminology
+* representation model
+* conversion doctrine
+* engine laws
+
+## Volume II — Comparative Study of Leading Drawing Systems
+
+* Illustrator
+* Animate
+* Figma
+* Inkscape
+* Clip Studio
+* Krita
+* Skia
+* browser editor architectures
+
+## Volume III — Geometry Kernel
+
+* paths
+* curves
+* contours
+* networks
+* intersection solving
+* booleans
+* offsets
+* simplification
+
+## Volume IV — Topology and Region Systems
+
+* merge semantics
+* isolated semantics
+* region extraction
+* fill graph logic
+* adjacency
+* network-derived regions
+
+## Volume V — Strokes and Linework
+
+* stroke ontology
+* variable width
+* pressure
+* expansion
+* expressive line correction
+* vector eraser logic
+
+## Volume VI — Brush Engines
+
+* brush feel
+* smoothing and stabilizers
+* deposition models
+* hybrid vector/raster logic
+
+## Volume VII — Procedural Effects and Non-Destructive Geometry
+
+* live path effects
+* warp systems
+* patterning
+* effect stacks
+* preservation of authoring intent
+
+## Volume VIII — Interaction and Tool Grammar
+
+* Pen and Curvature
+* Pencil and Brush
+* Ink and Blob
+* shape builder
+* node tools
+* vector lasso ideas
+* correction and cutting systems
+
+## Volume IX — Editor Runtime and Infinite Canvas Architecture
+
+* scene graph
+* shape behavior classes
+* undo/redo
+* transforms
+* bindings
+* collaboration hooks
+
+## Volume X — Builder Roadmap, Diagnostics, and Testing Doctrine
+
+* benchmarks
+* fuzzing geometry
+* replay tests
+* visual regression
+* topology stress suites
+* product sequencing
+
+---
+
+# Appendix B — Immediate Next Writing Targets
+
+The next sections to write in detail should be:
+
+1. canonical terminology glossary
+2. formal representation and conversion matrix
+3. full Geometry Core specification
+4. full Topology Core specification
+5. stroke ontology and line taxonomy
+6. region extraction theory
+7. brush engine architecture
+8. interaction grammar for the first tool family
+
+---
+
+# Part XI — Canonical Terminology Glossary
+
+## 11.1 Purpose of the glossary
+
+A serious engine cannot tolerate drifting terminology.
+When teams use words like path, line, shape, region, stroke, fill, and object loosely, the implementation begins to encode contradictory assumptions.
+
+This glossary exists to prevent that.
+
+A term in this glossary is not merely descriptive.
+It is normative.
+If code, UI, or documentation uses a term differently, that discrepancy must be corrected.
+
+---
+
+## 11.2 Foundational spatial terms
+
+### Working Space
+
+The coordinate space in which authored geometry is defined and manipulated.
+This may be world space, document space, artboard space, layer-local space, or another explicitly declared frame.
+
+### View Space
+
+The coordinate frame used for rendering and interaction relative to the viewport.
+This may include pan, zoom, rotation, and camera transforms.
+
+### Screen Space
+
+The final pixel-relative space in which visual output is displayed and pointer events originate.
+
+### Transform
+
+A mapping between coordinate spaces or between different states of the same geometry.
+Transforms may include translation, rotation, scale, skew, reflection, or arbitrary matrix-based mappings.
+
+---
+
+## 11.3 Structural geometry terms
+
+### Point
+
+A location in a coordinate space.
+A point has position but no extent.
+
+### Anchor
+
+A control point that participates in the structural definition of a path or network.
+An anchor is not merely a drawn point marker; it is a topological and geometric node.
+
+### Handle
+
+A control point associated with an anchor that influences local tangent or curvature behavior.
+
+### Segment
+
+A directed geometric span between two anchors or nodes.
+A segment may be linear, quadratic, cubic, circular, elliptical, spline-based, or procedurally defined.
+
+### Tangent
+
+A local directional derivative or directional constraint at a point on a segment or curve.
+
+### Curvature
+
+The rate of directional change along a curve.
+Curvature continuity and tangent continuity must be distinguished.
+
+### Contour
+
+An ordered chain of segments forming an open or closed boundary-like sequence.
+A contour is topologically linear if open and cyclic if closed.
+
+### Path
+
+A geometric authoring object composed of one or more contours under common ownership and edit semantics.
+A path may be open or closed and may carry linked stroke and fill state, but it is not identical to either.
+
+### Compound Path
+
+A path structure composed of multiple contours whose collective winding and nesting define fill behavior.
+
+### Network
+
+A branching graph of nodes and edges representing vector geometry that is not restricted to isolated contours.
+Networks may form branches, junctions, and region-generating structures.
+
+### Node
+
+A topological junction or endpoint in a network.
+A path anchor may also serve as a node when the representation permits, but node and anchor are not always interchangeable in all algorithms.
+
+### Edge
+
+A network connection between nodes.
+An edge may itself be realized by one or more geometric segments.
+
+---
+
+## 11.4 Appearance and linework terms
+
+### Skeleton Line
+
+The centerline or authoring path from which a visible stroke may be derived.
+
+### Stroke
+
+A visible line realization derived from a skeleton line or network edge under a stroke appearance definition.
+
+### Stroke Appearance
+
+The parameter set that determines how a stroke is rendered or expanded.
+This includes width, variable width distribution, cap style, join style, dash pattern, brush profile, pressure response, taper, and other visual or geometric properties.
+
+### Stroke Profile
+
+The local width and shape distribution of a stroke along its length.
+
+### Expanded Stroke
+
+Boundary geometry obtained by resolving a stroke appearance into filled shape contours.
+This is a derived geometry product, not the same thing as the original skeleton line.
+
+### Brush
+
+A mark-generation rule that transforms input motion and dynamic input signals into visual or geometric output.
+A brush may target raster, vector, or hybrid representations.
+
+### Dab
+
+A discrete deposited mark unit used by many brush engines as a fundamental rendering or accumulation element.
+
+### Pressure Curve
+
+A mapping from raw input pressure to an interpreted stroke or brush response.
+
+### Stabilizer
+
+A temporal or spatial filter applied to input trajectories to reduce noise or produce deliberate lagged motion.
+
+---
+
+## 11.5 Fill and region terms
+
+### Fill
+
+A visual or material assignment applied to a bounded region.
+Fill is not identical to the region itself.
+
+### Region
+
+A bounded area that can own fill state and participate in adjacency, containment, and topological editing.
+A region may be derived from contours, networks, merge geometry, or painted shape masses.
+
+### Hole
+
+A negatively contributing enclosed subregion within another region.
+
+### Winding Rule
+
+The rule used to determine filled interior for one or more contours, such as non-zero or even-odd winding behavior.
+
+### Adjacency
+
+A topological relationship between regions or boundaries indicating shared borders or contact relationships.
+
+### Region Graph
+
+A graph representation of region adjacency, containment, boundary ownership, or traversal relationships.
+
+---
+
+## 11.6 Topology and behavior terms
+
+### Topology Mode
+
+The declared behavior class that determines how a drawable entity interacts with overlap, segmentation, containment, and identity.
+
+### Merge Shape
+
+A topology-aware editable geometry object that materially interacts with overlapping merge shapes, potentially causing union, segmentation, subtraction, or region re-resolution.
+
+### Isolated Object
+
+A self-contained object whose identity is preserved independently of incidental overlap with other objects.
+
+### Contact Event
+
+A meaningful geometric or topological interaction such as overlap, intersection, adjacency, enclosure, or stroke crossing that may trigger topology updates.
+
+### Boolean Operation
+
+A set-based geometric operation such as union, intersection, subtraction, or exclusive-or.
+
+### Topological Edit
+
+An edit that changes region relationships, contour membership, graph connectivity, hole structure, segmentation, or overlap-derived decomposition.
+
+---
+
+## 11.7 Procedural and document terms
+
+### Authoring Intent
+
+The higher-level meaning encoded by how the user created geometry, including construction mode, brush mode, curve semantics, and procedural lineage.
+
+### Procedural Effect
+
+A non-destructive transformation or derived rule applied to canonical authored geometry.
+
+### Effect Stack
+
+An ordered chain of procedural effects that transforms source geometry into a resulting representation.
+
+### Bake
+
+The act of resolving a live or procedural representation into a static downstream representation.
+Baking may be reversible, partially reversible, or destructive depending on stored provenance.
+
+### Provenance
+
+Recorded lineage linking derived geometry to its source geometry, source operation, or authoring history.
+
+### Symbol / Component
+
+A reusable authored structure that can be instantiated multiple times with controlled local overrides.
+
+### Binding
+
+A declared relationship between entities such that state or behavior in one influences another.
+
+### Constraint
+
+A rule limiting or governing legal states, transforms, or relationships among objects.
+
+### Transaction
+
+An atomic editor operation or grouped set of operations that participates in undo/redo history.
+
+---
+
+## 11.8 Interaction terms
+
+### Tool
+
+A user-facing interaction mode or action family that maps input to edits, creation, or selection behavior.
+
+### Tool Grammar
+
+The full set of input rules, gestures, modifiers, hit-testing behaviors, previews, and commit semantics for a tool.
+
+### Selection State
+
+The current interaction state defining which entities, sub-entities, or regions are active for inspection or modification.
+
+### Edit Mode
+
+A more specific interaction state entered to modify a certain representation level, such as node editing, region editing, stroke profile editing, or procedural effect editing.
+
+### Preview
+
+A transient visual forecast of the result of an edit prior to commit.
+
+### Commit
+
+The operation that resolves a previewed change into durable document state.
+
+---
+
+## 11.9 Language discipline rules
+
+The following phrases are disallowed unless explicitly clarified:
+
+* “line” when the distinction between skeleton, stroke, and expanded stroke matters
+* “shape” when the distinction between path, fill region, merge shape, and isolated object matters
+* “object” when the topology mode or representation family matters
+* “brush stroke” when it is unclear whether the output is raster, vector skeleton, expanded fill, or hybrid
+
+Precise language is not optional.
+It is a prerequisite for a stable engine.
+
+---
+
+# Part XII — Formal Representation and Conversion Matrix
+
+## 12.1 Why the conversion matrix matters
+
+A unified drawing engine must support multiple representation families without devolving into silent destructive conversions.
+
+The conversion matrix defines:
+
+* what can convert into what
+* whether the conversion is direct or mediated
+* whether it is live-linked or baked
+* whether it is reversible or lossy
+* what provenance must be stored
+
+This matrix is one of the most important doctrinal artifacts in the engine.
+
+---
+
+## 12.2 Canonical representation families
+
+The engine shall formally recognize the following representation families:
+
+1. Gesture Representation
+2. Path Representation
+3. Network Representation
+4. Stroke Representation
+5. Expanded Boundary Representation
+6. Region Representation
+7. Merge Geometry Representation
+8. Isolated Object Representation
+9. Procedural Representation
+10. Symbol Instance Representation
+11. Raster Mark Representation
+12. Hybrid Representation
+
+These are not merely serialization types.
+They are semantic classes.
+
+---
+
+## 12.3 Representation definitions
+
+### Gesture Representation
+
+Raw or filtered input trajectory data with dynamic attributes such as time, pressure, tilt, velocity, and input source.
+Gesture data may be ephemeral, cached, or preserved for replay and editing.
+
+### Path Representation
+
+Canonical contour-based authored vector structure with anchors, handles, segments, and ownership.
+
+### Network Representation
+
+Canonical branching vector graph structure supporting nodes, edges, junctions, and region derivation.
+
+### Stroke Representation
+
+A stroke skeleton plus stroke appearance definition, optionally linked to gesture provenance and brush behavior.
+
+### Expanded Boundary Representation
+
+Filled contour geometry derived from a stroke or other expandable representation.
+
+### Region Representation
+
+Explicit fillable areas and their adjacency, containment, and hole relationships.
+
+### Merge Geometry Representation
+
+Geometry authored or converted into a merge-responsive topological mode.
+
+### Isolated Object Representation
+
+Geometry packaged with stable identity and self-contained transform or style behavior.
+
+### Procedural Representation
+
+Source geometry plus ordered non-destructive effect stack producing a derived result.
+
+### Symbol Instance Representation
+
+A reference to reusable source content plus instance-local overrides.
+
+### Raster Mark Representation
+
+Pixel or texel-based deposited mark output.
+
+### Hybrid Representation
+
+A composite object carrying linked vector, region, stroke, and raster components under one semantic unit.
+
+---
+
+## 12.4 Conversion classes
+
+All conversions shall be classified as one of the following:
+
+### Live Linked Conversion
+
+The target remains dynamically dependent on the source.
+Edits to the source propagate according to declared rules.
+
+### Derived Cached Conversion
+
+The target is regenerated from source as needed but may be cached for performance.
+
+### Baked Reversible Conversion
+
+The target is committed as primary geometry, but enough provenance is stored to reconstruct or recover source semantics to a declared extent.
+
+### Baked Lossy Conversion
+
+The target is committed with partial or total loss of upstream semantics.
+This must be disclosed and recorded.
+
+### View Conversion
+
+No true conversion occurs; the representation is a different editor view over the same canonical data.
+
+---
+
+## 12.5 Core conversion matrix
+
+### Gesture → Path
+
+Typical for Pencil, Pen-assist, or curve fitting workflows.
+Usually a baked reversible or live-linked conversion depending on whether gesture replay is retained.
+
+### Gesture → Stroke
+
+Typical for brush-authoring workflows.
+May remain live-linked if gesture provenance is preserved for later restroking.
+
+### Gesture → Raster Mark
+
+Typical for raster brush workflows.
+Usually baked but may preserve replay data.
+
+### Gesture → Hybrid
+
+Used when both vector skeleton and raster or textured output are retained.
+
+### Path → Stroke
+
+A canonical linkage in which a path or contour set becomes the skeleton for a stroke appearance.
+Usually a live-linked conversion.
+
+### Path → Region
+
+Occurs when closed contours or compound contour logic defines fillable areas.
+May be treated as a view conversion or derived cached conversion depending on engine design.
+
+### Path → Expanded Boundary
+
+Occurs when a stroke applied to the path is expanded.
+This is typically mediated through Stroke Representation.
+
+### Path → Network
+
+Not always direct.
+Usually requires reinterpretation, graph promotion, or a controlled structural transform.
+Should be considered partially reversible at best.
+
+### Network → Region
+
+A critical conversion for vector-network painting and region extraction.
+Usually a derived cached conversion or live-linked region solver view.
+
+### Network → Stroke
+
+Each edge or edge chain may act as a stroke skeleton.
+Live linkage is preferred.
+
+### Stroke → Expanded Boundary
+
+A foundational conversion for stroke expansion.
+This is often derived cached or baked reversible if skeleton and profile provenance are preserved.
+
+### Expanded Boundary → Path
+
+Possible by boundary extraction, but generally partially reversible because skeleton semantics are not guaranteed.
+
+### Expanded Boundary → Region
+
+Usually direct, often a view conversion or simple derived conversion.
+
+### Region → Path
+
+Possible through contour extraction.
+Usually partially reversible because region adjacency semantics may exceed boundary-only representation.
+
+### Region → Merge Geometry
+
+Typical when entering merge-edit workflows.
+May be a view conversion or a topology-mode reassignment.
+
+### Merge Geometry → Region
+
+Core live relationship in merge-capable systems.
+
+### Merge Geometry → Isolated Object
+
+Possible through packaging and topology-mode freezing.
+Often reversible if merge provenance is preserved.
+
+### Isolated Object → Merge Geometry
+
+Possible through topology-mode reassignment.
+May require decomposition of encapsulated structure.
+
+### Any Canonical Geometry → Procedural Representation
+
+Occurs when an effect stack is attached to source content.
+Should preserve source geometry intact.
+
+### Procedural Representation → Baked Geometry
+
+Occurs when effects are committed.
+Must declare whether provenance is preserved.
+
+### Any Reusable Geometry → Symbol Instance
+
+Creates referenced instances with override rules.
+Usually reversible and live-linked to symbol master semantics.
+
+### Vector or Region Geometry → Raster Mark
+
+Occurs during rasterization, painting to texture, export, or destructive hybrid workflows.
+Usually lossy unless source is retained in parallel.
+
+### Raster Mark → Vector or Region
+
+Possible through tracing or analysis, but inherently inferential and lossy.
+The engine must never misrepresent such recovery as exact.
+
+---
+
+## 12.6 Provenance requirements
+
+Every conversion that is not a pure view conversion should record at minimum:
+
+* source representation family
+* target representation family
+* conversion class
+* timestamp or transaction reference
+* responsible tool or subsystem
+* reversibility class
+* preserved semantic lineage
+* discarded semantic lineage
+
+This provenance is essential for:
+
+* intelligent undo/redo
+* conversion warnings
+* debugging
+* future editing recovery
+* user trust
+
+---
+
+## 12.7 Conversion UX laws
+
+### Law A — Destructive conversions must never be silent
+
+### Law B — Live links must be visibly communicated
+
+### Law C — Partially reversible conversions must declare what is preserved and what is lost
+
+### Law D — View changes must not masquerade as geometry changes
+
+### Law E — Symbolization, baking, and expansion must clearly communicate ownership and edit consequences
+
+---
+
+# Part XIII — Geometry Core Full Specification
+
+## 13.1 Mission of the Geometry Core
+
+The Geometry Core is the canonical mathematical substrate of the engine.
+It owns the exact or declared-approximate representation of vector structure and the algorithms that operate on that structure.
+
+If the Geometry Core is weak, every higher subsystem will compensate with hacks, special cases, and interaction lies.
+If the Geometry Core is robust, the rest of the engine can remain coherent.
+
+The Geometry Core therefore has three jobs:
+
+1. represent geometry clearly
+2. evaluate and transform geometry reliably
+3. provide deterministic services to all downstream subsystems
+
+---
+
+## 13.2 Design requirements
+
+The Geometry Core must satisfy the following requirements:
+
+### Structural clarity
+
+All entities must have clear ownership, type, and invariants.
+
+### Numerical robustness
+
+Algorithms must behave predictably under realistic floating-point limitations.
+
+### Deterministic behavior
+
+Given the same inputs and tolerances, the same outputs must be produced.
+
+### Precision layering
+
+The system must distinguish exact mathematical intent from approximate screen-space realization.
+
+### Extensibility
+
+The core must allow new segment classes and algorithms without breaking canonical assumptions.
+
+### Performance awareness
+
+The core must support caching, acceleration structures, and incremental recomputation without corrupting correctness.
+
+---
+
+## 13.3 Primary responsibilities
+
+The Geometry Core is responsible for:
+
+* points, anchors, handles, segments, contours, paths, and network edge geometry
+* curve evaluation
+* tangent and curvature queries
+* arc length approximation or exact evaluation where supported
+* contour closure logic
+* bounding volume computation
+* intersection and proximity queries
+* offset preparation and offset support primitives
+* simplification primitives
+* flattening and tessellation interfaces
+* boolean operation preparation support
+* geometry hashing or canonicalization where useful
+* geometric validity checks
+
+It is not solely responsible for topology mode semantics, brush simulation, or scene graph behavior, though it must supply services those systems use.
+
+---
+
+## 13.4 Canonical data model for geometry
+
+### GeometryPoint
+
+Fields should minimally include:
+
+* id
+* coordinate value
+* space/frame tag
+* precision or tolerance metadata if needed
+
+### GeometryAnchor
+
+Fields should minimally include:
+
+* id
+* point reference or embedded coordinate
+* anchor class
+* incoming handle reference
+* outgoing handle reference
+* continuity metadata
+* ownership references
+
+Anchor classes may include:
+
+* corner
+* smooth
+* symmetric
+* auto-smooth
+* procedural
+
+### GeometryHandle
+
+Fields should minimally include:
+
+* id
+* anchor owner
+* position or vector form
+* mode
+* lock/symmetry metadata
+
+### GeometrySegment
+
+Fields should minimally include:
+
+* id
+* segment type
+* ordered endpoint references
+* control references
+* parameter domain
+* cached bounds
+* cached length approximation references
+* provenance metadata
+
+Supported segment types should initially include:
+
+* line
+* quadratic Bézier
+* cubic Bézier
+* circular arc
+* polyline span
+* spline span
+
+The design should leave room for future procedural spans.
+
+### GeometryContour
+
+Fields should minimally include:
+
+* id
+* ordered segment list
+* closure flag
+* winding metadata
+* cached bounds
+* validity status
+* ownership references
+
+### GeometryPath
+
+Fields should minimally include:
+
+* id
+* contour list
+* style linkage references
+* fill linkage references
+* topology-mode metadata
+* provenance metadata
+* effect linkage references
+
+---
+
+## 13.5 Core invariants
+
+The following invariants must be enforced or explicitly repaired:
+
+### Segment continuity invariant
+
+Adjacent segments in a contour must share endpoint agreement under declared tolerance.
+
+### Contour closure invariant
+
+A contour marked closed must satisfy start-end coincidence under declared closure semantics.
+
+### Ownership invariant
+
+Anchors, handles, and segments must have unambiguous ownership or explicit shared semantics where networks require it.
+
+### Parameter-domain invariant
+
+Every evaluable segment must expose a valid parameter interval.
+
+### Bounds validity invariant
+
+Cached bounds must either be valid for current data or explicitly invalidated.
+
+### Winding consistency invariant
+
+Closed contours intended for compound fill logic must declare or derive consistent winding interpretation.
+
+Violations of invariants must not remain hidden.
+The system should either repair, reject, or mark invalid with diagnostic visibility.
+
+---
+
+## 13.6 Segment evaluation services
+
+The Geometry Core must expose a standard evaluation interface for all segment types.
+At minimum, every segment should support:
+
+* position at parameter t
+* first derivative at t
+* second derivative at t where defined
+* tangent direction at t
+* curvature query where meaningful
+* local bounding query
+* subdivision
+* closest-point query or approximation interface
+* flattening adapter
+
+This unified evaluation interface is critical because downstream systems must not care whether they are interacting with a line, Bézier, or arc at the API level.
+
+---
+
+## 13.7 Path and contour services
+
+Canonical services should include:
+
+* contour creation and editing
+* path creation and editing
+* anchor insertion
+* anchor deletion
+* handle conversion
+* contour split
+* contour join
+* contour reverse
+* contour close/open conversion
+* compound path assembly
+* contour extraction
+* contour normalization
+
+Normalization should include optional routines for:
+
+* redundant point removal
+* degenerate segment detection
+* zero-length span handling
+* parameter reconditioning where appropriate
+
+Normalization must be explicit and policy-driven.
+It must not silently rewrite user intent without clear rules.
+
+---
+
+## 13.8 Bounding systems
+
+The Geometry Core must support multiple bounding notions.
+
+### Exact or tight curve bounds
+
+Used where precision matters.
+
+### Conservative bounds
+
+Used for fast rejection tests.
+
+### Screen-space expanded bounds
+
+Used for interaction hit-testing with tolerance.
+
+### Stroke-aware projected bounds
+
+Used when a path is linked to stroke appearance or variable-width editing overlays.
+
+Bounding logic must be clearly labeled, because confusing these categories leads to broken hit-testing and invalid redraw assumptions.
+
+---
+
+## 13.9 Intersection and proximity framework
+
+Intersection logic is one of the hardest parts of the core and must be treated as a framework, not a single function.
+
+The framework should support:
+
+* segment-segment intersection
+* contour-contour intersection
+* path-path intersection
+* self-intersection detection
+* overlap interval detection
+* near-miss proximity queries
+* point-on-curve tests
+* region-boundary crossing support
+
+Intersection results must distinguish:
+
+* exact crossing
+* tangential contact
+* overlap interval
+* endpoint contact
+* tolerance-based near contact
+
+These categories matter for booleans, topology updates, snapping, and user feedback.
+
+---
+
+## 13.10 Tolerance doctrine
+
+Floating-point geometry without explicit tolerance doctrine becomes nonsense very quickly.
+
+The Geometry Core must declare at least the following tolerance classes:
+
+### Structural tolerance
+
+Used for ownership and continuity decisions.
+
+### Intersection tolerance
+
+Used for geometric crossing and contact classification.
+
+### Hit-test tolerance
+
+Used for user interaction and selection.
+
+### Visual tolerance
+
+Used for flattening, display approximation, and screen-space error control.
+
+### Simplification tolerance
+
+Used for intentional reduction of geometric complexity.
+
+These tolerances must not be casually mixed.
+Each subsystem must declare which tolerance class it is consuming.
+
+---
+
+## 13.11 Flattening and tessellation interfaces
+
+The Geometry Core should not force every downstream system to reimplement curve flattening.
+It must provide standard interfaces for:
+
+* polyline flattening under declared tolerance
+* adaptive subdivision
+* arc approximation
+* triangulation preparation
+* contour orientation extraction
+* tessellation-ready boundary output
+
+This is essential for rendering, GPU pipelines, hit-testing, and boolean preparation.
+
+---
+
+## 13.12 Offsetting support
+
+True offsetting is mathematically messy and operationally important.
+The Geometry Core should provide support primitives for:
+
+* local offset evaluation
+* cap/join construction interfaces
+* cusp detection
+* miter limit logic
+* self-intersection detection in offsets
+* branch generation for complex offsets
+
+The full offset solver may sit partly in the Stroke Core or dedicated geometry utilities, but the Geometry Core must provide the canonical primitives and data contracts.
+
+---
+
+## 13.13 Simplification support
+
+Simplification must be treated as a family of policy choices, not a single algorithm.
+The Geometry Core should support:
+
+* point reduction
+* curve fitting from sampled gesture input
+* contour smoothing under bounded error
+* topology-preserving simplification where required
+* style-aware simplification hooks for downstream systems
+
+Any simplification routine must clearly declare whether it preserves:
+
+* topology
+* anchor identity
+* tangent class
+* segment class
+* region behavior
+
+---
+
+## 13.14 Geometry diagnostics
+
+The Geometry Core must expose diagnostics for developers and advanced users.
+
+Diagnostic outputs should include:
+
+* invalid contour reports
+* zero-length segment detection
+* self-intersection reports
+* winding ambiguity flags
+* tolerance conflict warnings
+* degenerate bounds warnings
+* provenance gaps after conversion
+
+A mature engine cannot rely on silent failure and visual guessing.
+
+---
+
+## 13.15 Caching and invalidation
+
+Performance requires caching.
+Correctness requires disciplined invalidation.
+
+Cacheable products may include:
+
+* bounds
+* flattened polylines
+* approximate length tables
+* intersection acceleration structures
+* tessellation-ready contours
+
+Every cached product must declare:
+
+* source dependencies
+* invalidation triggers
+* tolerance dependencies
+* frame or transaction validity scope
+
+Caching without clear invalidation rules is just computational superstition wearing a fake mustache.
+
+---
+
+## 13.16 API doctrine for the Geometry Core
+
+The Geometry Core API should be divided into the following layers:
+
+### Authoring API
+
+For creation and structural edits.
+
+### Query API
+
+For evaluation, bounds, proximity, curvature, and inspection.
+
+### Derived Geometry API
+
+For flattening, offset preparation, extraction, normalization, and utility transforms.
+
+### Diagnostic API
+
+For validity checks, warnings, repair suggestions, and debug visualization hooks.
+
+### Transaction API
+
+For batched edits with clear commit and rollback semantics.
+
+The API must remain representation-aware and should avoid hiding costly operations behind innocent-looking calls.
+
+---
+
+## 13.17 Geometry Core output contracts to downstream systems
+
+The Geometry Core must provide clean contracts to:
+
+### Topology Core
+
+Intersections, contour structure, region boundary candidates, and contact classification.
+
+### Stroke Core
+
+Skeleton geometry, tangents, normals, offset primitives, and arc-length support.
+
+### Fill / Region Core
+
+Closed-boundary candidates, winding data, adjacency-relevant boundary structure.
+
+### Brush Core
+
+Curve fitting targets, replayable gesture-derived path structure, smoothing outputs.
+
+### Interaction Core
+
+Hit-testing, previews, snapping targets, editable control geometry.
+
+### Rendering Layer
+
+Flattened boundaries, tessellation adapters, bounds, and display-friendly approximations.
+
+---
+
+## 13.18 Testing doctrine for the Geometry Core
+
+The Geometry Core demands an unusually strong test discipline.
+At minimum, the test strategy should include:
+
+### Deterministic unit tests
+
+For evaluation, continuity, and bounds.
+
+### Golden corpus tests
+
+For known difficult shapes, intersections, and offset scenarios.
+
+### Property-based tests
+
+For invariants under random but valid edits.
+
+### Fuzz tests
+
+For malformed and adversarial inputs.
+
+### Differential tests
+
+Where useful, compare outputs across alternative solver implementations.
+
+### Visual regression tests
+
+For flattened and tessellated outputs under controlled tolerances.
+
+### Performance regression tests
+
+For large path sets, dense networks, and repeated edit workloads.
+
+Geometry bugs have a talent for hiding until the worst possible moment.
+They require a deliberately hostile test environment.
+
+---
+
+## 13.19 Implementation sequencing for the Geometry Core
+
+Recommended build order:
+
+1. core data types and invariants
+2. segment evaluation library
+3. contour construction and editing services
+4. bounds framework
+5. flattening adapters
+6. intersection framework
+7. normalization and validity diagnostics
+8. simplification primitives
+9. offset support primitives
+10. performance caches and acceleration structures
+
+This order keeps the foundation sane before the more chaotic algorithms arrive.
+
+---
+
+## 13.20 Geometry Core completion criteria
+
+The Geometry Core should not be considered foundationally complete until it can reliably support:
+
+* precise path authoring
+* curve editing
+* hit-testing
+* contour closure and compound paths
+* intersection-driven workflows
+* stroke generation support
+* region extraction prerequisites
+* diagnostics on malformed geometry
+* deterministic replay under repeated edit sequences
+
+Once this bar is met, the rest of the engine can begin building on stone instead of wet cardboard.
+
+---
+
+# Part XIV — Topology Core Full Specification
+
+## 14.1 Mission of the Topology Core
+
+The Geometry Core defines what the shapes are.
+The Topology Core defines how those shapes **behave as relational matter**.
+
+This distinction is essential.
+
+A path editor without an explicit topology model can construct curves, but it cannot cleanly answer questions like:
+
+* what happens when two filled shapes overlap in merge mode?
+* when does a stroke crossing create a new region boundary?
+* when is overlap merely visual and when is it structural?
+* what constitutes object identity after segmentation?
+* how are adjacency and containment updated after topology-changing edits?
+
+The Topology Core exists to answer those questions deterministically.
+
+Its mission is to govern:
+
+1. identity under interaction
+2. overlap and contact semantics
+3. segmentation and recomposition
+4. region adjacency and containment
+5. network connectivity semantics
+6. topology-changing edit laws
+
+Without this core, the engine can draw pretty curves while behaving like a confused bureaucrat whenever objects touch.
+
+---
+
+## 14.2 Why topology must be explicit
+
+Most drawing tools blur geometry and topology together.
+That is a mistake.
+
+Two objects may share identical visible geometry while differing profoundly in topological behavior.
+For example:
+
+* a closed path with fill assigned
+* a mergeable fill shape
+* an isolated object containing the same contour
+* a region extracted from a vector network
+* an expanded stroke stored as a compound region set
+
+These may look similar on screen.
+They are not the same thing.
+
+The Topology Core therefore treats **behavioral class** as first-class state, not an incidental UI mode.
+
+---
+
+## 14.3 Primary responsibilities
+
+The Topology Core is responsible for:
+
+* topology mode declaration and enforcement
+* overlap/contact classification
+* merge semantics
+* isolation semantics
+* segmentation rules
+* region graph maintenance
+* boundary ownership logic
+* hole and containment relationships
+* network connectivity behavior
+* object identity under topology-changing edits
+* topology-aware diagnostics
+* topology-aware undo/redo semantics support
+
+It is not responsible for low-level curve evaluation itself, but it consumes Geometry Core outputs heavily.
+
+---
+
+## 14.4 Canonical topology modes
+
+Every drawable entity or editable representation participating in topology-aware workflows must declare a topology mode.
+
+Initial canonical modes should include:
+
+### Isolated Object
+
+A self-contained object whose identity is preserved regardless of incidental overlap.
+Overlap does not automatically alter internal decomposition.
+
+### Merge Shape
+
+A geometry object that participates in merge semantics with other merge-compatible entities.
+Overlap may produce segmentation, union, subtraction, or region re-resolution.
+
+### Live Region Set
+
+A set of fillable regions derived from source boundaries, contours, networks, or merge structure, remaining dynamically linked to that source.
+
+### Network Topology
+
+A graph-based vector structure whose nodes, edges, branches, and crossings may imply region structure and connectivity state.
+
+### Procedural Topology
+
+A topology realized from procedural rules or effect stacks and subject to regeneration rather than direct boundary ownership.
+
+### Symbol / Component Topology
+
+A referenced reusable structure whose topology may be inherited from source content while local edits are constrained by instance semantics.
+
+These modes are not merely labels.
+They affect behavior contracts throughout the engine.
+
+---
+
+## 14.5 Topology entities and records
+
+The Topology Core should maintain canonical records beyond raw geometry.
+At minimum, it should define the following conceptual structures:
+
+### TopologyEntity
+
+A behavior-aware wrapper around geometric or derived content.
+Fields should include:
+
+* id
+* topology mode
+* source geometry references
+* derived region references
+* boundary ownership references
+* identity lineage
+* containment parent references
+* adjacency references
+* merge-compatibility tags
+* procedural linkage metadata where relevant
+
+### RegionNode
+
+A topological region record.
+Fields should include:
+
+* id
+* boundary references
+* hole references
+* containment parent
+* adjacency neighbors
+* fill ownership
+* provenance
+* validity state
+
+### BoundaryRecord
+
+A record describing a boundary segment, contour fragment, or derived edge participating in region separation.
+Fields should include:
+
+* id
+* source geometry reference
+* directional metadata
+* left/right region references where meaningful
+* ownership class
+* derived-or-source flag
+
+### ContactEventRecord
+
+A structured description of an overlap, crossing, enclosure, tangency, or adjacency event that may trigger topology changes.
+
+### IdentityLineageRecord
+
+A provenance structure linking post-segmentation or post-merge entities to their ancestors.
+
+---
+
+## 14.6 Core topological invariants
+
+The following invariants must be upheld or explicitly invalidated with diagnostics.
+
+### Identity invariant
+
+Every topology entity must have stable identity within a transaction, even if its internal region structure changes.
+
+### Region-boundary consistency invariant
+
+Every region must have a coherent boundary description and every boundary must have consistent region-side relationships where defined.
+
+### Containment invariant
+
+A region or topology entity marked as contained within another must satisfy containment under declared tolerance and interpretation rules.
+
+### Adjacency symmetry invariant
+
+If region A is adjacent to region B, that relationship must be reflected symmetrically unless the relationship type explicitly encodes directionality.
+
+### Hole-parent invariant
+
+Every hole must belong to a defined containing region or be flagged invalid.
+
+### Connectivity invariant
+
+Every network topology record must preserve declared graph connectivity semantics under edits.
+
+### Mode-consistency invariant
+
+An entity’s behavior must remain consistent with its topology mode unless a conversion or reassignment is explicitly committed.
+
+---
+
+## 14.7 Contact classification framework
+
+Topology begins when things touch, overlap, cross, or enclose one another.
+The Topology Core therefore needs a rigorous contact classification framework.
+
+Canonical contact classes should include:
+
+### No Contact
+
+No meaningful topological relationship under relevant tolerance.
+
+### Near Contact
+
+Objects do not strictly intersect but are within a tolerance relevant to snapping, gap closure, or region inference.
+
+### Boundary Crossing
+
+Two boundaries cross in a way that may create new segmentation points or region partitions.
+
+### Tangential Contact
+
+Entities touch without proper crossing.
+This must be distinguished from crossing because the topological consequences are different.
+
+### Overlap Interval
+
+Boundaries overlap along a continuous interval rather than at a point.
+This is one of the nastier cases and must be modeled explicitly.
+
+### Enclosure
+
+One region or boundary set encloses another.
+
+### Adjacency Contact
+
+Entities share a border or are recognized as neighboring without merge or union.
+
+### Self Contact
+
+A single entity contacts or intersects itself in a topologically meaningful way.
+
+Contact classification must not be reduced to a boolean “intersects.”
+That is how topology engines become mud.
+
+---
+
+## 14.8 Merge semantics
+
+Merge semantics define how merge-compatible entities behave when contact events occur.
+
+The engine must support at least the following merge operations conceptually:
+
+### Union-like Merge
+
+Overlapping compatible filled matter becomes a unified topological mass.
+Internal boundaries may dissolve according to policy.
+
+### Segmented Merge
+
+Overlap creates new decomposed regions while preserving boundary information.
+This is useful when fills remain separable for editing despite shared material interaction.
+
+### Subtractive Merge
+
+One merge entity cuts material from another under declared tool or operation semantics.
+
+### Intersective Merge
+
+Only shared overlap becomes retained material.
+
+### Paint-Over Merge
+
+A brush or fill action adds matter into the merge system and triggers local region re-resolution.
+
+### Erase-Over Merge
+
+A subtractive brush or eraser removes matter from merge geometry.
+
+Each merge behavior must declare:
+
+* whether internal seams are preserved
+* how fill ownership is resolved
+* how post-merge identity is assigned
+* whether source provenance is retained as editable ancestry
+
+A serious system cannot leave these decisions as vague UI folklore.
+
+---
+
+## 14.9 Isolation semantics
+
+Isolated Object mode exists to preserve object identity and stable editing behavior.
+
+In isolated mode:
+
+* incidental overlap does not automatically alter internal topology
+* fill and stroke relationships remain object-local unless explicitly expanded or booleaned
+* transforms apply to the object as a unit
+* region decomposition may still exist internally, but it is not implicitly recomputed from external overlaps
+
+Isolation is not “less advanced” than merge behavior.
+It is a different behavioral contract.
+
+The user must be able to rely on it.
+
+---
+
+## 14.10 Merge compatibility rules
+
+Not every entity should merge with every other entity.
+The Topology Core must support merge compatibility rules such as:
+
+* merge shape with merge shape
+* region with merge shape
+* expanded stroke with merge shape
+* painted fill mass with merge shape
+* isolated object excluded by default
+* procedural output mergeable only after declared realization policy
+* symbol instances mergeable only if detached or if instance policy permits
+
+Compatibility must be based on explicit rules, not hidden guesses.
+
+---
+
+## 14.11 Region graph doctrine
+
+The region graph is one of the core data products of the Topology Core.
+
+It must represent at minimum:
+
+* region nodes
+* shared boundaries
+* adjacency relationships
+* containment relationships
+* hole-parent relationships
+* source provenance for each region
+* fill ownership or style linkage
+
+The region graph enables:
+
+* region selection
+* live fill assignment
+* shape-builder operations
+* merge editing
+* gap-closing heuristics
+* diagnostics and debugging
+
+The region graph may be fully explicit or partially derived on demand, but its semantics must be stable.
+
+---
+
+## 14.12 Boundary ownership doctrine
+
+Boundary ownership is subtle and dangerous.
+A boundary fragment may originate from:
+
+* a source contour
+* a network edge
+* an expanded stroke boundary
+* a merge-derived segmentation cut
+* a boolean-generated edge
+* a region extraction artifact
+
+The Topology Core must preserve enough provenance to answer:
+
+* who owns this boundary?
+* is it source or derived?
+* can it be edited directly?
+* if edited, which upstream structures are affected?
+
+Without this, region editing becomes a carnival of accidental destruction.
+
+---
+
+## 14.13 Hole and containment semantics
+
+The engine must formalize the difference between:
+
+* interior region
+* nested contained object
+* hole in a region
+* independently filled inner island
+* procedural negative space
+
+These are not interchangeable.
+
+Containment semantics should define:
+
+* parent-child region relationships
+* hole validity rules
+* fill inheritance or independence
+* hit-testing priority
+* selection disambiguation
+* merge behavior of contained shapes
+
+In particular, a hole is not just “a small thing inside a big thing.”
+It is a topological negative contribution to a containing region.
+That must be encoded explicitly.
+
+---
+
+## 14.14 Network topology semantics
+
+Because the engine supports vector networks, topology cannot assume everything is an isolated contour.
+
+The Topology Core must support:
+
+* node degree tracking
+* branch connectivity
+* edge splitting and joining
+* crossing interpretation policy
+* region extraction from graph structure
+* disconnected subgraph tracking
+* promoted junction semantics
+
+A critical design choice must be declared for crossings:
+
+### Geometric crossing without node promotion
+
+Two edges may visually cross without becoming connected in the network graph.
+
+### Promoted crossing as junction node
+
+A crossing may be intentionally promoted into graph connectivity.
+
+The user or tool must control this.
+Otherwise network editing becomes infernal.
+
+---
+
+## 14.15 Segmentation rules
+
+Segmentation is the process by which topology entities are decomposed into regions, fragments, or child entities after interaction.
+
+Segmentation rules should define:
+
+* when crossing inserts split points
+* when overlap creates new region partitions
+* when tangency does not segment
+* when overlapping boundaries collapse or remain distinct
+* when post-segmentation child entities get independent identity
+* when segmentation is transient view logic versus committed structure
+
+This distinction is vital.
+Not every visible segmentation needs to become permanent authored structure.
+
+---
+
+## 14.16 Identity after topology-changing edits
+
+One of the hardest questions in any topology-aware editor is:
+
+**After a split, merge, erase, or region recomposition, what remains “the same object”?**
+
+The Topology Core must answer this with policy, not vibes.
+
+Possible identity outcomes include:
+
+### Identity Preserved
+
+The original entity remains primary and absorbs the topological change.
+
+### Identity Split
+
+The original entity becomes multiple child entities with lineage links.
+
+### Identity Replaced
+
+A new entity supersedes the original, which remains only in provenance history.
+
+### Identity Layered
+
+A parent entity persists while child regions or fragments gain sub-identity.
+
+Different tools may invoke different identity policies, but those policies must be explicit.
+
+---
+
+## 14.17 Topology-aware editing operations
+
+The Topology Core must define behavior contracts for at least the following edit classes:
+
+### Add Matter
+
+Introduce geometry into merge or region systems.
+
+### Remove Matter
+
+Subtract geometry from merge or region systems.
+
+### Cut / Slice
+
+Introduce topological partitions without necessarily removing matter.
+
+### Join / Weld
+
+Fuse compatible boundaries or nodes.
+
+### Split Boundary
+
+Separate a boundary or edge into multiple owned fragments.
+
+### Promote Crossing
+
+Convert a geometric crossing into connected topology.
+
+### Demote Junction
+
+Break graph connectivity while preserving visible crossing.
+
+### Reassign Topology Mode
+
+Convert between isolated, merge, network, region-set, or procedural topology classes.
+
+### Freeze / Package
+
+Stabilize currently dynamic topology into isolated object semantics.
+
+### Resolve Regions
+
+Recompute region graph from current boundaries under declared policies.
+
+These operations need clean transaction semantics and predictable diagnostics.
+
+---
+
+## 14.18 Dynamic versus baked topology
+
+Not all topology should be committed immediately.
+The engine must distinguish:
+
+### Live Topology
+
+Continuously derived from current geometry and topology mode.
+
+### Cached Derived Topology
+
+Stored temporarily for performance but conceptually dependent on source state.
+
+### Baked Topology
+
+Committed into authored structure as explicit regions, boundaries, or entity splits.
+
+This distinction matters for performance, user understanding, and undo/redo behavior.
+
+---
+
+## 14.19 Topology-mode reassignment doctrine
+
+Users must be able to convert content between topology modes, but the consequences must be clear.
+
+Examples:
+
+* isolated object → merge shape
+* merge shape → isolated object
+* path-derived fill → live region set
+* network → isolated packaged object
+* procedural output → baked merge geometry
+
+Every reassignment must declare:
+
+* whether geometry changes
+* whether only behavior changes
+* whether provenance is preserved
+* whether region ids are regenerated
+* whether future external overlap will affect the object
+
+Behavioral conversion without clear messaging is one of the classic editor booby traps.
+
+---
+
+## 14.20 Topology diagnostics
+
+The Topology Core must expose diagnostics at both developer and advanced-user levels.
+
+Diagnostics should include:
+
+* invalid hole-parent relationships
+* orphaned regions
+* contradictory adjacency links
+* ambiguous overlap classifications
+* unsupported overlap intervals
+* accidental junction promotions
+* merge incompatibility warnings
+* identity ambiguity after split operations
+* stale derived topology caches
+
+This diagnostic layer is critical for debugging both engine logic and user-facing behavior.
+
+---
+
+## 14.21 Topology Core API doctrine
+
+The Topology Core API should be separated into the following layers:
+
+### Classification API
+
+For contact classification, overlap queries, and topology inspection.
+
+### Region API
+
+For region graph queries, containment, adjacency, and boundary ownership.
+
+### Merge API
+
+For union-like, subtractive, intersective, and paint-over matter operations.
+
+### Identity API
+
+For lineage, split tracking, replacement policy, and ancestry inspection.
+
+### Conversion API
+
+For topology-mode reassignment and packaging/freezing operations.
+
+### Diagnostic API
+
+For validity checks, ambiguity reports, and debug visualization outputs.
+
+The API must not hide major recomputation costs or topology bakes behind harmless-looking function names.
+
+---
+
+## 14.22 Contracts to downstream systems
+
+The Topology Core must provide clean outputs to the rest of the engine.
+
+### To Fill / Region Core
+
+Stable region graph, adjacency, containment, and boundary relationships.
+
+### To Interaction Core
+
+Selectable regions, merge targets, split previews, shape-builder candidates, topology warnings.
+
+### To Stroke Core
+
+Policies for how expanded strokes participate in merge or isolated semantics.
+
+### To Procedural Effects Core
+
+Rules for whether procedural outputs are topology-live, topology-cached, or topology-baked.
+
+### To Editor / Scene Core
+
+Identity lineage, mode state, topology transactions, and undo/redo-relevant diff information.
+
+### To Rendering Layer
+
+Optional debug overlays for region ids, boundaries, adjacency, containment, and merge previews.
+
+---
+
+## 14.23 Testing doctrine for the Topology Core
+
+The Topology Core requires a brutal test regime.
+Nice weather tests are not enough.
+
+Testing should include:
+
+### Deterministic topology cases
+
+Known scenarios for overlap, segmentation, adjacency, holes, and containment.
+
+### Merge-mode scenario suites
+
+Repeated add, erase, union, subtract, and paint-over workflows.
+
+### Isolation stability tests
+
+Ensure incidental overlap does not corrupt isolated object identity.
+
+### Region graph integrity tests
+
+Verify symmetry, parent-child consistency, and boundary ownership validity.
+
+### Network topology tests
+
+Crossings, junction promotions, splits, joins, and disconnected subgraphs.
+
+### Identity lineage tests
+
+Verify consistent ancestry after split, merge, and replacement operations.
+
+### Fuzz tests
+
+Adversarial combinations of malformed geometry, near contacts, and repeated mode switching.
+
+### Visual debug regression tests
+
+Ensure topology overlays match expected decomposition and adjacency.
+
+Topology bugs are especially vicious because they often look fine until the user performs one more edit and the entire thing mutates into abstract sadness.
+
+---
+
+## 14.24 Implementation sequencing for the Topology Core
+
+Recommended build order:
+
+1. topology mode schema and invariants
+2. contact classification framework
+3. region node and boundary record model
+4. adjacency and containment graph maintenance
+5. merge compatibility rules
+6. basic merge and isolation semantics
+7. segmentation policies
+8. identity lineage framework
+9. network topology semantics
+10. diagnostics and debug overlays
+11. performance caches and incremental recomputation rules
+
+This order keeps the conceptual skeleton stable before the nastier interaction cases arrive.
+
+---
+
+## 14.25 Completion criteria for the Topology Core
+
+The Topology Core should not be considered foundationally complete until it can reliably support:
+
+* explicit isolated versus merge behavior
+* stable region graph construction
+* clear adjacency and containment semantics
+* predictable segmentation under overlap
+* identity tracking after topology-changing edits
+* network crossings and junction policies
+* topology-mode reassignment with provenance
+* diagnostics for ambiguous or invalid topology
+
+At that point the engine has crossed a major threshold.
+It is no longer merely describing shapes.
+It is governing their behavior.
+
+---
+
+# Part XV — Stroke Core Full Specification
+
+## 15.1 Mission of the Stroke Core
+
+The Stroke Core governs how authored line intent becomes visible, editable, and topologically meaningful mark geometry.
+
+This is not a cosmetic subsystem.
+It is the formal bridge between:
+
+* path or network skeletons
+* expressive line appearance
+* brush-informed line behavior
+* expanded boundary geometry
+* topology-aware interaction with fills and merge systems
+
+If the Geometry Core defines structural curves and the Topology Core defines relational behavior, the Stroke Core defines the living line itself.
+
+Its mission is to govern:
+
+1. stroke ontology
+2. stroke realization
+3. variable width and pressure behavior
+4. caps, joins, tapers, and endings
+5. stroke editing and correction
+6. stroke expansion into fill geometry
+7. reversibility and provenance of line transformations
+8. topology participation of strokes and expanded strokes
+
+Without a serious Stroke Core, the engine either becomes a sterile vector drafting tool or a sloppy brush toy. Both are insufficient.
+
+---
+
+## 15.2 Why stroke must be separated from path
+
+A recurring failure in drawing software is the collapse of path and stroke into one vague concept of “line.”
+
+That is wrong.
+
+The engine must preserve the distinction between:
+
+### Skeleton Line
+
+The authored centerline or edge path.
+
+### Rendered Stroke
+
+The visible line generated from the skeleton line and stroke appearance state.
+
+### Expanded Stroke Boundary
+
+Filled contour geometry derived from the rendered stroke.
+
+These are related.
+They are not identical.
+
+The difference matters for:
+
+* editing behavior
+* topology participation
+* erasing logic
+* region generation
+* conversion reversibility
+* performance caching
+* user understanding
+
+A serious engine must never blur them casually.
+
+---
+
+## 15.3 Primary responsibilities
+
+The Stroke Core is responsible for:
+
+* stroke data structures and invariants
+* line realization from paths or networks
+* variable width profiles
+* pressure and tilt response for vector strokes
+* cap and join resolution
+* taper systems
+* stroke patterning and dash logic where supported
+* expressive line correction
+* stroke-local editing tools
+* stroke expansion
+* expanded-stroke provenance tracking
+* topology participation policies for strokes and expanded strokes
+* stroke diagnostics and testing
+
+It is not responsible for raw pointer smoothing itself at the deepest level if that belongs to the Brush Core, but it must consume those signals coherently.
+
+---
+
+## 15.4 Canonical stroke ontology
+
+The Stroke Core should define at minimum the following conceptual structures:
+
+### StrokeEntity
+
+A visible line authoring record linking a skeleton source to stroke appearance semantics.
+
+Fields should minimally include:
+
+* id
+* skeleton source reference
+* source representation class
+* stroke appearance reference
+* width profile reference
+* pressure response mapping reference
+* cap and join settings
+* taper settings
+* dash or pattern settings where relevant
+* brush-style linkage where applicable
+* expanded-boundary cache reference
+* provenance metadata
+* topology participation policy
+
+### StrokeAppearance
+
+A parameter bundle defining how the stroke is visually or geometrically realized.
+
+This may include:
+
+* base width
+* variable width mode
+* cap type
+* join type
+* miter limit
+* dash pattern
+* pattern placement rules
+* texture or brush profile linkage
+* compositing hints
+
+### WidthProfile
+
+A mapping describing line thickness variation along the stroke.
+
+This may be represented as:
+
+* scalar samples along normalized arc length
+* spline-controlled width envelope
+* pressure-derived curve
+* procedural function
+* local width handles
+
+### StrokeExpansionRecord
+
+A provenance object linking the current expanded boundary geometry to its originating skeleton, appearance, and expansion policy.
+
+### StrokeEditRecord
+
+A record of local stroke edits such as width edits, taper edits, caps, join overrides, correction passes, or eraser operations.
+
+---
+
+## 15.5 Accepted stroke sources
+
+A stroke may be derived from multiple source classes.
+Initial accepted sources should include:
+
+### Path-derived stroke
+
+A stroke whose skeleton source is a path or contour.
+
+### Network-derived stroke
+
+A stroke realized from one or more edges in a vector network.
+
+### Gesture-derived vector stroke
+
+A stroke created from gesture input and either fitted to a skeleton or stored with gesture-linked stroke semantics.
+
+### Procedural stroke
+
+A stroke generated or modified by an effect stack or rule system.
+
+### Hybrid stroke
+
+A stroke that retains vector skeleton semantics while also linking to raster or textured deposition outputs.
+
+The source class matters because editability, expansion, and reversibility may differ.
+
+---
+
+## 15.6 Core invariants
+
+The Stroke Core must uphold the following invariants or explicitly invalidate and diagnose them.
+
+### Skeleton linkage invariant
+
+Every stroke must have a valid declared source skeleton or explicitly declared direct-boundary mode if it no longer has one.
+
+### Width validity invariant
+
+All width samples or width functions must remain within declared legal ranges.
+Negative width is not permitted unless a specialized semantic explicitly encodes signed offset behavior.
+
+### Cap and join consistency invariant
+
+Stroke endings and segment junctions must resolve according to declared style and tolerance rules.
+
+### Expansion provenance invariant
+
+If an expanded boundary is cached or baked, its provenance must identify the originating skeleton and appearance state unless intentionally discarded.
+
+### Arc-length mapping invariant
+
+Width and pressure mappings that depend on arc-length parameterization must remain synchronized with the current skeleton state.
+
+### Topology participation invariant
+
+The stroke must explicitly declare whether it participates as visual-only linework, merge-compatible expanded matter, region boundary candidate, or isolated object content.
+
+---
+
+## 15.7 Stroke realization pipeline
+
+The Stroke Core should formalize line realization as a multi-stage pipeline.
+A canonical pipeline may be expressed as:
+
+1. acquire skeleton geometry
+2. compute stroke parameterization basis
+3. evaluate width and modulation profile
+4. resolve caps, joins, and local junction policies
+5. generate render-time stroke realization or expanded boundary geometry
+6. publish derived topology participation data where needed
+7. cache or invalidate expansion and display products
+
+This pipeline must allow multiple realization levels:
+
+### Display-only realization
+
+Fast visual stroke output for rendering and interaction previews.
+
+### Editable stroke realization
+
+Line output retaining live skeleton and width profile semantics.
+
+### Expanded boundary realization
+
+Explicit filled contour output suitable for boolean, fill, merge, and region workflows.
+
+These levels must not be conflated.
+
+---
+
+## 15.8 Parameterization doctrine
+
+Many stroke systems quietly become unstable because they do not define how a stroke is parameterized along its length.
+
+The Stroke Core must explicitly support parameterization strategies such as:
+
+### Native segment parameterization
+
+Direct use of underlying segment parameter t values.
+This is rarely sufficient by itself for user-facing width control.
+
+### Arc-length parameterization
+
+A preferred basis for width, taper, dash, and pressure mapping because it aligns better with user expectations.
+
+### Node-relative parameterization
+
+Useful for local edits anchored to specific points, joins, or feature markers.
+
+### Gesture-time parameterization
+
+Useful when retaining input-driven pressure or velocity history.
+
+A stroke may use several of these simultaneously, but the system must not lose track of which mapping drives which behavior.
+
+---
+
+## 15.9 Width profile doctrine
+
+Width is not a single number.
+It is a field over the stroke.
+
+The Stroke Core must support at least the following width profile modes:
+
+### Uniform width
+
+Single width value along the entire stroke.
+
+### Sampled width profile
+
+Discrete width samples distributed along parameterized stroke length.
+
+### Handle-based width profile
+
+Editable width handles placed at positions along the stroke.
+
+### Pressure-derived width profile
+
+Width produced from recorded or interpreted input pressure.
+
+### Procedural width profile
+
+Function-driven width patterns such as taper curves, pulse patterns, or stylized modulation.
+
+### Branch-aware width profile
+
+A special case for network-based strokes where width behavior near junctions must follow explicit rules.
+
+Width editing operations should include:
+
+* add width control point
+* move width control point
+* scale local width
+* smooth width transitions
+* normalize width profile
+* collapse local width variation
+* convert profile type
+
+---
+
+## 15.10 Pressure, tilt, and dynamic input response
+
+The Stroke Core must support dynamic input signals where appropriate, especially for expressive vector linework.
+
+Supported dynamic channels may include:
+
+* pressure
+* tilt
+* azimuth
+* velocity
+* acceleration
+* input tool class
+* stylus rotation where available
+
+The key doctrine is this:
+
+These channels do not automatically become geometry.
+They become geometry only through declared mappings.
+
+Examples include:
+
+* pressure → width
+* pressure → opacity preview only
+* tilt → nib orientation
+* velocity → taper or smoothing influence
+* stylus rotation → brush-profile rotation
+
+These mappings must be inspectable and, where practical, editable.
+Otherwise the line becomes mysterious even to the user who drew it.
+
+---
+
+## 15.11 Cap doctrine
+
+The Stroke Core must formally support cap types at open stroke endings.
+Initial canonical cap classes should include:
+
+* butt cap
+* round cap
+* square cap
+* procedural cap
+* brush-defined cap
+* tapered cap
+
+Cap resolution must consider:
+
+* local tangent direction
+* local width
+* brush-profile orientation where relevant
+* topology participation policy
+* export and flattening implications
+
+Caps are not a trivial style switch.
+They affect hit-testing, expansion, region formation, and end behavior in correction tools.
+
+---
+
+## 15.12 Join doctrine
+
+Joins at segment or edge junctions must be resolved explicitly.
+Canonical join classes should include:
+
+* miter join
+* round join
+* bevel join
+* procedural join
+* brush-defined join
+* network junction join
+
+Join resolution must consider:
+
+* incident tangent directions
+* local width on both sides
+* miter limit policy
+* cusp or corner intent
+* network branching context
+* whether the output is display-only or expanded geometry
+
+Junctions in expressive strokes are often where beautiful linework dies in a small fire. The engine must be smarter than that.
+
+---
+
+## 15.13 Taper doctrine
+
+Tapers are not merely “width goes to zero.”
+They require explicit treatment.
+
+The Stroke Core should support:
+
+* start taper
+* end taper
+* bilateral taper
+* local interior taper
+* gesture-driven taper
+* velocity-influenced taper
+* profile-preserving taper
+* brush-profile taper
+
+Tapers must define:
+
+* length domain
+* taper curve shape
+* minimum terminal width
+* cap interaction
+* reversibility when expanded
+
+---
+
+## 15.14 Dash and pattern doctrine
+
+Where supported, dash and pattern logic must be defined as stroke-space structures rather than post-render hacks.
+
+The Stroke Core should support:
+
+* periodic dash patterns
+* variable dash spacing
+* pattern-along-path logic
+* corner-aware pattern resolution
+* phase offset controls
+* expansion-ready pattern realization
+
+Dash and pattern logic should declare whether it is:
+
+* display-only
+* editable live stroke state
+* expandable into explicit geometry
+
+Otherwise export and topology behavior become chaotic.
+
+---
+
+## 15.15 Stroke editing operations
+
+The Stroke Core must define behavior contracts for direct line editing.
+Initial editing operations should include:
+
+### Width edit
+
+Change local or global width without altering skeleton geometry.
+
+### Profile smooth
+
+Smooth width transitions while preserving main shape intent.
+
+### Taper edit
+
+Adjust taper length or curve.
+
+### Cap edit
+
+Change ending class or local end behavior.
+
+### Join edit
+
+Change junction resolution policy.
+
+### Skeleton-preserving reshape
+
+Alter the visible line through stroke-space controls while keeping centerline topology stable.
+
+### Skeleton edit passthrough
+
+Propagate edits to the source path or network while keeping stroke state valid.
+
+### Convert live stroke to direct boundary
+
+Freeze current line into explicit expanded shape semantics.
+
+### Reconstruct stroke from boundary
+
+Attempt recovery of a stroke skeleton from expanded geometry, marked as inferential and partial.
+
+A mature engine should allow local stroke editing without constantly forcing the user back into raw anchor surgery.
+
+---
+
+## 15.16 Expressive vector linework doctrine
+
+One of the most important ambitions of this engine is to support expressive linework without giving up editability.
+
+The Stroke Core must therefore support line behavior associated with illustration workflows, including:
+
+* post-draw width refinement
+* local thickness push/pull
+* correction passes
+* line simplification under bounded style preservation
+* width-sensitive transformations
+* stylized curve cleanup
+* width-preserving reshaping
+* variable-width-aware scaling and transforms
+
+This is where many vector tools historically become cold and unpleasant.
+We are not doing that.
+
+---
+
+## 15.17 Stroke correction tools
+
+The engine should formalize correction operations rather than bury them as ad hoc brush tricks.
+Possible correction operations include:
+
+### Smooth line
+
+Reduce noise in skeleton or width profile while preserving major inflections.
+
+### Simplify line
+
+Reduce structural complexity under declared error bounds.
+
+### Correct width
+
+Push, pull, equalize, or normalize line thickness locally.
+
+### Redraw segment
+
+Replace part of a stroke skeleton while preserving adjoining continuity and profile context.
+
+### Reconnect line
+
+Repair broken line continuity with controlled tangent and width blending.
+
+### Split line
+
+Divide a stroke into independent stroke entities with preserved provenance.
+
+### Merge line
+
+Fuse compatible strokes under declared skeleton and profile policies.
+
+These tools are fundamental, not optional luxuries.
+
+---
+
+## 15.18 Vector eraser doctrine
+
+The engine must define vector erasing as a structured family of operations, not a single monolithic delete action.
+
+Canonical vector eraser behaviors should include:
+
+### Whole-stroke erase
+
+Remove an entire selected or contacted stroke entity.
+
+### Segment erase
+
+Remove a contacted interval and split the remaining stroke into child entities.
+
+### Intersection erase
+
+Erase to the nearest intersection or between intersections.
+
+### Width-only erase
+
+Reduce width locally without deleting skeleton continuity.
+
+### Boundary erase on expanded stroke
+
+Operate on expanded geometry rather than live stroke semantics.
+
+### Merge-aware erase
+
+When a stroke participates as expanded merge matter, erasing may alter region topology instead of simply removing a line entity.
+
+The user must know which erase model is active.
+A hidden erase law is a reliable way to create rage.
+
+---
+
+## 15.19 Stroke expansion doctrine
+
+Stroke expansion is one of the most important and most dangerous conversions in a drawing engine.
+
+Expansion converts a live stroke into explicit filled boundary geometry.
+This may be necessary for:
+
+* booleans
+* region fills
+* merge editing
+* outline exports
+* topology-aware shape operations
+* certain rendering paths
+
+But expansion is not trivial.
+It potentially discards:
+
+* centerline semantics
+* width profile editability
+* pressure provenance
+* dash logic as live state
+* brush-behavior semantics
+
+The Stroke Core must therefore classify expansion outcomes as:
+
+### Live derived expansion
+
+Expanded boundary remains derived from a live stroke.
+
+### Cached expansion
+
+Expanded boundary is cached for performance but not primary authored structure.
+
+### Baked reversible expansion
+
+Expansion becomes primary but retains enough provenance for meaningful recovery.
+
+### Baked lossy expansion
+
+Expansion discards important upstream semantics.
+This must be explicitly communicated.
+
+---
+
+## 15.20 Expansion geometry requirements
+
+When expanding a stroke, the engine must define:
+
+* local offset generation policy
+* cap realization policy
+* join realization policy
+* self-intersection handling
+* narrow-width collapse handling
+* profile sampling density
+* branch or junction behavior for network strokes
+* contour orientation rules for resulting boundaries
+* hole generation where applicable
+
+These requirements must be deterministic.
+Expansion that behaves like a dice roll is not acceptable.
+
+---
+
+## 15.21 Reversibility doctrine
+
+Not every expanded stroke can be perfectly reconstructed into a live stroke.
+The engine must state that plainly.
+
+Reconstruction quality depends on whether the engine preserved:
+
+* source skeleton
+* width profile
+* pressure history
+* cap/join/taper settings
+* local edit history
+* expansion policy version
+
+If these are preserved, recovery may be high quality.
+If not, reconstruction is inferential at best.
+
+The engine must never pretend a traced or inferred centerline is identical to the original authored stroke.
+That would be a small lie with big consequences.
+
+---
+
+## 15.22 Stroke participation in topology
+
+The Stroke Core must explicitly declare how strokes participate in topology.
+Possible participation policies include:
+
+### Visual-only stroke
+
+The stroke is not a boundary candidate and does not participate in region or merge logic.
+
+### Boundary-candidate stroke
+
+The stroke may participate in region closure or live paint inference without being expanded into explicit fill matter.
+
+### Expanded-topology stroke
+
+The stroke participates through its expanded boundary representation.
+
+### Merge-compatible line matter
+
+The expanded or directly painted line behaves as mergeable fill matter.
+
+### Isolated object stroke
+
+The stroke and any expansion-derived content remain self-contained under isolation semantics.
+
+This policy must be visible and editable.
+
+---
+
+## 15.23 Stroke behavior for network sources
+
+Strokes derived from vector networks require special handling.
+The Stroke Core must define:
+
+* edge-local width behavior
+* junction blending or termination policy
+* crossing behavior when crossings are not promoted to graph nodes
+* branch-specific taper logic
+* width continuity rules across nodes
+* local join policy overrides at promoted junctions
+
+This is not just path stroking with extra paperwork.
+Network linework has fundamentally different edge cases.
+
+---
+
+## 15.24 Hybrid stroke doctrine
+
+Some workflows demand that a stroke remain both structurally editable and visually rich beyond pure vector representation.
+
+The Stroke Core should therefore support hybrid stroke entities where:
+
+* a vector skeleton remains canonical
+* width or brush metadata remains editable
+* raster or textured deposition is linked as a render layer or editable sibling representation
+* export paths can choose vector, raster, or mixed realization
+
+This is especially important for future expressive and browser-native systems that do not want to choose between purity and beauty.
+
+---
+
+## 15.25 Stroke diagnostics
+
+The Stroke Core must expose diagnostics for both development and advanced editing workflows.
+
+Diagnostics should include:
+
+* invalid width profile warnings
+* inconsistent arc-length mapping warnings
+* unsupported join resolution warnings
+* expansion self-intersection reports
+* reconstruction-provenance gaps
+* stale expanded-boundary cache warnings
+* topology participation mismatch warnings
+* hybrid stroke desynchronization warnings
+
+A line system that cannot explain what went wrong is not mature.
+
+---
+
+## 15.26 Stroke Core API doctrine
+
+The Stroke Core API should be separated into the following layers:
+
+### Realization API
+
+For converting skeletons and profiles into renderable or expandable strokes.
+
+### Edit API
+
+For width, taper, cap, join, and correction operations.
+
+### Expansion API
+
+For generating explicit boundary geometry and provenance records.
+
+### Reconstruction API
+
+For recovering stroke semantics from preserved or inferential sources.
+
+### Topology Participation API
+
+For declaring and querying how strokes interact with regions, merge systems, and isolation.
+
+### Diagnostic API
+
+For warnings, validity checks, and debug visualization.
+
+The API must not disguise whether it is returning a view, a cache, or a committed conversion.
+
+---
+
+## 15.27 Contracts to downstream systems
+
+The Stroke Core must provide clean outputs to the rest of the engine.
+
+### To Brush Core
+
+Structured targets for vector-capturable line output and dynamic input mappings.
+
+### To Fill / Region Core
+
+Expanded boundaries and boundary-candidate information.
+
+### To Topology Core
+
+Declared participation policies and merge-compatible expansion products where relevant.
+
+### To Interaction Core
+
+Editable width handles, stroke overlays, correction previews, eraser targets, and conversion warnings.
+
+### To Editor / Scene Core
+
+Stroke identity, edit transactions, provenance records, and cache invalidation signals.
+
+### To Rendering Layer
+
+Display-ready stroke meshes, polylines, signed-distance or tessellation adapters, and debug overlays.
+
+---
+
+## 15.28 Testing doctrine for the Stroke Core
+
+The Stroke Core needs a punishing test discipline because linework is where users notice every tiny betrayal.
+
+Testing should include:
+
+### Uniform stroke tests
+
+Verify width, caps, joins, and hit behavior for basic cases.
+
+### Variable-width tests
+
+Verify width-profile continuity, local edits, and transforms.
+
+### Pressure replay tests
+
+Ensure dynamic-input capture yields stable and editable results.
+
+### Expansion tests
+
+Validate contour correctness, self-intersection handling, and provenance retention.
+
+### Reversibility tests
+
+Measure recovery quality when expansion is live-linked, reversible-baked, or lossy-baked.
+
+### Vector eraser tests
+
+Verify split policies, interval erasing, and topology participation behavior.
+
+### Network stroke tests
+
+Stress branch joins, node continuity, and non-promoted crossings.
+
+### Hybrid stroke tests
+
+Verify synchronization of vector and raster-linked representations.
+
+### Visual regression tests
+
+Compare rendered and expanded linework under stable conditions.
+
+### Performance tests
+
+Stress large numbers of variable-width strokes and repeated local edits.
+
+If a drawing engine mishandles lines, users will detect it instantly and with justified hostility.
+
+---
+
+## 15.29 Implementation sequencing for the Stroke Core
+
+Recommended build order:
+
+1. stroke ontology and data structures
+2. skeleton-to-stroke realization pipeline
+3. arc-length parameterization support
+4. width profile system
+5. cap and join resolution
+6. taper system
+7. stroke editing API
+8. expansion pipeline and provenance
+9. correction tools and vector eraser semantics
+10. topology participation policies
+11. hybrid stroke support
+12. diagnostics and performance caches
+
+This order gets the line alive before we teach it advanced tricks.
+
+---
+
+## 15.30 Completion criteria for the Stroke Core
+
+The Stroke Core should not be considered foundationally complete until it can reliably support:
+
+* live strokes over paths and networks
+* variable width and dynamic-input-driven linework
+* editable caps, joins, and tapers
+* expressive vector line correction
+* deterministic expansion with provenance
+* explicit topology participation behavior
+* vector erasing modes
+* partial reversibility where semantics are preserved
+* robust diagnostics and visual regression coverage
+
+At that point, the engine has a genuine line system rather than a decorative approximation of one.
+
+---
+
+# Part XVI — Fill / Region Core Full Specification
+
+## 16.1 Mission of the Fill / Region Core
+
+The Fill / Region Core governs bounded area logic.
+It defines how enclosed space is recognized, represented, filled, edited, and related to surrounding structure.
+
+This is a foundational subsystem, not a cosmetic one.
+A serious drawing engine cannot treat fill as a passive color property sprinkled on top of whatever boundaries happen to exist.
+It must treat regions as first-class authored and derived entities.
+
+Its mission is to govern:
+
+1. region ontology
+2. region extraction from contours, networks, strokes, and merge matter
+3. fill ownership and fill appearance linkage
+4. adjacency and containment
+5. hole semantics
+6. gap handling and closure heuristics
+7. live versus baked region behavior
+8. region editing and region-based tool foundations
+
+Without a real Fill / Region Core, the engine can draw boundaries but cannot reason cleanly about interior space.
+
+---
+
+## 16.2 Why fill must be separated from region
+
+The engine must distinguish clearly between:
+
+### Region
+
+A bounded topological area.
+
+### Fill Appearance
+
+The visual or material assignment applied to that area.
+
+### Fill Ownership
+
+The relationship by which a region acquires, inherits, or overrides fill state.
+
+These are related but not identical.
+
+Two regions may share the same fill appearance while remaining distinct regions.
+A region may exist with no visible fill.
+A fill appearance may be defined but not currently bound to any valid region.
+
+This distinction matters for:
+
+* live region extraction
+* shape builder behavior
+* paint bucket logic
+* adjacency-aware editing
+* gradient and material assignment
+* merge behavior
+* symbol and style systems
+* export and serialization
+
+A mature engine must not collapse region and fill into one vague “shape color” concept.
+
+---
+
+## 16.3 Primary responsibilities
+
+The Fill / Region Core is responsible for:
+
+* explicit region data structures
+* region extraction from valid source boundaries
+* live and cached region-set maintenance
+* fill appearance linkage and ownership resolution
+* hole interpretation
+* containment logic as applied to fillable areas
+* gap tolerance policies for region inference
+* region editing operations
+* region diagnostics
+* output contracts for region-aware tools and renderers
+
+It is not solely responsible for topology-mode law itself, but it depends heavily on Topology Core outputs.
+
+---
+
+## 16.4 Canonical fill and region ontology
+
+The Fill / Region Core should define at minimum the following conceptual structures:
+
+### RegionEntity
+
+A bounded area record eligible for fill ownership, selection, adjacency queries, and editing.
+
+Fields should minimally include:
+
+* id
+* boundary references
+* hole references
+* containment parent reference
+* adjacency references
+* source provenance
+* topology mode context
+* fill binding reference
+* validity state
+* live-or-baked classification
+
+### FillAppearance
+
+A material or visual assignment applicable to a region.
+
+Fields may include:
+
+* id
+* solid color state
+* gradient state
+* pattern state
+* texture/shader linkage
+* opacity and blend state
+* transform state for fill space
+* style or token linkage
+* inheritance metadata
+
+### FillBinding
+
+A record linking a RegionEntity to a FillAppearance under declared ownership rules.
+
+Fields may include:
+
+* region id
+* fill appearance id
+* ownership mode
+* inheritance source if any
+* override flags
+* provenance
+
+### RegionSet
+
+A coherent set of related regions derived from one or more source structures.
+
+Examples include:
+
+* path-derived live region set
+* network-derived live region set
+* merge-derived region set
+* baked region set
+
+### GapClosureRecord
+
+A record describing any inferred or tolerated closure used to create a region that is not strictly closed by exact geometry.
+
+This is critical for user trust and diagnostic visibility.
+
+---
+
+## 16.5 Accepted sources of regions
+
+Regions may be derived from multiple source classes.
+The engine should support at minimum:
+
+### Contour-derived regions
+
+Generated from closed paths, compound contours, or extracted contour systems.
+
+### Network-derived regions
+
+Generated from vector networks where graph structure and boundary interpretation yield enclosed areas.
+
+### Expanded-stroke-derived regions
+
+Generated from stroke expansion boundaries.
+
+### Merge-derived regions
+
+Generated dynamically from merge-compatible filled matter and resulting segmentation.
+
+### Painted fill masses
+
+Generated from direct ink/blob-style filled-shape painting.
+
+### Procedural regions
+
+Generated from effect stacks or parametric construction rules.
+
+### Imported or traced region geometry
+
+Generated from external content, import pipelines, or vectorization steps.
+
+The source class matters because closure certainty, editability, provenance, and topology participation differ.
+
+---
+
+## 16.6 Core invariants
+
+The Fill / Region Core must uphold the following invariants or explicitly diagnose invalidity.
+
+### Boundary completeness invariant
+
+A valid region must reference a coherent closed boundary description, either exact or declared as inferred with explicit closure metadata.
+
+### Hole-parent invariant
+
+Every hole must belong to a valid containing region.
+
+### Fill-binding invariant
+
+A region with bound fill state must resolve to a valid fill appearance or a declared missing-style fallback state.
+
+### Adjacency consistency invariant
+
+Shared boundaries and region-neighbor relationships must remain consistent with Topology Core outputs.
+
+### Containment consistency invariant
+
+Region containment relations must remain coherent under edits and recomputation.
+
+### Live-source synchronization invariant
+
+A live region set must be invalidated or updated whenever its source boundaries change.
+
+### Gap-closure provenance invariant
+
+If a region depends on inferred closure, that inference must be recorded and queryable.
+
+---
+
+## 16.7 Region extraction doctrine
+
+Region extraction is one of the central services of the Fill / Region Core.
+It must operate as a formal process rather than an ad hoc bucket-fill trick.
+
+A canonical region extraction pipeline may be expressed as:
+
+1. acquire candidate boundary structures
+2. normalize and classify boundary fragments
+3. identify closed cycles or infer closure under declared policies
+4. compute containment and hole relationships
+5. construct region entities
+6. bind or inherit fill appearance where applicable
+7. publish adjacency and region-set outputs
+
+This pipeline must support multiple modes:
+
+### Exact extraction
+
+Only strictly closed valid boundaries generate regions.
+
+### Assisted extraction
+
+Near-closed boundaries may generate regions using declared gap tolerance policies.
+
+### Live extraction
+
+Regions remain dynamically linked to source boundaries.
+
+### Baked extraction
+
+Regions become committed authored structure.
+
+The mode must be visible, because users need to know whether a region is mathematically closed or editor-assisted.
+
+---
+
+## 16.8 Boundary interpretation doctrine
+
+Region extraction depends on clear rules for interpreting boundaries.
+Boundary contributors may include:
+
+* path contours
+* contour fragments
+* network edges
+* expanded stroke boundaries
+* merge-generated boundary segments
+* boolean-generated edges
+* inferred closure bridges
+
+The Fill / Region Core must preserve enough boundary interpretation metadata to answer:
+
+* which boundaries are exact versus inferred?
+* which are editable source boundaries versus derived boundaries?
+* which side of a boundary belongs to which region?
+* whether the boundary is currently live-linked to upstream geometry?
+
+Without this, region editing becomes ambiguous and fragile.
+
+---
+
+## 16.9 Gap tolerance and closure heuristics
+
+Real users often expect fills to work even when boundaries are not perfectly closed.
+That expectation is reasonable.
+Blindly pretending the region is exact is not.
+
+The Fill / Region Core must therefore formalize gap handling.
+
+Gap handling policies should include:
+
+### Strict closure
+
+No inferred closure is permitted.
+
+### Screen-space tolerance closure
+
+Small visible gaps may be bridged based on current zoom or display tolerance.
+
+### Document-space tolerance closure
+
+Gaps smaller than a declared document-unit threshold may be bridged.
+
+### Directional closure heuristic
+
+A probable boundary continuation may be inferred based on local geometry direction.
+
+### User-guided closure
+
+The user explicitly indicates intended closure or selects a target region.
+
+Every inferred closure must record:
+
+* closure method
+* tolerance used
+* generated bridge geometry if any
+* recomputation conditions
+* whether the closure is display-only, live-derived, or baked
+
+Hidden gap filling is unacceptable in a professional system.
+
+---
+
+## 16.10 Hole semantics
+
+Holes must be modeled explicitly rather than inferred casually from visual appearance.
+
+The Fill / Region Core must support at minimum:
+
+* single-hole regions
+* multiple-hole regions
+* nested hole/island structures where policy permits
+* independent fill ownership for inner islands distinct from holes
+* hole invalidation diagnostics when containment changes
+
+A hole is not merely an interior contour.
+It is a negative contribution to a parent region’s fillable area.
+
+This affects:
+
+* rendering
+* hit-testing
+* paint operations
+* boolean behavior
+* export
+* topology-aware editing
+
+---
+
+## 16.11 Containment doctrine
+
+Region containment must define more than visual nesting.
+It must specify:
+
+* parent-child spatial relationships
+* whether a child is a hole, island, or independent contained region
+* fill inheritance behavior
+* selection precedence
+* editing scope
+* serialization semantics
+
+Containment should support at minimum:
+
+### Parent region
+
+A region that spatially contains others.
+
+### Hole child
+
+A negative subregion belonging to the parent.
+
+### Island child
+
+A positive independent region surrounded by parent material but not part of the parent fill.
+
+### Decorated interior region
+
+A region linked semantically to the parent but retaining separate fill identity.
+
+These distinctions are necessary for professional region workflows.
+
+---
+
+## 16.12 Fill ownership doctrine
+
+Fill must not be thought of as “whatever color happens to be inside.”
+The engine must define explicit ownership modes such as:
+
+### Direct fill ownership
+
+The region directly owns its FillAppearance.
+
+### Inherited fill ownership
+
+The region inherits fill state from a parent object, style, symbol, or region-set rule.
+
+### Shared style binding
+
+Multiple regions reference a shared style token or appearance object.
+
+### Override fill ownership
+
+The region overrides an inherited or shared fill locally.
+
+### Unfilled region
+
+The region exists structurally but intentionally has no visible fill.
+
+This doctrine is essential for style systems, symbols, and multi-region editing.
+
+---
+
+## 16.13 Fill appearance classes
+
+The Fill / Region Core should support multiple fill appearance classes, including:
+
+* solid fill
+* linear gradient
+* radial gradient
+* conic or angular gradient where supported
+* pattern fill
+* texture fill
+* shader or procedural fill
+* hybrid material fill
+
+Each fill class must declare:
+
+* coordinate space or transform basis
+* clipping behavior relative to the region
+* inheritance/override rules
+* export behavior
+* interaction affordances for editing
+
+The fill engine must remain region-aware regardless of appearance type.
+
+---
+
+## 16.14 Live region sets versus baked regions
+
+The engine must distinguish clearly between:
+
+### Live region set
+
+A dynamically derived set of regions that updates when source boundaries change.
+
+### Cached region set
+
+A derived region set stored for performance but not primary authored structure.
+
+### Baked region set
+
+A committed authored region structure whose boundaries and region identities are treated as durable state.
+
+This distinction matters because:
+
+* editing consequences differ
+* undo/redo semantics differ
+* symbol and style behavior differ
+* user expectations differ
+* performance strategies differ
+
+The UI must make this visible.
+
+---
+
+## 16.15 Region identity doctrine
+
+After recomputation, split, merge, or boundary edits, region identity may need to persist or be regenerated.
+The Fill / Region Core must define explicit region identity policies.
+
+Possible policies include:
+
+### Stable identity preservation
+
+A region retains its identity when edits are minor and correspondence can be established.
+
+### Identity remap
+
+A region is matched to a new derived region through correspondence heuristics or provenance.
+
+### Identity split
+
+One region becomes multiple child regions with lineage records.
+
+### Identity replacement
+
+A new region supersedes the previous region, which survives only in history.
+
+This matters for:
+
+* fill retention
+* animation continuity
+* selection persistence
+* symbol override stability
+* collaborative editing
+
+---
+
+## 16.16 Region editing operations
+
+The Fill / Region Core must define behavior contracts for region-oriented editing operations.
+At minimum, these should include:
+
+### Assign fill
+
+Bind a fill appearance to a target region.
+
+### Remove fill
+
+Detach fill appearance while preserving the region.
+
+### Replace fill
+
+Swap one fill appearance for another.
+
+### Merge regions
+
+Unify compatible neighboring regions under declared policy.
+
+### Split region
+
+Partition a region using added boundaries, cuts, or topology changes.
+
+### Promote inferred region
+
+Convert an assisted/inferred region into a fully committed region structure.
+
+### Freeze live region set
+
+Commit currently live derived regions into durable authored state.
+
+### Rebind fill inheritance
+
+Change ownership mode without altering region geometry.
+
+### Convert region to boundary path
+
+Extract contour structure from the region boundary.
+
+### Resolve region graph
+
+Recompute region adjacency and containment after edits.
+
+These operations form the backbone of shape-builder, paint-bucket, and region-paint workflows.
+
+---
+
+## 16.17 Shape-builder foundation
+
+A professional shape-builder system depends on the Fill / Region Core.
+The engine must therefore treat shape-builder operations as region-graph editing operations, not merely as booleans over whole objects.
+
+Shape-builder foundations require:
+
+* region hit-testing
+* region adjacency awareness
+* selective region union or subtraction
+* fill retention or remapping policy
+* boundary clean-up rules
+* identity preservation where possible
+
+This is important because users often want to edit **parts of decomposed space**, not entire source objects.
+
+---
+
+## 16.18 Region-paint and bucket tool foundation
+
+A paint-bucket or region-paint system must be built on explicit region logic.
+It should never rely on fragile scanline tricks detached from the engine’s canonical region model.
+
+The region-paint foundation must support:
+
+* exact region targeting
+* assisted targeting with gap closure policies
+* live preview of fill target
+* region disambiguation when multiple candidate regions exist
+* propagation rules for shared style or inherited fill systems
+* clear diagnostics when no valid region exists
+
+If the tool fills a region because the engine secretly fabricated a closure, the user must be able to see that fact.
+
+---
+
+## 16.19 Region participation in topology
+
+The Fill / Region Core must coordinate tightly with the Topology Core.
+Regions may participate under different policies such as:
+
+### Passive region participation
+
+The region reflects topology state but does not itself drive topological changes.
+
+### Merge-responsive region participation
+
+Region matter participates in merge add/subtract/recompose workflows.
+
+### Isolation-bound region participation
+
+The region remains structurally internal to an isolated object unless explicitly exposed.
+
+### Boundary-candidate participation
+
+The region may contribute boundaries back into other live region extraction workflows.
+
+These policies must not be hidden.
+
+---
+
+## 16.20 Region participation in rendering
+
+The Fill / Region Core must provide rendering-relevant outputs while remaining decoupled from final rasterization implementation.
+It should provide:
+
+* resolved fillable boundaries
+* hole-aware contour ordering
+* fill transform state
+* appearance references
+* clipping masks or region clips where applicable
+* tessellation-ready area data or adapters
+
+This output must remain stable whether the fill is simple solid color or a more advanced procedural material.
+
+---
+
+## 16.21 Region diagnostics
+
+The Fill / Region Core must expose diagnostics for development and advanced user workflows.
+Diagnostics should include:
+
+* open-boundary warnings
+* inferred-closure warnings
+* ambiguous-region-target warnings
+* invalid hole-parent warnings
+* orphaned fill-binding warnings
+* stale live-region-cache warnings
+* identity remap failure warnings
+* overlapping contradictory region records
+* unsupported fill-appearance export warnings
+
+Region systems fail in subtle ways.
+A diagnostic layer is mandatory.
+
+---
+
+## 16.22 Fill / Region Core API doctrine
+
+The Fill / Region Core API should be separated into the following layers:
+
+### Extraction API
+
+For building region entities from contours, networks, merge matter, or expanded strokes.
+
+### Fill Binding API
+
+For assigning, inheriting, overriding, and clearing fill appearances.
+
+### Region Query API
+
+For adjacency, containment, hole, and identity inspection.
+
+### Region Edit API
+
+For split, merge, freeze, promote, and boundary extraction operations.
+
+### Gap Closure API
+
+For declaring, querying, and visualizing inferred closure logic.
+
+### Diagnostic API
+
+For validity checks, ambiguity reports, and debug overlays.
+
+The API must clearly distinguish view-level derived regions from durable authored region structure.
+
+---
+
+## 16.23 Contracts to downstream systems
+
+The Fill / Region Core must provide clean outputs to the rest of the engine.
+
+### To Topology Core
+
+Stable region entities, hole relationships, and boundary ownership interpretation.
+
+### To Interaction Core
+
+Selectable regions, candidate fill targets, shape-builder cells, and region-paint previews.
+
+### To Editor / Scene Core
+
+Region identities, fill bindings, transaction diffs, and live-versus-baked state.
+
+### To Rendering Layer
+
+Hole-aware contour data, fill appearance references, transform bases, and tessellation adapters.
+
+### To Style / Symbol Systems
+
+Shared fill bindings, overrides, inheritance records, and region identity continuity.
+
+### To Export Systems
+
+Explicit fill geometry, fill appearance metadata, and warnings when fill behavior depends on live inference or unsupported procedural rules.
+
+---
+
+## 16.24 Testing doctrine for the Fill / Region Core
+
+The Fill / Region Core requires a serious test regime because region bugs often hide behind apparently correct visuals.
+
+Testing should include:
+
+### Exact closure tests
+
+Verify clean region extraction from canonical closed contours.
+
+### Gap-tolerance tests
+
+Verify assisted closure behavior under multiple tolerance policies.
+
+### Hole and containment tests
+
+Stress parent-hole-island relationships and updates after edits.
+
+### Live-region synchronization tests
+
+Ensure source-boundary changes invalidate or update derived regions correctly.
+
+### Fill-binding tests
+
+Verify style inheritance, overrides, and shared fill updates.
+
+### Shape-builder tests
+
+Verify selective region merges, splits, and fill remapping.
+
+### Region-identity tests
+
+Verify stable or lineage-aware region identity under recomputation.
+
+### Diagnostic tests
+
+Ensure inferred closure and ambiguous targeting warnings appear correctly.
+
+### Visual regression tests
+
+Validate filled output, hole rendering, and gradient transforms across representative cases.
+
+### Performance tests
+
+Stress large region graphs, repeated recomputation, and dense network-derived fills.
+
+The region engine must survive both mathematical edge cases and ordinary user messiness.
+
+---
+
+## 16.25 Implementation sequencing for the Fill / Region Core
+
+Recommended build order:
+
+1. region ontology and data structures
+2. exact contour-derived region extraction
+3. hole and containment handling
+4. fill appearance and fill-binding system
+5. live region-set maintenance
+6. gap-tolerance and inferred-closure framework
+7. region editing operations
+8. shape-builder and region-paint foundations
+9. identity continuity policies
+10. diagnostics and performance caches
+
+This order builds trustworthy interior-space logic before advanced interaction layers depend on it.
+
+---
+
+## 16.26 Completion criteria for the Fill / Region Core
+
+The Fill / Region Core should not be considered foundationally complete until it can reliably support:
+
+* exact and assisted region extraction
+* explicit hole and containment logic
+* stable fill ownership and fill-binding behavior
+* live and baked region-set workflows
+* region identity continuity or lineage-aware replacement
+* region-based editing operations
+* shape-builder and paint-bucket foundations
+* robust diagnostics for inferred and invalid regions
+* performance suitable for complex multi-region documents
+
+At that point, the engine has a true area model rather than a superficial paint feature.
+
+---
+
+# Closing statement
+
+The correct path forward is not to build “a better vector editor.”
+
+The correct path forward is to build the first genuinely unified **dynamic drawing engine**: one that treats precision construction, expressive drawing, topology interaction, region logic, and modern editor architecture as members of the same coherent system.
+
+That is the doctrine of this book.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# The Ultimate Drawing Engine
+
+## Volume II — Brush Core
+
+### Authoring Draft v1
+
+---
+
+# Preface
+
+This volume extends the broader *Ultimate Drawing Engine* doctrine by defining the **Brush Core** as a first-class subsystem.
+
+The Brush Core is not a decorative accessory attached to vector tools.
+It is the input-to-mark engine that determines whether drawing feels inert, unstable, expressive, precise, controllable, replayable, and structurally meaningful.
+
+A serious drawing system must not treat brushing as a single algorithm.
+It must support multiple capture, filtering, modulation, deposition, and output models while preserving provenance and interoperability with the rest of the engine.
+
+This volume defines:
+
+1. the mission of the Brush Core
+2. the ontology of brush entities and brush state
+3. input capture and filtering doctrine
+4. dynamic signal mapping doctrine
+5. deposition and realization models
+6. vector, raster, and hybrid brush output systems
+7. replay, provenance, and editability rules
+8. integration contracts with Stroke, Region, Topology, and Scene systems
+9. implementation sequencing and test doctrine
+
+This is not a notes page.
+This is the canonical brush subsystem specification.
+
+---
+
+# Part I — Brush Core Full Specification
+
+## 1.1 Mission of the Brush Core
+
+The Brush Core governs how human motion becomes authored mark output.
+
+It sits between raw input and visible drawing result, and therefore between intention and artifact.
+
+Its mission is to govern:
+
+1. input sampling
+2. input filtering and stabilization
+3. dynamic signal interpretation
+4. mark deposition and stroke realization
+5. vector, raster, and hybrid capture modes
+6. replay and provenance
+7. brush preset architecture
+8. interoperability with Stroke, Fill/Region, and Topology systems
+
+The Brush Core is responsible for whether drawing feels precise, fluid, natural, delayed, rigid, noisy, elegant, or alive.
+
+Without a serious Brush Core, the editor may be mathematically sound while feeling physically wrong.
+
+---
+
+## 1.2 Why the Brush Core must be independent
+
+The engine must not collapse brush behavior into either:
+
+* a thin wrapper over path creation
+* a raster-only paint toy
+* a visual style applied after line generation
+
+A brush system has its own internal logic.
+
+It must reason about:
+
+* raw pointer trajectories
+* time
+* velocity
+* acceleration
+* pressure
+* tilt
+* orientation
+* smoothing latency
+* deposition spacing
+* texture response
+* capture mode
+* output representation
+
+These concerns are not owned by the Geometry Core or Stroke Core, though both depend on them.
+
+The Brush Core must therefore remain conceptually independent while interoperating tightly with the rest of the engine.
+
+---
+
+## 1.3 Primary responsibilities
+
+The Brush Core is responsible for:
+
+* input sample ingestion
+* input stream normalization
+* smoothing and stabilization
+* lag and drag models
+* dynamic signal extraction
+* dynamic signal mapping
+* mark deposition logic
+* vector stroke capture logic
+* raster mark deposition logic
+* hybrid output orchestration
+* brush preset evaluation
+* brush replay and provenance recording
+* brush diagnostics and performance behavior
+
+It is not the sole owner of final vector stroke semantics or final raster compositing policy, but it is responsible for generating coherent brush-driven output for those downstream systems.
+
+---
+
+## 1.4 Canonical brush ontology
+
+The Brush Core should define at minimum the following conceptual structures:
+
+### BrushPreset
+
+A durable, user-facing or system-facing configuration describing a brush’s behavior.
+
+Fields should minimally include:
+
+* id
+* preset name
+* brush family
+* capture mode
+* smoothing profile
+* signal mapping graph
+* deposition model
+* output realization policy
+* texture/material references
+* spacing policy
+* jitter/noise policy
+* taper policy
+* blend/composite hints
+* provenance/version metadata
+
+### BrushSession
+
+A single authored use of a brush over a continuous or grouped interaction.
+
+Fields should include:
+
+* id
+* brush preset reference
+* input source reference
+* input sample stream reference
+* filtered trajectory reference
+* dynamic signal stream reference
+* output references
+* replay metadata
+* transaction references
+
+### InputSample
+
+A time-stamped input event or normalized sample.
+
+Fields may include:
+
+* timestamp
+* position
+* pressure
+* tilt
+* azimuth
+* twist/rotation where available
+* device id
+* pointer type
+* button or tool state
+* sampling metadata
+
+### FilteredTrajectory
+
+The processed motion stream after smoothing, stabilization, lag, or reconstruction.
+
+### DynamicSignalStream
+
+A derived signal bundle over time or trajectory length, including velocity, acceleration, curvature, smoothed pressure, normalized tilt, and other derived channels.
+
+### DepositionPlan
+
+A structured plan for where and how mark units are emitted.
+
+### BrushOutputRecord
+
+A record linking the BrushSession to one or more resulting outputs such as vector stroke, raster mark layer, hybrid mark bundle, or region paint operation.
+
+### ReplayRecord
+
+A record sufficient to reconstruct, simulate, or partially replay the authored brush action under declared fidelity constraints.
+
+---
+
+## 1.5 Brush families
+
+The Brush Core should support multiple brush families rather than pretending that all brushes are slight variations of one master formula.
+
+Initial canonical families should include:
+
+### Vector Line Brush
+
+Produces editable vector stroke output with skeleton and width semantics.
+
+### Raster Paint Brush
+
+Produces raster mark deposition on a raster surface or paint layer.
+
+### Hybrid Brush
+
+Produces linked vector and raster outputs.
+
+### Blob / Ink Brush
+
+Produces filled-shape or merge-compatible area output rather than a purely stroked line.
+
+### Pattern Brush
+
+Places repeated motifs or pattern elements along a trajectory.
+
+### Calligraphic Brush
+
+Uses nib orientation, tilt, and directional geometry to produce anisotropic marks.
+
+### Texture Brush
+
+Deposits textured dabs or stamp fields.
+
+### Procedural Brush
+
+Uses rule-based synthesis beyond fixed dab stamping.
+
+### Region Paint Brush
+
+Targets region fills or boundary-aware area deposition instead of free-space stroke deposition.
+
+Each family should inherit common brush semantics while retaining family-specific rules.
+
+---
+
+## 1.6 Capture modes
+
+A brush must declare how it captures authored output.
+The engine should support at minimum:
+
+### Vector Capture
+
+The brush session produces vector stroke or path-linked output.
+
+### Raster Capture
+
+The brush session produces raster mark output.
+
+### Hybrid Capture
+
+The brush session produces linked vector and raster outputs.
+
+### Region Capture
+
+The brush session modifies region fill or filled matter directly.
+
+### Topology-Aware Merge Capture
+
+The brush session produces merge-compatible matter that participates in topological recomposition.
+
+Capture mode must be explicit because it changes editability, performance, provenance, export, and user expectations.
+
+---
+
+## 1.7 Core invariants
+
+The Brush Core must uphold the following invariants or explicitly report invalid state.
+
+### Session coherence invariant
+
+A BrushSession must reference a valid preset, coherent input stream, and declared output policy.
+
+### Time-order invariant
+
+Input samples within a session must maintain monotonic or explicitly segmented time ordering.
+
+### Mapping validity invariant
+
+Dynamic mappings must reference valid channels and legal output targets.
+
+### Deposition coherence invariant
+
+The deposition plan must remain consistent with the capture mode and brush family.
+
+### Replay provenance invariant
+
+If replayability is claimed, the system must preserve enough data to reproduce the brush action to the declared fidelity.
+
+### Output linkage invariant
+
+Hybrid or linked outputs must remain synchronized or explicitly flagged as desynchronized.
+
+---
+
+## 1.8 Input sampling doctrine
+
+The Brush Core must treat input as a real signal stream, not as a crude list of points.
+
+Input handling should support:
+
+* high-frequency sample ingestion where available
+* sample timestamp preservation
+* interpolation when device sampling is sparse
+* sample coalescing where appropriate
+* pressure and tilt capture
+* device/tool identity capture
+* segmentation of continuous versus interrupted strokes
+
+The engine must distinguish between:
+
+### Raw input samples
+
+Direct device-originating events.
+
+### Normalized samples
+
+Device-agnostic samples transformed into canonical units and channel ranges.
+
+### Filtered samples
+
+Samples after smoothing, lag, drag, or noise conditioning.
+
+This separation is crucial for replay, diagnostics, and alternative filter evaluation.
+
+---
+
+## 1.9 Input normalization doctrine
+
+Different devices report signals differently.
+The Brush Core must normalize at minimum:
+
+* position coordinates into the engine’s working or view-space interpretation
+* pressure into a declared normalized range
+* tilt and azimuth into canonical angular units
+* timestamp precision into a stable timing basis
+* device sampling anomalies into coherent sample series where possible
+
+Normalization must preserve access to raw values where practical.
+The system must not silently destroy useful signal detail during normalization.
+
+---
+
+## 1.10 Smoothing and stabilization doctrine
+
+The Brush Core must support multiple filtering paradigms because different creative intents require different temporal behavior.
+
+Canonical filter classes should include:
+
+### No smoothing
+
+Faithful raw-input drawing.
+
+### Light smoothing
+
+Minor noise reduction with low latency.
+
+### Stabilizer
+
+Intentional lagged smoothing that trails the pointer and yields cleaner curves.
+
+### Weighted moving filter
+
+Filters position based on recent sample history.
+
+### Velocity-aware smoothing
+
+Adjusts smoothing strength based on motion speed.
+
+### Drag model
+
+Applies a physically inspired trailing behavior.
+
+### Prediction-assisted smoothing
+
+Uses short-range motion prediction to reduce visible lag or jitter.
+
+Each filtering mode must declare:
+
+* latency behavior
+* preview behavior
+* interaction with dynamic signals
+* replay determinism
+* suitability for vector versus raster output
+
+A brush engine that hides these differences behind one “smoothing” slider is not sophisticated enough.
+
+---
+
+## 1.11 Lag and drag models
+
+Lag and drag deserve explicit treatment rather than being buried as subcases of smoothing.
+
+### Lag
+
+The visible or committed mark trails the current pointer position intentionally.
+This improves control for many users.
+
+### Drag
+
+The mark behaves as if pulled through a medium, producing physical inertia-like response.
+
+The Brush Core should allow:
+
+* constant lag distance
+* velocity-dependent lag
+* adaptive lag reduction at stroke endings
+* drag spring models
+* damping models
+* drag modes that affect only preview versus committed output
+
+These behaviors must be parameterized and replayable.
+
+---
+
+## 1.12 Dynamic signal extraction
+
+The Brush Core must derive useful dynamic channels from the input stream.
+These may include:
+
+* velocity
+* acceleration
+* local turning angle
+* curvature estimate
+* pressure derivative
+* sample density
+* dwell time
+* directional stability
+* orientation change rate
+
+These derived channels should become part of the DynamicSignalStream and remain queryable.
+
+Derived signals are essential because many expressive brush behaviors depend not on raw input alone, but on how the input evolves.
+
+---
+
+## 1.13 Dynamic signal mapping doctrine
+
+Dynamic input signals do nothing by themselves.
+They matter only through mappings.
+
+The Brush Core should formalize mappings as an inspectable graph or pipeline.
+Possible mappings include:
+
+* pressure → width
+* pressure → opacity
+* pressure → deposition density
+* tilt → nib orientation
+* tilt → brush aspect ratio
+* velocity → smoothing strength
+* velocity → taper amount
+* curvature → dab spacing modulation
+* acceleration → texture intensity
+* sample density → anti-gap compensation
+
+Mappings should support:
+
+* clamping
+* scaling
+* bias
+* remap curves
+* thresholds
+* hysteresis
+* smoothing per channel
+* channel blending
+
+A professional system must let the engine and the user reason about these mappings explicitly.
+
+---
+
+## 1.14 Brush parameter graph doctrine
+
+A brush preset should not be treated as a flat bag of sliders.
+It should be treated as a structured parameter graph.
+
+A canonical brush parameter graph may include the following groups:
+
+### Input group
+
+Sampling, normalization, device interpretation.
+
+### Filter group
+
+Smoothing, stabilization, lag, drag.
+
+### Signal group
+
+Derived-channel generation and transformation.
+
+### Shape group
+
+Nib shape, dab shape, profile shape, vector width behavior.
+
+### Spacing group
+
+Dab interval, adaptive spacing, overlap policy.
+
+### Texture group
+
+Stamp texture, noise fields, modulation masks.
+
+### Dynamics group
+
+Channel mappings and envelopes.
+
+### Output group
+
+Vector/raster/hybrid capture and realization rules.
+
+### Topology group
+
+Merge participation, region targeting, or isolated behavior policies.
+
+This structure improves editability, diagnostics, serialization, and future tool development.
+
+---
+
+## 1.15 Deposition doctrine
+
+Brush output must be described through formal deposition models.
+The Brush Core should support at minimum:
+
+### Continuous vector realization
+
+A filtered trajectory becomes a vector skeleton plus dynamic stroke semantics.
+
+### Discrete dab deposition
+
+Marks are placed at controlled intervals along the trajectory.
+
+### Continuous raster accumulation
+
+Paint is deposited over time across a raster surface.
+
+### Blob deposition
+
+Filled-shape matter is accumulated into area geometry.
+
+### Pattern emission
+
+Repeated geometry or textured units are emitted along the path.
+
+### Hybrid linked deposition
+
+A vector skeleton is retained while raster or textured deposition is generated alongside it.
+
+Deposition logic must declare:
+
+* spacing policy
+* overlap policy
+* blending/compositing policy
+* jitter/noise policy
+* latency and preview behavior
+* editability expectations
+
+---
+
+## 1.16 Dab and spacing doctrine
+
+Many brushes depend on discrete dab emission.
+This must be treated rigorously.
+
+The Brush Core should support:
+
+* fixed spacing
+* width-relative spacing
+* velocity-adaptive spacing
+* pressure-adaptive spacing
+* curvature-adaptive spacing
+* overlap compensation
+* anti-gap correction
+* random or controlled jitter spacing
+
+Dab systems must define whether spacing is computed over:
+
+* raw trajectory length
+* filtered trajectory length
+* vector skeleton length
+* rasterized arc proxy
+
+This matters because different choices produce visibly different marks.
+
+---
+
+## 1.17 Nib and mark-shape doctrine
+
+The brush must be able to define the shape of deposited marks or implied stroke cross-sections.
+Supported concepts should include:
+
+* circular nib
+* elliptical nib
+* calligraphic chisel nib
+* texture-defined nib
+* procedural nib
+* anisotropic profile linked to tilt or direction
+
+Nib logic should integrate with:
+
+* tilt/azimuth
+* stroke direction
+* local curvature
+* brush rotation
+* pressure scaling
+
+This is essential for expressive and calligraphic workflows.
+
+---
+
+## 1.18 Vector brush doctrine
+
+Vector brushes must produce editable output while preserving brush character.
+The Brush Core must support vector brush behavior including:
+
+* gesture capture to vector skeleton
+* pressure-driven width semantics
+* brush-profile metadata retention
+* path fitting under bounded error
+* stroke-correction compatibility
+* replayable dynamic input linkage
+* optional live linkage to brush preset parameters
+
+Vector brushes must not be reduced to bland Bézier traces with a width field and a prayer.
+They must preserve expressive intent where possible.
+
+---
+
+## 1.19 Raster brush doctrine
+
+Raster brushes must support actual paint deposition rather than merely stamped opacity sprites.
+Depending on the engine scope, raster behavior may include:
+
+* opacity accumulation
+* wet/dry accumulation models
+* blend mode integration
+* texture buildup
+* smudge or pickup behavior
+* mask-aware painting
+* anti-aliased edge control
+* performance-aware tile updates
+
+This volume does not require a full physical paint simulation, but it does require that raster brushes be treated as a real subsystem, not an afterthought.
+
+---
+
+## 1.20 Hybrid brush doctrine
+
+Hybrid brushes are essential for a modern engine that wants both structure and richness.
+
+A hybrid brush should be able to:
+
+* preserve a vector skeleton or stroke entity
+* preserve dynamic brush provenance
+* generate raster or textured surface detail
+* remain partially editable in both domains
+* export in vector, raster, or mixed form depending on context
+
+Hybrid brushes must declare synchronization rules between their linked outputs.
+If the vector line is edited later, the engine must know whether the raster detail reflows, becomes stale, or detaches.
+
+---
+
+## 1.21 Blob and ink brush doctrine
+
+Some brushes do not produce a line in the ordinary sense.
+They produce **filled matter**.
+
+The Brush Core must support blob or ink brushes that:
+
+* create area geometry directly
+* merge with compatible fill matter when policy allows
+* participate in region and topology systems
+* preserve source brush provenance where practical
+* support smoothing and reshaping of filled contours after capture
+
+This is critical for workflows that resemble direct shape painting rather than path stroking.
+
+---
+
+## 1.22 Region-aware brush doctrine
+
+A next-generation drawing engine should support brushes that understand regions rather than only free space.
+
+Region-aware brushes may:
+
+* fill target regions
+* paint within region boundaries
+* grow or shrink region matter
+* apply textured fill to selected regions
+* respond to adjacency or containment
+* respect hole boundaries automatically
+
+These brushes require clean integration with the Fill / Region Core and must never rely on disconnected pixel-only guesswork if the region model is available.
+
+---
+
+## 1.23 Topology-aware brush doctrine
+
+The Brush Core must support topology-aware brush behavior for merge and live-shape workflows.
+
+Possible behaviors include:
+
+* adding merge-compatible matter
+* erasing merge matter
+* cutting region boundaries
+* painting boundary-candidate strokes
+* converting direct paint into live topology updates
+
+The brush must declare whether it is:
+
+* topology-neutral
+* topology-observing
+* topology-participating
+* topology-driving
+
+This distinction prevents interaction ambiguity.
+
+---
+
+## 1.24 Replay and provenance doctrine
+
+Brush actions are often among the richest authored events in the entire document.
+The engine should preserve them intelligently.
+
+A ReplayRecord should capture enough information to support declared replay fidelity.
+Depending on policy, this may include:
+
+* raw input samples
+* normalized samples
+* filtered trajectory
+* dynamic signal stream
+* preset version
+* parameter graph state
+* output references
+* device interpretation metadata
+
+Replay fidelity classes should include:
+
+### Full replay
+
+The brush action can be recomputed from preserved inputs and settings.
+
+### Approximate replay
+
+The brush action can be reconstructed within declared error bounds.
+
+### Visual replay only
+
+The engine can show an approximate authored motion, but not regenerate fully editable output.
+
+### No replay
+
+Only resulting output remains.
+
+The engine must not claim replayability it cannot actually deliver.
+
+---
+
+## 1.25 Brush editability doctrine
+
+After a brush mark is created, the engine should support varying degrees of editability depending on capture mode and preserved provenance.
+
+Possible editable dimensions include:
+
+* trajectory refinement
+* width/profile remapping
+* smoothing re-evaluation
+* brush preset substitution
+* channel remapping adjustments
+* local dab redistribution
+* texture intensity changes
+* region/merge participation reassignment
+
+Each session or output must declare which of these remain live.
+Otherwise “editable brush” becomes meaningless marketing language.
+
+---
+
+## 1.26 Brush preset lifecycle
+
+Brush presets should support:
+
+* creation
+* duplication
+* inheritance
+* versioning
+* migration
+* parameter locking
+* shared style or team library distribution
+
+Preset versioning is especially important.
+If a brush preset changes over time, the engine must know whether existing sessions remain pinned to the old version, migrate automatically, or request user intervention.
+
+This matters for consistency, collaboration, and replay integrity.
+
+---
+
+## 1.27 Performance doctrine
+
+Brush systems are performance-sensitive because they operate under continuous user input.
+The Brush Core must therefore define strategies for:
+
+* low-latency preview rendering
+* background-quality refinement where appropriate
+* incremental deposition
+* tile-aware raster updates
+* adaptive sampling reduction where safe
+* cached brush texture resources
+* efficient signal processing
+* bounded-memory replay retention
+
+Performance optimization must not silently change authoring semantics.
+If fidelity is reduced during preview and restored at commit, that distinction must be intentional and controlled.
+
+---
+
+## 1.28 Brush diagnostics
+
+The Brush Core must provide diagnostics for development and advanced workflows.
+Diagnostics should include:
+
+* input sample loss warnings
+* invalid mapping graph warnings
+* replay fidelity downgrade warnings
+* stale hybrid synchronization warnings
+* excessive latency warnings
+* unsupported device channel warnings
+* preset migration warnings
+* deposition gap warnings
+* topology participation mismatch warnings
+
+A sophisticated brush engine must be able to explain why a mark behaved the way it did.
+
+---
+
+## 1.29 Brush Core API doctrine
+
+The Brush Core API should be separated into the following layers:
+
+### Input API
+
+For sample ingestion, normalization, and device abstraction.
+
+### Filter API
+
+For smoothing, stabilizers, lag, drag, and trajectory processing.
+
+### Signal API
+
+For derived dynamic channels and mapping evaluation.
+
+### Deposition API
+
+For dab planning, raster accumulation, vector capture, blob creation, and hybrid output orchestration.
+
+### Replay API
+
+For storing, querying, and re-running brush sessions under declared policies.
+
+### Preset API
+
+For preset authoring, serialization, versioning, and inheritance.
+
+### Diagnostic API
+
+For warnings, profiling hooks, and debug overlays.
+
+The API must clearly distinguish preview computations, committed outputs, live-linked sessions, and baked results.
+
+---
+
+## 1.30 Contracts to downstream systems
+
+The Brush Core must provide clean outputs to the rest of the engine.
+
+### To Stroke Core
+
+Vector skeleton candidates, dynamic width data, brush-style profile metadata, and replay-linked sessions.
+
+### To Fill / Region Core
+
+Blob/ink area output, region-aware paint operations, and fill or merge matter additions.
+
+### To Topology Core
+
+Declared topology participation behavior and merge-driving brush outputs.
+
+### To Geometry Core
+
+Filtered trajectory curves and optional fitted path candidates.
+
+### To Interaction Core
+
+Live previews, latency behavior, editable handles where applicable, and brush diagnostic surfaces.
+
+### To Editor / Scene Core
+
+Brush session identities, transaction boundaries, preset references, replay records, and output linkage state.
+
+### To Rendering Layer
+
+Preview marks, raster tiles, vector stroke meshes, texture references, and hybrid visualization state.
+
+---
+
+## 1.31 Testing doctrine for the Brush Core
+
+The Brush Core demands a multi-layered test discipline.
+Testing should include:
+
+### Input normalization tests
+
+Verify stable cross-device normalization behavior.
+
+### Filter determinism tests
+
+Verify smoothing, lag, and drag behavior under fixed inputs.
+
+### Mapping tests
+
+Verify channel mappings, clamping, thresholds, and remap curves.
+
+### Vector capture tests
+
+Verify skeleton generation, pressure linkage, and editability retention.
+
+### Raster deposition tests
+
+Verify spacing, accumulation, texture consistency, and tile updates.
+
+### Hybrid synchronization tests
+
+Verify linked vector/raster outputs stay coherent or correctly report divergence.
+
+### Replay tests
+
+Verify full and approximate replay fidelity claims.
+
+### Region/topology participation tests
+
+Verify blob and merge-aware brushes alter the correct structures.
+
+### Latency and performance tests
+
+Verify acceptable interaction response under realistic drawing loads.
+
+### Visual regression tests
+
+Verify brush output consistency across representative presets and sample streams.
+
+Brush bugs are immediately perceptible and professionally damaging.
+They require aggressive testing.
+
+---
+
+## 1.32 Implementation sequencing for the Brush Core
+
+Recommended build order:
+
+1. input sample model and normalization layer
+2. filter/stabilizer framework
+3. dynamic signal extraction layer
+4. mapping graph system
+5. vector capture pipeline
+6. raster deposition pipeline
+7. blob/ink and region-aware capture modes
+8. hybrid output synchronization system
+9. replay and provenance records
+10. preset versioning and lifecycle support
+11. diagnostics and performance optimization
+
+This order builds a reliable mark engine before piling on advanced behavior.
+
+---
+
+## 1.33 Completion criteria for the Brush Core
+
+The Brush Core should not be considered foundationally complete until it can reliably support:
+
+* normalized multi-device input
+* multiple smoothing/stabilization models
+* explicit dynamic signal mappings
+* vector, raster, blob, and hybrid brush families
+* replayable brush sessions with declared fidelity
+* preset versioning and parameter graph serialization
+* topology-aware and region-aware brush output where appropriate
+* robust diagnostics and real-time performance under practical loads
+
+At that point, the engine has a true mark-making subsystem rather than a collection of drawing gimmicks.
+
+---
+
+# Part II — Immediate Next Writing Targets
+
+The next sections that should follow this volume are:
+
+1. **Interaction Core full specification**
+2. **tool grammar canon for Pen / Curvature / Pencil / Brush / Ink**
+3. **Editor / Scene Core full specification**
+4. **diagnostics and testing doctrine volume**
+5. **implementation architecture and browser runtime strategy**
+
+That sequence keeps user interaction behavior grounded in the now-defined geometry, topology, stroke, region, and brush subsystems.
+
+---
+
+# Closing statement
+
+A serious drawing engine is not defined only by its geometry.
+It is defined by the fidelity with which human motion is captured, interpreted, shaped, and preserved.
+
+That is the role of the Brush Core.
+
+
+
+
+
+# The Ultimate Drawing Engine
+
+## Volume IV — Editor and Scene Core
+
+### Authoring Draft v1
+
+---
+
+# Preface
+
+This volume extends the broader *Ultimate Drawing Engine* doctrine by defining the **Editor / Scene Core**.
+
+The internal engine now has canonical doctrine for geometry, topology, stroke, fill/region, brush behavior, and interaction grammar.
+What remains is the application-scale substrate that turns those capabilities into a durable, navigable, extensible editor.
+
+The Editor / Scene Core governs how authored content is stored, organized, viewed, selected, transformed, persisted, versioned, and extended.
+It is the operational shell around the lower-level engine.
+
+This volume defines:
+
+1. the mission of the Editor / Scene Core
+2. the document and scene ontology
+3. scene graph and document graph doctrine
+4. layers, groups, symbols, and reusable structure
+5. viewport and infinite-canvas behavior
+6. command routing, undo/redo, and transaction history
+7. persistence, serialization, and migration
+8. collaboration hooks and concurrency doctrine
+9. extension, plugin, and scripting surfaces
+10. diagnostics, testing, and implementation sequencing
+
+This is not a product brief.
+This is the canonical editor-runtime specification.
+
+---
+
+# Part I — Editor / Scene Core Full Specification
+
+## 1.1 Mission of the Editor / Scene Core
+
+The Editor / Scene Core governs the durable operational environment in which drawing content lives.
+
+If the lower engine layers answer questions like:
+
+* what is a path?
+* what is a region?
+* what is a stroke?
+* how does a brush session behave?
+* how does a tool commit changes?
+
+then the Editor / Scene Core answers questions like:
+
+* where does this content live?
+* how is it organized and addressed?
+* what is currently visible, locked, selected, or editable?
+* how do transactions become undo history?
+* how does a document persist and migrate over time?
+* how do symbols, instances, and shared styles work?
+* how can plugins and automation safely extend the system?
+* how can the editor scale to large scenes and infinite-canvas workflows?
+
+Its mission is to govern:
+
+1. document ontology
+2. scene/document graph structure
+3. organization and visibility systems
+4. viewport and navigation behavior
+5. command and history systems
+6. persistence and migration
+7. collaboration-ready state surfaces
+8. extensibility and runtime integration
+
+Without a serious Editor / Scene Core, the engine remains a laboratory instead of a professional creative system.
+
+---
+
+## 1.2 Why the Editor / Scene Core must be separate
+
+Many systems muddle together:
+
+* rendering structures
+* document structures
+* selection structures
+* history structures
+* UI view state
+* plugin state
+
+That leads to brittle architecture and polluted mental models.
+
+The Editor / Scene Core must separate at least the following concerns:
+
+* authored document state
+* derived scene/runtime state
+* viewport/view state
+* interaction session state
+* history/transaction state
+* extension/plugin state
+* collaboration/network state
+
+These concerns interact constantly.
+They must not be conflated.
+
+A document is not the same thing as a viewport.
+A scene graph is not the same thing as undo history.
+A plugin’s cached analysis is not the same thing as authored content.
+
+The system must preserve these distinctions rigorously.
+
+---
+
+## 1.3 Primary responsibilities
+
+The Editor / Scene Core is responsible for:
+
+* document root and metadata
+* object identity and addressing
+* scene graph or document graph organization
+* layer and grouping systems
+* symbol/component systems
+* visibility, lock, mute, and isolation states
+* viewport navigation and infinite-canvas support
+* selection persistence and cross-view coherence
+* command dispatch and transaction routing
+* undo/redo history management
+* persistence and serialization boundaries
+* file migration and schema versioning
+* collaboration-ready state hooks
+* extension and scripting entry points
+* editor diagnostics and runtime performance discipline
+
+It is not responsible for low-level geometry evaluation or brush dynamics themselves, but it is responsible for hosting those systems coherently.
+
+---
+
+## 1.4 Canonical editor/runtime ontology
+
+The Editor / Scene Core should define at minimum the following conceptual structures:
+
+### DocumentRoot
+
+The top-level authored document container.
+
+Fields should include:
+
+* document id
+* schema version
+* document metadata
+* root graph reference
+* style/token references
+* symbol registry reference
+* history linkage metadata
+* persistence metadata
+* collaboration metadata where applicable
+
+### SceneNode
+
+A node in the editor’s document or scene organization structure.
+
+Possible node classes include:
+
+* layer node
+* group node
+* object node
+* symbol master node
+* symbol instance node
+* guide node
+* annotation node
+* plugin-managed auxiliary node where policy permits
+
+### ObjectRecord
+
+A durable identity wrapper around authored drawable or procedural content.
+
+Fields may include:
+
+* object id
+* object type/class
+* representation references
+* transform state
+* style references
+* topology mode state
+* ownership/parent references
+* visibility/lock flags
+* provenance
+* plugin-safe metadata map
+
+### LayerRecord
+
+A structural and visual organization unit.
+
+### GroupRecord
+
+A containment unit with shared transform or selection semantics.
+
+### SymbolMaster
+
+A reusable canonical source definition.
+
+### SymbolInstance
+
+A placed instance referencing a SymbolMaster with declared local overrides.
+
+### ViewportState
+
+The current view transform and navigation state.
+
+### CommandRecord
+
+A routable editor operation request.
+
+### HistoryEntry
+
+A transactionally committed change record suitable for undo/redo.
+
+### SerializationEnvelope
+
+A portable representation of authored state and required metadata.
+
+### ExtensionStateSurface
+
+A sanctioned area for plugin or automation state that must not corrupt canonical authored content.
+
+---
+
+## 1.5 Core invariants
+
+The Editor / Scene Core must uphold the following invariants or explicitly diagnose invalid state.
+
+### Identity invariant
+
+Every authored object, layer, symbol, and durable node must have stable identity across editing, serialization, and history traversal.
+
+### Parentage invariant
+
+Every scene node except the root must have a valid parent or explicit detached/transient state.
+
+### Visibility coherence invariant
+
+Visibility, isolation, and lock state must produce deterministic editability and renderability behavior.
+
+### History integrity invariant
+
+Committed changes must map to valid history entries with reversible semantics under declared policies.
+
+### Serialization completeness invariant
+
+Persistent exports must include all canonical authored state required to reconstruct the document faithfully within declared version bounds.
+
+### View/document separation invariant
+
+Viewport changes must not mutate authored document state unless explicitly committed as authored transforms.
+
+### Extension safety invariant
+
+Extension-managed state must not silently corrupt canonical editor or document invariants.
+
+---
+
+## 1.6 Document graph versus scene graph doctrine
+
+The system should explicitly distinguish between:
+
+### Document Graph
+
+The canonical authored structure of the document.
+This is the source of truth for persistence, history, collaboration, and durable identity.
+
+### Scene Graph
+
+A runtime-oriented organization of visible or interactive content used for rendering, hit-testing, culling, overlays, and view-specific behavior.
+
+In some implementations these may share structures.
+Conceptually, they must remain distinct.
+
+The Document Graph answers:
+
+* what exists?
+* what owns what?
+* what is persisted?
+
+The Scene Graph answers:
+
+* what is currently being rendered?
+* what is spatially culled?
+* what view-specific overlays exist?
+* what temporary runtime caches exist?
+
+This distinction is critical for large documents, multiple views, and performance sanity.
+
+---
+
+## 1.7 Addressing doctrine
+
+A professional editor must be able to address content precisely.
+The Editor / Scene Core should support stable addressing for:
+
+* documents
+* scene nodes
+* objects
+* layers
+* groups
+* symbols/instances
+* styles/tokens
+* regions or sub-entities where durable identity exists
+* history entries
+* plugin-owned extension anchors where permitted
+
+Addressing should support:
+
+* stable ids
+* path-like graph addresses where useful
+* symbolic references
+* transient session references for ephemeral overlays
+
+Durable authored state must not depend solely on fragile positional addressing.
+
+---
+
+## 1.8 Object lifecycle doctrine
+
+Objects in the editor should have explicit lifecycle stages.
+Possible lifecycle states include:
+
+* created
+* live-edited
+* transformed
+* grouped
+* symbolized
+* instanced
+* hidden
+* locked
+* isolated for edit
+* archived in history only
+* deleted but recoverable through undo/history
+
+The Editor / Scene Core must record enough provenance and lifecycle state to support:
+
+* history traversal
+* collaboration conflict handling
+* symbol updates
+* plugin analysis
+* export filtering
+
+An object should not simply wink in and out of existence without lineage.
+
+---
+
+## 1.9 Layer doctrine
+
+Layers must be treated as first-class organizational and visibility structures.
+They should support:
+
+* ordering
+* visibility
+* lock state
+* solo/isolation behavior
+* filtering or tagging where supported
+* nested layers if product policy permits
+* layer-scoped selection or edit restrictions
+* layer metadata
+
+The engine must declare whether layers are:
+
+* purely organizational
+* organizational plus render-order controlling
+* organizational plus behavioral/edit-scope boundaries
+
+Most systems need at least the second, often the third.
+
+---
+
+## 1.10 Group doctrine
+
+Groups are not merely folders.
+They are editing and transform scopes.
+
+A GroupRecord should support:
+
+* child ownership
+* group-local transform
+* selection behavior
+* enter/exit group scope
+* shared clipping or masking relationships where supported
+* optional group-level style or effect linkage
+* history-aware regroup/ungroup behavior
+
+The Editor / Scene Core must define clearly whether group-local edits:
+
+* mutate child local coordinates
+* apply transforms at the group node only
+* preserve child authored geometry untouched
+* trigger flattening in special export modes only
+
+Group behavior must remain representation-truthful.
+
+---
+
+## 1.11 Symbol and component doctrine
+
+Reusable authored structure is essential.
+The Editor / Scene Core must support at minimum:
+
+### SymbolMaster
+
+A canonical reusable definition.
+
+### SymbolInstance
+
+A placed reference to a master with controlled local overrides.
+
+The system should define:
+
+* what kinds of content may become symbols
+* which properties may be overridden locally
+* whether topology, geometry, fill, text, or transform overrides are allowed
+* how master updates propagate
+* how instance detachment works
+* how nested symbols behave
+
+Symbols are not just duplication optimizers.
+They are semantic reuse structures.
+
+---
+
+## 1.12 Override doctrine
+
+Instance overrides must be formalized, not improvised.
+Override classes may include:
+
+* transform override
+* visibility override
+* fill/style override
+* text/content override where relevant
+* effect override
+* exposed parameter override for procedural or parametric content
+
+Override rules must specify:
+
+* whether the override is durable
+* whether it survives master structural edits
+* whether it blocks future inheritance for that property
+* how conflicts are resolved during master updates
+
+Without this, symbol systems become unpredictable little gremlins.
+
+---
+
+## 1.13 Visibility, locking, and isolation doctrine
+
+The Editor / Scene Core must separate at minimum:
+
+### Visible / Hidden
+
+Controls render visibility.
+
+### Editable / Locked
+
+Controls interaction eligibility.
+
+### Isolated Scope
+
+Temporarily narrows editing context without changing durable object ownership.
+
+### Muted / Ghosted
+
+Optional states for reference-only display or reduced emphasis.
+
+These states must produce deterministic behavior across:
+
+* rendering
+* hit-testing
+* selection
+* export inclusion
+* plugin queries
+
+A hidden object should not randomly remain targetable.
+A locked object should not accept accidental edits through a side channel.
+Isolation must be visible and reversible.
+
+---
+
+## 1.14 Viewport doctrine
+
+Viewport state must be explicit and decoupled from authored document state.
+A ViewportState should include at minimum:
+
+* pan position
+* zoom level
+* rotation if supported
+* active artboard/page focus where applicable
+* visible bounds
+* overlay visibility preferences
+* snap/grid visibility state
+* selection framing state
+
+The viewport is a view into the document, not the document itself.
+This sounds obvious until systems forget it.
+
+---
+
+## 1.15 Infinite-canvas doctrine
+
+The Editor / Scene Core should support infinite-canvas workflows where product goals require them.
+This means the system must handle:
+
+* content at arbitrary document positions
+* large empty spaces without pathological overhead
+* persistent navigation landmarks
+* multi-cluster content organization
+* zoomed-out overview and zoomed-in precision editing
+* optional boards, frames, or pages within a broader infinite space
+
+Infinite canvas does not mean shapeless chaos.
+The editor should provide structure without imposing small boxed thinking.
+
+---
+
+## 1.16 Multi-board and frame doctrine
+
+Even within an infinite or large canvas, many workflows require bounded working surfaces.
+The Editor / Scene Core should support:
+
+* artboards
+* frames
+* pages
+* export regions
+* named working areas
+
+It must define:
+
+* whether boards are organizational only or also clipping/export boundaries
+* how objects relate to boards when partially overlapping
+* how viewport navigation targets boards
+* how history and selection behave across multiple boards
+
+---
+
+## 1.17 Navigation doctrine
+
+The editor must provide coherent navigation behavior across scale.
+Navigation should support:
+
+* pan
+* zoom
+* focus selected
+* frame object or scope
+* board-to-board navigation
+* bookmarkable views where supported
+* temporary zoom for precision
+* return-to-previous-view behavior
+
+Navigation operations are view-state operations unless explicitly saved as authored presentation state.
+This distinction matters.
+
+---
+
+## 1.18 Command doctrine
+
+The Editor / Scene Core should use a command model for durable editor operations.
+A CommandRecord should define:
+
+* command id/type
+* target references
+* parameters
+* preconditions
+* transaction policy
+* expected side effects
+* undo/redo handlers or reversible diff model
+* emitted diagnostics or warnings
+
+Commands should be the bridge between user intent and committed history, not random method calls sprayed across the app.
+
+---
+
+## 1.19 History doctrine
+
+Undo/redo must be designed as a first-class system, not a late patch.
+The editor should support:
+
+* atomic undo/redo
+* grouped history entries
+* chained session history
+* mergeable history policies where appropriate
+* non-authoring view-state history separate from authored history where product policy requires
+* diagnostic traceability for history events
+
+A HistoryEntry should capture:
+
+* transaction id
+* affected object identities
+* reversible diff or replay record
+* timestamp
+* tool/command provenance
+* warnings or migration notes where relevant
+
+History must preserve user trust above all.
+
+---
+
+## 1.20 Transaction routing doctrine
+
+The Editor / Scene Core must route transactions cleanly from tool/session layer into history and persistence layers.
+This routing should handle:
+
+* preflight validation
+* commit publication
+* post-commit recomputation triggers
+* history entry creation
+* autosave/persistence dirty-state updates
+* collaboration event emission where enabled
+* plugin notification hooks under safe policy
+
+Transaction routing must be deterministic.
+Silent side effects are how editors become haunted.
+
+---
+
+## 1.21 Persistence doctrine
+
+Persistence must preserve canonical authored state without smuggling in irrelevant runtime garbage.
+The system should clearly separate:
+
+* durable authored content
+* derived caches
+* transient view state
+* per-user local preferences
+* plugin auxiliary state
+
+A SerializationEnvelope should capture:
+
+* schema version
+* document root
+* authored graph
+* style/symbol registries
+* required references
+* optional persisted viewport state if product policy allows
+* extension-safe namespaces
+* migration metadata
+
+Do not serialize every little runtime burp just because it exists in memory.
+
+---
+
+## 1.22 Serialization doctrine
+
+Serialization must be explicit about:
+
+* canonical field meanings
+* optional versus required fields
+* forward compatibility policy
+* backward compatibility policy
+* lossy export versus lossless save formats
+* stable ids and references
+* extension namespaces
+
+The engine should distinguish between:
+
+### Native save format
+
+Optimized for fidelity and full engine reconstruction.
+
+### Exchange format
+
+Optimized for interoperability with declared limits.
+
+### Export format
+
+Optimized for final output rather than editable fidelity.
+
+These are not the same thing and must not be treated as if they were.
+
+---
+
+## 1.23 Migration doctrine
+
+Documents live longer than code.
+The Editor / Scene Core must support schema migration across versions.
+Migration policy should define:
+
+* schema version tagging
+* migration steps
+* validation after migration
+* warning surfaces for degraded fidelity
+* extension/plugin migration responsibilities
+* fallback behavior when unsupported legacy content is encountered
+
+Migration must be auditable.
+A file should not be quietly “kind of transformed” with no trace of what happened.
+
+---
+
+## 1.24 Collaboration hook doctrine
+
+Even if full multiplayer is not a day-one feature, the editor should be designed with collaboration-safe seams.
+The Editor / Scene Core should support hooks for:
+
+* transaction emission
+* stable object identity
+* per-object diffs or patches
+* optimistic local edits where policy permits
+* selection/presence overlays
+* conflict detection surfaces
+* merge policy integration
+
+This does not require committing to one specific multiplayer model immediately.
+It does require refusing to build a system that assumes only one isolated local user forever.
+
+---
+
+## 1.25 Concurrency doctrine
+
+If collaboration or background automation exists, the system must reason about concurrent change.
+Concurrency policy should define:
+
+* authoritative state source
+* conflict granularity
+* conflict visibility
+* stale-selection handling
+* stale-preview invalidation
+* command rejection or replay policy
+* symbol/style registry conflict behavior
+
+The editor should prefer explicit conflict surfaces over silent divergent corruption.
+
+---
+
+## 1.26 Extension and plugin doctrine
+
+The editor must expose extensibility without sacrificing integrity.
+The extension model should support:
+
+* tool extensions
+* analysis/diagnostic extensions
+* import/export extensions
+* panel/UI extensions
+* automation/scripting hooks
+* custom procedural content nodes where policy allows
+
+But extension code must be constrained by clear safety boundaries.
+
+Extensions should not be allowed to mutate arbitrary internal state invisibly.
+They should operate through sanctioned surfaces.
+
+---
+
+## 1.27 Extension state doctrine
+
+Extensions may need state, but that state must be separated from canonical authored state unless explicitly persisted through a sanctioned namespace.
+The system should support:
+
+* transient extension state
+* persisted extension metadata namespaces
+* extension-owned panels/preferences
+* document-scoped extension annotations
+* runtime caches isolated from save fidelity unless opted in
+
+Extension state must not pollute the core document schema carelessly.
+
+---
+
+## 1.28 Scripting and automation doctrine
+
+The editor should expose a formal automation surface for:
+
+* document inspection
+* selection queries
+* command execution
+* batch operations
+* import/export flows
+* diagnostics
+* custom transformations under policy
+
+Automation must be:
+
+* permissioned
+* transaction-aware
+* history-aware
+* schema-aware
+* diagnosable
+
+A scripting system that bypasses history and invariants is just a vandalism API.
+
+---
+
+## 1.29 Performance doctrine
+
+The Editor / Scene Core must scale operationally as document complexity increases.
+Performance strategy should account for:
+
+* large scene graphs
+* many layers/groups/symbols
+* dense selection states
+* multiple viewports or panels
+* incremental recomputation
+* dirty-region rendering
+* scene culling
+* deferred overlay generation
+* history memory pressure
+* serialization cost
+
+Performance optimization must preserve authored truth.
+Approximation may be allowed in previews and caches, but canonical state must remain sound.
+
+---
+
+## 1.30 Diagnostics doctrine
+
+The Editor / Scene Core must expose diagnostics for both development and advanced operation.
+Diagnostics should include:
+
+* invalid parentage warnings
+* stale-scene-cache warnings
+* orphaned symbol-instance warnings
+* broken reference warnings
+* lock/visibility contradiction warnings
+* history corruption or irreversibility warnings
+* serialization completeness warnings
+* migration downgrade warnings
+* extension namespace violations
+* concurrency conflict warnings
+
+A runtime shell this complex must be inspectable.
+
+---
+
+## 1.31 Editor / Scene Core API doctrine
+
+The Editor / Scene Core API should be separated into the following layers:
+
+### Document API
+
+For document creation, loading, saving, migration, metadata, and root access.
+
+### Graph API
+
+For scene/document node creation, reparenting, ordering, grouping, and traversal.
+
+### Object API
+
+For object identity, visibility, lock state, symbolization, and durable addressing.
+
+### Viewport API
+
+For navigation, framing, zoom/pan, and view-state inspection.
+
+### Command API
+
+For routable operations and history-integrated commits.
+
+### History API
+
+For undo, redo, grouping, inspection, and diagnostics.
+
+### Persistence API
+
+For serialization, schema validation, migration, and exchange/export pathways.
+
+### Collaboration API
+
+For transaction emission, presence overlays, state sync hooks, and conflict handling surfaces.
+
+### Extension API
+
+For plugins, scripting, panels, tools, and safe metadata namespaces.
+
+### Diagnostic API
+
+For runtime inspection, graph validation, performance tracing, and state warnings.
+
+The API must keep durable state, view state, and transient runtime state clearly separated.
+
+---
+
+## 1.32 Contracts to downstream systems
+
+The Editor / Scene Core must provide clean hosting contracts to the rest of the engine.
+
+### To Interaction Core
+
+Selection scope, editable targets, visibility/lock filtering, transaction publication, viewport state.
+
+### To Geometry / Topology / Stroke / Fill / Brush systems
+
+Durable object records, representation references, symbol inheritance context, transaction lifecycle hooks.
+
+### To Rendering Layer
+
+Scene graph visibility, ordering, clipping/board state, overlay instructions, dirty-region invalidation cues.
+
+### To Import/Export Systems
+
+Canonical document graph and representation access with explicit fidelity policies.
+
+### To Extension Systems
+
+Sanctioned document/query/command surfaces and permission boundaries.
+
+### To Collaboration Systems
+
+Stable identities, history events, patch surfaces, conflict visibility, and presence-scoped view data where allowed.
+
+---
+
+## 1.33 Testing doctrine for the Editor / Scene Core
+
+This subsystem requires a broad and unpleasantly realistic test regime.
+Testing should include:
+
+### Graph integrity tests
+
+Verify parentage, ordering, and traversal consistency.
+
+### Visibility/lock/isolation tests
+
+Verify rendering and interaction eligibility remain deterministic.
+
+### Group/symbol tests
+
+Verify instance propagation, overrides, detachment, and regroup behavior.
+
+### View/document separation tests
+
+Verify viewport operations never corrupt authored state.
+
+### History tests
+
+Verify undo/redo across commands, chained operations, and migrations.
+
+### Serialization round-trip tests
+
+Verify native save/load fidelity.
+
+### Migration tests
+
+Verify older documents upgrade correctly and warnings appear when fidelity changes.
+
+### Extension safety tests
+
+Verify plugins cannot violate core invariants through sanctioned APIs.
+
+### Concurrency/collaboration tests
+
+Verify conflict surfaces and stale state invalidation behavior.
+
+### Performance tests
+
+Verify large scenes remain navigable, editable, and persistable within target budgets.
+
+This is the shell that holds the cathedral together. It needs brutal validation.
+
+---
+
+## 1.34 Implementation sequencing for the Editor / Scene Core
+
+Recommended build order:
+
+1. document root and identity system
+2. document graph / scene graph separation model
+3. layers, groups, and visibility/lock system
+4. viewport and navigation system
+5. command routing and transaction publication
+6. undo/redo history system
+7. symbol master / instance system with overrides
+8. persistence and serialization envelope
+9. migration system
+10. extension/scripting surfaces
+11. collaboration hooks and concurrency surfaces
+12. diagnostics and performance optimization
+
+This order builds a stable runtime shell before the more treacherous extensibility and sync features arrive.
+
+---
+
+## 1.35 Completion criteria for the Editor / Scene Core
+
+The Editor / Scene Core should not be considered foundationally complete until it can reliably support:
+
+* stable document and object identity
+* deterministic scene/document organization
+* visibility, lock, and isolation semantics
+* viewport navigation separated from authored state
+* transaction-safe command routing and undo/redo
+* symbol masters, instances, and formal overrides
+* lossless native persistence and auditable migration
+* extension-safe APIs and metadata surfaces
+* collaboration-ready state hooks
+* robust diagnostics and large-scene performance discipline
+
+At that point, the engine has a real editor shell rather than a pile of subsystem demos.
+
+---
+
+# Part II — Immediate Next Writing Targets
+
+The next volumes that should follow are:
+
+1. **Diagnostics, Benchmarking, and Testing Doctrine**
+2. **Browser Runtime Architecture and Performance Strategy**
+3. **Plugin, Extension, and Scripting System Doctrine**
+4. **Advanced Tool Families and Construction Systems**
+5. **Collaboration and Multi-Agent Editing Architecture**
+
+That sequence moves from the editor shell into validation, runtime strategy, and long-term extensibility.
+
+---
+
+# Closing statement
+
+A drawing engine becomes a professional system only when its internal power is housed inside a coherent, durable, navigable editor runtime.
+
+That is the role of the Editor / Scene Core.

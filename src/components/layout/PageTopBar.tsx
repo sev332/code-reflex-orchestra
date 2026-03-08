@@ -12,7 +12,7 @@ import {
   MessageSquare, Zap, FileText, Code2, Image, Music, Video, Map,
   Table2, CalendarDays, Mail, KanbanSquare, MessageCircle,
   Box, LayoutDashboard, Database, Terminal, Globe, StickyNote,
-  FolderOpen, Presentation, Beaker,
+  FolderOpen, Presentation, Beaker, PenTool,
   User, Settings, LogOut, Bell, Wifi, WifiOff, Activity,
   LayoutGrid,
 } from 'lucide-react';
@@ -23,7 +23,7 @@ export type PageId =
   | 'chat' | 'orchestration' | 'documents' | 'ide' | 'image' | 'audio' | 'video' | 'map'
   | 'spreadsheet' | 'calendar' | 'email' | 'tasks'
   | 'presentations' | 'studio3d' | 'terminal' | 'apistudio' | 'database' | 'dashboard'
-  | 'browser' | 'notes' | 'files' | 'comms';
+  | 'browser' | 'notes' | 'files' | 'comms' | 'illustrator';
 
 const iconMap: Record<PageId, React.ComponentType<any>> = {
   chat: MessageSquare, orchestration: Zap, documents: FileText, ide: Code2,
@@ -31,7 +31,7 @@ const iconMap: Record<PageId, React.ComponentType<any>> = {
   spreadsheet: Table2, calendar: CalendarDays, email: Mail, tasks: KanbanSquare,
   presentations: Presentation, studio3d: Box, terminal: Terminal, apistudio: Beaker,
   database: Database, dashboard: LayoutDashboard, browser: Globe, notes: StickyNote,
-  files: FolderOpen, comms: MessageCircle,
+  files: FolderOpen, comms: MessageCircle, illustrator: PenTool,
 };
 
 const labelMap: Record<PageId, string> = {
@@ -40,7 +40,7 @@ const labelMap: Record<PageId, string> = {
   spreadsheet: 'Sheets', calendar: 'Calendar', email: 'Email', tasks: 'Tasks',
   presentations: 'Slides', studio3d: '3D', terminal: 'Term', apistudio: 'API',
   database: 'DB', dashboard: 'Dash', browser: 'Browse', notes: 'Notes',
-  files: 'Files', comms: 'Comms',
+  files: 'Files', comms: 'Comms', illustrator: 'Draw',
 };
 
 interface PageTopBarProps {
