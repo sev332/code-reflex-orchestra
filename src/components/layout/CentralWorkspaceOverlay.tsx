@@ -1,5 +1,5 @@
 // Central workspace overlay aligned to canonical drawer system (no embedded side drawers)
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
