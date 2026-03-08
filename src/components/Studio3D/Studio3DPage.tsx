@@ -1,6 +1,6 @@
 // 3D Studio — Unreal-class scene editor built on React Three Fiber
-// Phase 1: Post-Processing Pipeline + Advanced PBR Materials
-import React, { useState, useCallback, useRef, useMemo, Suspense } from 'react';
+// Phase 1+2: Post-Processing Pipeline + PBR + Animation Timeline
+import React, { useState, useCallback, useRef, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
   OrbitControls, TransformControls, Grid, GizmoHelper, GizmoViewport,
