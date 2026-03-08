@@ -1090,6 +1090,22 @@ export function Studio3DPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── Animation Timeline ─── */}
+      {showTimeline && (
+        <AnimationTimeline
+          clip={animClip}
+          onClipChange={setAnimClip}
+          currentTime={animTime}
+          onTimeChange={setAnimTime}
+          isPlaying={animPlaying}
+          onPlayToggle={handleAnimPlayToggle}
+          sceneObjects={sceneObjectRefs}
+          getObjectProperty={getObjPropValue}
+          selectedTrackId={selectedTrackId}
+          onSelectTrack={setSelectedTrackId}
+        />
+      )}
     </div>
   );
 }
