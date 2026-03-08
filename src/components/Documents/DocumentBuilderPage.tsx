@@ -37,11 +37,7 @@ export function DocumentBuilderPage() {
     },
   ]);
   const [selectedId, setSelectedId] = useState('1');
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set(['1']));
   const [viewMode, setViewMode] = useState<ViewMode>('edit');
-  const [activeTab, setActiveTab] = useState<'editor' | 'outline' | 'index' | 'map'>('editor');
-  const [aiPrompt, setAiPrompt] = useState('');
-  const [isAiWorking, setIsAiWorking] = useState(false);
   const [projectName, setProjectName] = useState('Untitled Document');
   const editorRef = useRef<any>(null);
 
