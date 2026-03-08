@@ -1,8 +1,9 @@
-// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering
+// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW + Text Rendering + Effects
 import { DrawableEntity, ViewportState, Scene, Vec2 } from './types';
 import { expandStroke, defaultWidthProfile, defaultPressureCurve } from './stroke-core';
 import { distance as geoDist } from './geometry-core';
 import { renderTextEntity } from './text-engine';
+import { Effect, EffectStack, applyEffectsToContext, clearEffectsFromContext } from './effects-engine';
 
 // ============================================
 // GRID RENDERER
