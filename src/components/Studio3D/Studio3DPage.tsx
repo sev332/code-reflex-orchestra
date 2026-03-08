@@ -41,6 +41,11 @@ import {
   createClip, evaluateClipAtTime, applyAnimatedValues, getObjectPropertyValue,
   type AnimationClip, type AnimatableProperty,
 } from '@/lib/3d-engine/animation-engine';
+import { ParticleEditorPanel } from './ParticleEditor';
+import type { ParticleEmitterConfig } from '@/lib/3d-engine/particle-system';
+import { interpolateColorOverLife } from '@/lib/3d-engine/particle-system';
+import { ProceduralToolsPanel } from './ProceduralTools';
+import { generateTerrainGeometry, generateProceduralGeometry, type TerrainConfig, type ProceduralConfig } from '@/lib/3d-engine/terrain-generator';
 
 // ─── Types ─────────────────────────────────────────
 
