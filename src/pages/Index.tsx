@@ -120,7 +120,7 @@ const Index = () => {
             isOpen={showLauncher}
             onClose={() => setShowLauncher(false)}
             onAppSelect={setActivePage}
-            pinnedApps={pinnedApps}
+            pinnedApps={DEFAULT_PINNED}
             onTogglePin={handleTogglePin}
           />
 
