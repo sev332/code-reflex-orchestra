@@ -1050,7 +1050,233 @@ export function useDrawingEngine() {
     });
   }, []);
 
-  // ── SVG Export ──
+  // ── SPRINT 3: Transform Tools ──
+
+  const rotateSelected = useCallback((angleDeg: number, copy: boolean = false) => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const entities = { ...prev.scene.entities };
+      const bounds = getSelectionBounds(ids, entities);
+      const origin = getOriginFromPreset(bounds, transformOriginPreset);
+      const newIds: string[] = [];
+      
+      for (const id of ids) {
+        const e = entities[id];
+        if (!e) continue;
+        const result = rotateEntity(e, angleDeg, origin, copy);
+        entities[result.id] = result;
+        newIds.push(result.id);
+        if (copy) {
+          // Add copy to active layer
+          const activeLayer = prev.scene.layers.find(l => l.id === prev.scene.activeLayerId);
+          if (activeLayer) activeLayer.entities.push(result.id);
+        }
+      }
+      
+      return { ...prev, scene: { ...prev.scene, entities }, selection: { ...prev.selection, selectedIds: copy ? newIds : ids } };
+    });
+  }, [transformOriginPreset]);
+
+  const reflectSelected = useCallback((axis: 'horizontal' | 'vertical', copy: boolean = false) => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const entities = { ...prev.scene.entities };
+      const bounds = getSelectionBounds(ids, entities);
+      const origin = getOriginFromPreset(bounds, transformOriginPreset);
+      
+      for (const id of ids) {
+        const e = entities[id];
+        if (!e) continue;
+        const result = reflectEntity(e, axis, origin, undefined, copy);
+        entities[result.id] = result;
+      }
+      
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, [transformOriginPreset]);
+
+  const shearSelected = useCallback((angleDeg: number, axis: 'horizontal' | 'vertical') => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const entities = { ...prev.scene.entities };
+      const bounds = getSelectionBounds(ids, entities);
+      const origin = getOriginFromPreset(bounds, transformOriginPreset);
+      
+      for (const id of ids) {
+        const e = entities[id];
+        if (!e) continue;
+        entities[id] = shearEntity(e, angleDeg, axis, origin);
+      }
+      
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, [transformOriginPreset]);
+
+  const transformEachSelected = useCallback((options: TransformEachOptions) => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const selectedEntities = ids.map(id => prev.scene.entities[id]).filter(Boolean);
+      const transformed = transformEach(selectedEntities, options);
+      const entities = { ...prev.scene.entities };
+      transformed.forEach(e => { entities[e.id] = e; });
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, []);
+
+  const updateEntityTransform = useCallback((entityId: string, data: Partial<TransformPanelData>) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      const updated = applyTransformPanelData(entity, data);
+      return { ...prev, scene: { ...prev.scene, entities: { ...prev.scene.entities, [entityId]: updated } } };
+    });
+  }, []);
+
+  // ── SPRINT 3: Effects ──
+
+  const addEntityEffect = useCallback((entityId: string, effect: Effect) => {
+    setEntityEffects(prev => ({
+      ...prev,
+      [entityId]: addEffect(prev[entityId] ?? emptyEffectStack, effect),
+    }));
+  }, []);
+
+  const removeEntityEffect = useCallback((entityId: string, effectId: string) => {
+    setEntityEffects(prev => ({
+      ...prev,
+      [entityId]: removeEffect(prev[entityId] ?? emptyEffectStack, effectId),
+    }));
+  }, []);
+
+  const updateEntityEffect = useCallback((entityId: string, effectId: string, updates: Partial<Effect>) => {
+    setEntityEffects(prev => ({
+      ...prev,
+      [entityId]: updateEffect(prev[entityId] ?? emptyEffectStack, effectId, updates),
+    }));
+  }, []);
+
+  const toggleEntityEffect = useCallback((entityId: string, effectId: string) => {
+    setEntityEffects(prev => ({
+      ...prev,
+      [entityId]: toggleEffect(prev[entityId] ?? emptyEffectStack, effectId),
+    }));
+  }, []);
+
+  const applyEffectPreset = useCallback((entityId: string, preset: EffectPreset) => {
+    setEntityEffects(prev => ({
+      ...prev,
+      [entityId]: { effects: [...(prev[entityId]?.effects ?? []), ...preset.effects] },
+    }));
+  }, []);
+
+  // ── SPRINT 3: Blend Tool ──
+
+  const blendSelected = useCallback((options: BlendOptions = defaultBlendOptions) => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length !== 2) return prev;
+      const a = prev.scene.entities[ids[0]];
+      const b = prev.scene.entities[ids[1]];
+      if (!a || !b) return prev;
+
+      const blended = createBlend(a, b, options);
+      const entities = { ...prev.scene.entities };
+      // Remove originals, add all blended
+      delete entities[ids[0]];
+      delete entities[ids[1]];
+      blended.forEach(e => { entities[e.id] = e; });
+
+      const layers = prev.scene.layers.map(l => ({
+        ...l,
+        entities: l.entities.filter(eid => !ids.includes(eid)),
+      }));
+      const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
+      if (activeLayer) blended.forEach(e => activeLayer.entities.push(e.id));
+
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: blended.map(e => e.id) },
+      };
+    });
+  }, []);
+
+  // ── SPRINT 3: Clipping Masks ──
+
+  const makeClippingMask = useCallback(() => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length < 2) return prev;
+      // Front object is clip path, rest are contents
+      const clipEntityId = ids[ids.length - 1];
+      const contentIds = ids.slice(0, -1);
+      const clipEntity = prev.scene.entities[clipEntityId];
+      const contentEntities = contentIds.map(id => prev.scene.entities[id]).filter(Boolean);
+      if (!clipEntity) return prev;
+
+      const mask = createClippingMask(clipEntity, contentEntities);
+      setClippingMasks(masks => [...masks, mask]);
+      return prev;
+    });
+  }, []);
+
+  const releaseClippingMaskById = useCallback((maskId: string) => {
+    setClippingMasks(masks => masks.filter(m => m.id !== maskId));
+  }, []);
+
+  // ── SPRINT 3: Warp Tools ──
+
+  const applyWarp = useCallback((worldPoint: Vec2, direction?: Vec2) => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const entities = { ...prev.scene.entities };
+      for (const id of ids) {
+        const e = entities[id];
+        if (!e) continue;
+        entities[id] = applyWarpAtPoint(e, worldPoint, warpConfig, direction);
+      }
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, [warpConfig]);
+
+  // ── SPRINT 3: Duplicate ──
+
+  const duplicateSelected = useCallback(() => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const entities = { ...prev.scene.entities };
+      const newIds: string[] = [];
+      const layers = prev.scene.layers.map(l => {
+        if (l.id !== prev.scene.activeLayerId) return l;
+        const newLayerEntities = [...l.entities];
+        for (const id of ids) {
+          const e = entities[id];
+          if (!e) continue;
+          const copy: DrawableEntity = {
+            ...JSON.parse(JSON.stringify(e)),
+            id: generateId(),
+            name: `${e.name} copy`,
+            transform: { ...e.transform, translateX: e.transform.translateX + 20, translateY: e.transform.translateY + 20 },
+          };
+          entities[copy.id] = copy;
+          newIds.push(copy.id);
+          newLayerEntities.push(copy.id);
+        }
+        return { ...l, entities: newLayerEntities };
+      });
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: newIds },
+      };
+    });
+  }, []);
 
   const exportSVG = useCallback((): string => {
     return exportSceneToSVG(state.scene);
