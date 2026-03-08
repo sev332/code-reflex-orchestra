@@ -544,8 +544,6 @@ function LeftDrawerContent({ page, sideTab, subTab, onNavigate }: { page: PageId
       if (sideTab === 'favorites') return <FavoritesPanel />;
       if (sideTab === 'library') return <LibraryPanel />;
       break;
-    case 'orchestration':
-      return <PlaceholderSubPanel page={page} subTab={sideTab} />;
     case 'documents':
       if (sideTab === 'storage') return <DocumentStoragePanel onNavigate={onNavigate} />;
       if (sideTab === 'projects') return <ProjectsPanel />;
@@ -594,7 +592,14 @@ function LeftDrawerContent({ page, sideTab, subTab, onNavigate }: { page: PageId
       break;
   }
 
-  return <PlaceholderSubPanel page={page} subTab={sideTab} />;
+  // Use blueprint data for any tab that doesn't have a dedicated panel
+  const blueprintKey = `${page}:${sideTab}`;
+  const blueprint = drawerBlueprints[blueprintKey];
+  if (blueprint) {
+    return <BlueprintSubPanel blueprint={blueprint} page={page} sideTab={sideTab} />;
+  }
+
+  return <BlueprintFallbackPanel page={page} sideTab={sideTab} />;
 }
 
 // ─── Sub-panels (same as before, abbreviated) ──────────
