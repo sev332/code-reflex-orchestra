@@ -27,53 +27,86 @@ import { cn } from '@/lib/utils';
 import { emitPageDrawerAction } from '@/lib/page-drawer-events';
 
 // ============================================================
-// EMAIL DRAWER PANELS
+// EMAIL DRAWER PANELS (Perfected)
 // ============================================================
 
 const EMAIL_FOLDERS = [
-  { id: 'inbox', label: 'Inbox', icon: Inbox, count: 3 },
-  { id: 'starred', label: 'Starred', icon: Star, count: 2 },
-  { id: 'snoozed', label: 'Snoozed', icon: AlarmClock, count: 1 },
-  { id: 'sent', label: 'Sent', icon: Send, count: 0 },
-  { id: 'scheduled', label: 'Scheduled', icon: CalendarClock, count: 0 },
-  { id: 'drafts', label: 'Drafts', icon: FileText, count: 1 },
-  { id: 'archive', label: 'Archive', icon: Archive, count: 0 },
-  { id: 'trash', label: 'Trash', icon: Trash2, count: 0 },
+  { id: 'inbox', label: 'Inbox', icon: Inbox, count: 3, color: '' },
+  { id: 'starred', label: 'Starred', icon: Star, count: 2, color: 'text-amber-400' },
+  { id: 'snoozed', label: 'Snoozed', icon: AlarmClock, count: 1, color: 'text-blue-400' },
+  { id: 'sent', label: 'Sent', icon: Send, count: 0, color: '' },
+  { id: 'scheduled', label: 'Scheduled', icon: CalendarClock, count: 0, color: '' },
+  { id: 'drafts', label: 'Drafts', icon: FileText, count: 1, color: '' },
+  { id: 'archive', label: 'Archive', icon: Archive, count: 0, color: '' },
+  { id: 'trash', label: 'Trash', icon: Trash2, count: 0, color: '' },
 ];
 
 const EMAIL_LABELS = [
-  { name: 'Architecture', color: 'bg-violet-500/20 text-violet-400' },
-  { name: 'Sprint', color: 'bg-amber-500/20 text-amber-400' },
-  { name: '3D Studio', color: 'bg-emerald-500/20 text-emerald-400' },
-  { name: 'Urgent', color: 'bg-red-500/20 text-red-400' },
-  { name: 'Personal', color: 'bg-blue-500/20 text-blue-400' },
+  { name: 'Architecture', color: 'hsl(270, 80%, 60%)', count: 3 },
+  { name: 'Sprint', color: 'hsl(45, 100%, 65%)', count: 2 },
+  { name: '3D Studio', color: 'hsl(150, 100%, 60%)', count: 1 },
+  { name: 'Urgent', color: 'hsl(0, 80%, 60%)', count: 1 },
+  { name: 'Personal', color: 'hsl(210, 80%, 60%)', count: 4 },
 ];
 
 export function EmailInboxPanel() {
   const [activeFolder, setActiveFolder] = useState('inbox');
+  const totalUnread = EMAIL_FOLDERS.reduce((a, f) => a + f.count, 0);
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-1">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs mb-2">
-          <Plus className="w-3.5 h-3.5" /> Compose
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-9 gap-1.5 text-xs font-medium">
+          <Plus className="w-4 h-4" /> Compose
         </Button>
-        {EMAIL_FOLDERS.map(f => {
-          const Icon = f.icon;
-          const isActive = activeFolder === f.id;
-          return (
-            <Button
-              key={f.id}
-              variant="ghost"
-              size="sm"
-              onClick={() => { setActiveFolder(f.id); emitPageDrawerAction({ page: 'email', action: 'folder', value: f.id }); }}
-              className={cn('w-full justify-start h-8 px-2 text-xs gap-2', isActive && 'bg-primary/10 text-primary')}
-            >
-              <Icon className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-muted-foreground')} />
-              <span className="flex-1 text-left">{f.label}</span>
-              {f.count > 0 && <Badge variant="outline" className="text-[10px] px-1.5 h-4">{f.count}</Badge>}
-            </Button>
-          );
-        })}
+
+        {/* Unread summary */}
+        <div className="bg-muted/15 rounded-lg px-3 py-2 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium">{totalUnread} unread</p>
+            <p className="text-[10px] text-muted-foreground">across all folders</p>
+          </div>
+          <Mail className="w-5 h-5 text-primary/40" />
+        </div>
+
+        <div className="space-y-0.5">
+          {EMAIL_FOLDERS.map(f => {
+            const Icon = f.icon;
+            const isActive = activeFolder === f.id;
+            return (
+              <button
+                key={f.id}
+                onClick={() => { setActiveFolder(f.id); emitPageDrawerAction({ page: 'email', action: 'folder', value: f.id }); }}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all',
+                  isActive ? 'bg-primary/10 text-primary border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+                )}
+              >
+                <Icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-primary' : f.color || 'text-muted-foreground')} />
+                <span className="flex-1 text-left font-medium">{f.label}</span>
+                {f.count > 0 && (
+                  <span className={cn(
+                    'text-[10px] font-semibold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                    isActive ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-muted-foreground',
+                  )}>
+                    {f.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Quick actions */}
+        <div className="border-t border-border/20 pt-2 space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Quick Actions</p>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" /> Mark all read
+          </Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2">
+            <Wand2 className="w-3.5 h-3.5 text-primary" /> AI Sort inbox
+          </Button>
+        </div>
       </div>
     </ScrollArea>
   );
@@ -83,39 +116,79 @@ export function EmailLabelsPanel() {
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-1">
-        <div className="flex items-center justify-between px-2 mb-2">
-          <span className="text-xs font-medium text-muted-foreground">Labels</span>
+      <div className="p-2 space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase">Labels</span>
           <Button variant="ghost" size="icon" className="w-6 h-6"><Plus className="w-3 h-3" /></Button>
         </div>
-        {EMAIL_LABELS.map(l => (
-          <Button
-            key={l.name}
-            variant="ghost"
-            size="sm"
-            onClick={() => { setActiveLabel(activeLabel === l.name ? null : l.name); emitPageDrawerAction({ page: 'email', action: 'label', value: l.name }); }}
-            className={cn('w-full justify-start h-8 px-2 text-xs gap-2', activeLabel === l.name && 'bg-primary/10')}
-          >
-            <div className={cn('w-3 h-3 rounded-full', l.color.split(' ')[0])} />
-            <span>{l.name}</span>
+
+        <div className="space-y-0.5">
+          {EMAIL_LABELS.map(l => (
+            <button
+              key={l.name}
+              onClick={() => { setActiveLabel(activeLabel === l.name ? null : l.name); emitPageDrawerAction({ page: 'email', action: 'label', value: l.name }); }}
+              className={cn(
+                'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all',
+                activeLabel === l.name ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ background: l.color }} />
+              <span className="flex-1 text-left">{l.name}</span>
+              <Badge variant="outline" className="text-[10px] px-1.5 h-4">{l.count}</Badge>
+            </button>
+          ))}
+        </div>
+
+        <div className="border-t border-border/20 pt-2">
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2 text-muted-foreground">
+            <Settings className="w-3.5 h-3.5" /> Manage Labels
           </Button>
-        ))}
+        </div>
       </div>
     </ScrollArea>
   );
 }
 
 export function EmailSearchPanel() {
+  const [query, setQuery] = useState('');
+  const filters = [
+    { label: 'Unread', icon: Mail, active: false },
+    { label: 'Has Attachments', icon: FileText, active: false },
+    { label: 'Flagged', icon: Flag, active: false },
+    { label: 'This Week', icon: Clock, active: false },
+    { label: 'From: Me', icon: Send, active: false },
+  ];
   return (
     <div className="p-3 space-y-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search emails..." className="pl-9 bg-muted/30 border-none" autoFocus />
+        <Input
+          placeholder="Search emails..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-9 bg-muted/30 border-none"
+          autoFocus
+        />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Quick Filters</p>
-        {['Unread', 'Has Attachments', 'Flagged', 'This Week'].map(f => (
-          <Button key={f} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs">{f}</Button>
+        {filters.map(f => {
+          const Icon = f.icon;
+          return (
+            <Button key={f.label} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs gap-2">
+              <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+              {f.label}
+            </Button>
+          );
+        })}
+      </div>
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Recent Searches</p>
+        {['AIMOS architecture', 'security audit', 'shader catalog'].map(s => (
+          <Button key={s} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs gap-2 text-muted-foreground">
+            <History className="w-3 h-3" />
+            {s}
+          </Button>
         ))}
       </div>
     </div>
@@ -123,81 +196,175 @@ export function EmailSearchPanel() {
 }
 
 // ============================================================
-// CALENDAR DRAWER PANELS
+// CALENDAR DRAWER PANELS (Perfected)
 // ============================================================
 
 export function CalendarListPanel() {
   const calendars = [
-    { name: 'Work', color: 'bg-primary', enabled: true },
-    { name: 'Personal', color: 'bg-[hsl(270,80%,60%)]', enabled: true },
-    { name: 'Team', color: 'bg-[hsl(150,100%,60%)]', enabled: true },
-    { name: 'Holidays', color: 'bg-[hsl(45,100%,65%)]', enabled: false },
+    { name: 'Work', color: 'hsl(var(--primary))', enabled: true, events: 12 },
+    { name: 'Personal', color: 'hsl(270, 80%, 60%)', enabled: true, events: 5 },
+    { name: 'Team', color: 'hsl(150, 100%, 60%)', enabled: true, events: 8 },
+    { name: 'Holidays', color: 'hsl(45, 100%, 65%)', enabled: false, events: 3 },
+    { name: 'Birthdays', color: 'hsl(340, 80%, 60%)', enabled: false, events: 2 },
   ];
+
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(calendars.map(c => [c.name, c.enabled]))
   );
 
+  const [selectedDate, setSelectedDate] = useState(8);
+  const [miniCalMonth, setMiniCalMonth] = useState({ month: 2, year: 2026 });
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Days with events (for dots)
+  const eventDays = new Set([8, 9, 10, 11, 12, 13, 15, 18, 22]);
+
+  // Generate mini calendar days properly
+  const firstDay = new Date(miniCalMonth.year, miniCalMonth.month, 1).getDay();
+  const daysInMonth = new Date(miniCalMonth.year, miniCalMonth.month + 1, 0).getDate();
+  const prevMonthDays = new Date(miniCalMonth.year, miniCalMonth.month, 0).getDate();
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-3">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs">
-          <Plus className="w-3.5 h-3.5" /> New Calendar
+      <div className="p-2 space-y-3">
+        <Button size="sm" className="w-full h-9 gap-1.5 text-xs font-medium">
+          <Plus className="w-4 h-4" /> New Event
         </Button>
-        <div className="space-y-1">
+
+        {/* Interactive Mini Calendar */}
+        <div className="border border-border/30 rounded-xl p-2.5 bg-muted/5">
+          <div className="flex items-center justify-between mb-2">
+            <button
+              className="text-muted-foreground hover:text-foreground p-0.5"
+              onClick={() => setMiniCalMonth(prev => {
+                const m = prev.month - 1;
+                return m < 0 ? { month: 11, year: prev.year - 1 } : { ...prev, month: m };
+              })}
+            >
+              <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+            </button>
+            <span className="text-xs font-semibold">{monthNames[miniCalMonth.month]} {miniCalMonth.year}</span>
+            <button
+              className="text-muted-foreground hover:text-foreground p-0.5"
+              onClick={() => setMiniCalMonth(prev => {
+                const m = prev.month + 1;
+                return m > 11 ? { month: 0, year: prev.year + 1 } : { ...prev, month: m };
+              })}
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-0 text-center">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+              <div key={i} className="text-[9px] text-muted-foreground/60 font-medium py-1">{d}</div>
+            ))}
+            {/* Previous month overflow */}
+            {Array.from({ length: firstDay }, (_, i) => (
+              <div key={`prev-${i}`} className="text-[10px] py-1 text-muted-foreground/20">
+                {prevMonthDays - firstDay + i + 1}
+              </div>
+            ))}
+            {/* Current month */}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const isSelected = day === selectedDate;
+              const isToday = day === 8 && miniCalMonth.month === 2 && miniCalMonth.year === 2026;
+              const hasEvent = eventDays.has(day);
+              return (
+                <button
+                  key={day}
+                  onClick={() => { setSelectedDate(day); emitPageDrawerAction({ page: 'calendar', action: 'select-date', value: `${miniCalMonth.year}-${miniCalMonth.month + 1}-${day}` }); }}
+                  className={cn(
+                    'text-[10px] py-1 rounded-md relative transition-all',
+                    isSelected ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-muted/30',
+                    isToday && !isSelected && 'font-bold text-primary ring-1 ring-primary/40',
+                  )}
+                >
+                  {day}
+                  {hasEvent && !isSelected && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Calendars */}
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">My Calendars</p>
           {calendars.map(cal => (
-            <div key={cal.name} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/20">
+            <div key={cal.name} className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/20 group">
               <Checkbox
                 checked={enabled[cal.name]}
                 onCheckedChange={(checked) => setEnabled(prev => ({ ...prev, [cal.name]: !!checked }))}
+                className="border-muted-foreground/40"
               />
-              <div className={cn('w-3 h-3 rounded-full', cal.color)} />
-              <span className="text-xs flex-1">{cal.name}</span>
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cal.color }} />
+              <span className={cn('text-xs flex-1', !enabled[cal.name] && 'text-muted-foreground')}>{cal.name}</span>
+              <span className="text-[10px] text-muted-foreground">{cal.events}</span>
             </div>
           ))}
         </div>
 
-        {/* Mini Calendar */}
-        <div className="border border-border/30 rounded-lg p-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium">March 2026</span>
-          </div>
-          <div className="grid grid-cols-7 gap-px text-center">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-              <div key={i} className="text-[9px] text-muted-foreground py-0.5">{d}</div>
-            ))}
-            {Array.from({ length: 31 }, (_, i) => (
-              <button
-                key={i}
-                className={cn(
-                  'text-[10px] py-0.5 rounded hover:bg-primary/20',
-                  i + 1 === 8 && 'bg-primary text-primary-foreground font-bold',
-                )}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-xs h-7 gap-2 text-muted-foreground">
+          <Plus className="w-3.5 h-3.5" /> Add Calendar
+        </Button>
       </div>
     </ScrollArea>
   );
 }
 
 export function CalendarUpcomingPanel() {
-  const upcoming = [
-    { title: 'Team Standup', time: '9:00 AM', color: 'border-l-primary' },
-    { title: 'Design Review', time: '2:00 PM', color: 'border-l-[hsl(270,80%,60%)]' },
-    { title: 'Sprint Planning', time: 'Tomorrow 10:00 AM', color: 'border-l-[hsl(150,100%,60%)]' },
-    { title: 'AI Deep Dive', time: 'Mar 10, 1:00 PM', color: 'border-l-destructive' },
+  const sections = [
+    { label: 'Today · March 8', events: [
+      { title: 'Team Standup', time: '9:00 – 9:30 AM', color: 'hsl(var(--primary))', location: 'Virtual' },
+      { title: 'Lunch Break', time: '12:00 – 1:00 PM', color: 'hsl(210, 90%, 55%)', location: null },
+      { title: 'Design Review', time: '2:00 – 3:30 PM', color: 'hsl(270, 80%, 60%)', location: 'Room 3B' },
+    ]},
+    { label: 'Tomorrow · March 9', events: [
+      { title: 'Sprint Planning', time: '10:00 – 11:30 AM', color: 'hsl(150, 100%, 60%)', location: null },
+    ]},
+    { label: 'Tuesday · March 10', events: [
+      { title: 'AI Architecture Deep Dive', time: '1:00 – 4:00 PM', color: 'hsl(0, 80%, 55%)', location: null },
+    ]},
+    { label: 'Wednesday · March 11', events: [
+      { title: 'Code Review', time: '11:00 AM – 12:00 PM', color: 'hsl(45, 100%, 65%)', location: null },
+    ]},
   ];
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-1.5">
-        {upcoming.map((ev, i) => (
-          <div key={i} className={cn('border-l-2 pl-3 py-2 rounded-r-md hover:bg-muted/20 cursor-pointer', ev.color)}>
-            <p className="text-xs font-medium">{ev.title}</p>
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {ev.time}
+      <div className="p-2 space-y-3">
+        {sections.map(section => (
+          <div key={section.label} className="space-y-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase px-1">{section.label}</p>
+            {section.events.map((ev, i) => (
+              <button
+                key={i}
+                className="w-full text-left rounded-lg hover:bg-muted/20 transition-colors group"
+              >
+                <div className="flex gap-2 px-1 py-1.5">
+                  <div className="w-0.5 rounded-full shrink-0 self-stretch" style={{ background: ev.color }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium">{ev.title}</p>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {ev.time}
+                    </p>
+                    {ev.location && (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {ev.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
+  );
             </p>
           </div>
         ))}
