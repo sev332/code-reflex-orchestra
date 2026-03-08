@@ -172,6 +172,66 @@ function renderBrushStroke(ctx: CanvasRenderingContext2D, e: DrawableEntity, vp:
 }
 
 // ============================================
+// PATH ENTITY RENDERER — Bézier paths
+// ============================================
+
+function renderPathEntity(ctx: CanvasRenderingContext2D, e: DrawableEntity, vp: ViewportState) {
+  if (!e.pathData) return;
+  const { panX, panY, zoom } = vp;
+  
+  ctx.save();
+  for (const contour of e.pathData.contours) {
+    if (contour.anchors.length < 2) continue;
+    ctx.beginPath();
+    const a0 = contour.anchors[0];
+    ctx.moveTo((a0.position.x + panX) * zoom, (a0.position.y + panY) * zoom);
+    
+    for (let i = 1; i < contour.anchors.length; i++) {
+      const prev = contour.anchors[i - 1];
+      const curr = contour.anchors[i];
+      if (prev.handleOut && curr.handleIn) {
+        ctx.bezierCurveTo(
+          (prev.handleOut.x + panX) * zoom, (prev.handleOut.y + panY) * zoom,
+          (curr.handleIn.x + panX) * zoom, (curr.handleIn.y + panY) * zoom,
+          (curr.position.x + panX) * zoom, (curr.position.y + panY) * zoom,
+        );
+      } else {
+        ctx.lineTo((curr.position.x + panX) * zoom, (curr.position.y + panY) * zoom);
+      }
+    }
+    
+    if (contour.closed) {
+      const last = contour.anchors[contour.anchors.length - 1];
+      const first = contour.anchors[0];
+      if (last.handleOut && first.handleIn) {
+        ctx.bezierCurveTo(
+          (last.handleOut.x + panX) * zoom, (last.handleOut.y + panY) * zoom,
+          (first.handleIn.x + panX) * zoom, (first.handleIn.y + panY) * zoom,
+          (first.position.x + panX) * zoom, (first.position.y + panY) * zoom,
+        );
+      }
+      ctx.closePath();
+    }
+    
+    // Fill
+    if (e.fill.type !== 'none') {
+      ctx.fillStyle = e.fill.color;
+      ctx.globalAlpha = e.blend.opacity * e.fill.opacity;
+      ctx.fill();
+    }
+    // Stroke
+    if (e.stroke.width > 0) {
+      ctx.strokeStyle = e.stroke.color;
+      ctx.lineWidth = e.stroke.width * zoom;
+      ctx.lineCap = e.stroke.cap;
+      ctx.lineJoin = e.stroke.join;
+      ctx.globalAlpha = e.blend.opacity * e.stroke.opacity;
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+
 // LIVE PREVIEW RENDERER — Renders in-progress drawing
 // ============================================
 
