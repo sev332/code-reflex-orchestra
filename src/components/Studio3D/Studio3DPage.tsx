@@ -1135,6 +1135,22 @@ export function Studio3DPage() {
             {rightPanel === 'render' && (
               <RenderSettingsPanel settings={postProcessing} onChange={setPostProcessing} />
             )}
+
+            {rightPanel === 'particles' && (
+              <ParticleEditorPanel
+                emitters={particleEmitters}
+                onEmittersChange={setParticleEmitters}
+                selectedEmitterId={selectedEmitterId}
+                onSelectEmitter={setSelectedEmitterId}
+              />
+            )}
+
+            {rightPanel === 'procedural' && (
+              <ProceduralToolsPanel
+                onAddTerrain={handleAddTerrain}
+                onAddProcedural={handleAddProcedural}
+              />
+            )}
           </div>
         </div>
       </div>
