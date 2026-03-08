@@ -191,7 +191,7 @@ export function IllustratorApp() {
       setIsDrawing(true);
       setDrawStart(world);
       if (tool === 'brush' || tool === 'pencil') {
-        setBrushPoints([{ x: world.x, y: world.y, pressure: e.pressure || 0.5 }]);
+        setBrushPoints([{ x: world.x, y: world.y, pressure: (e.nativeEvent as PointerEvent).pressure || 0.5 }]);
       }
     }
   }, [state.tool.activeToolId, state.viewport, state.selection.selectedIds, engine, screenToWorld]);
