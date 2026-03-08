@@ -164,6 +164,7 @@ export function ImageEditor() {
 
   const tools = [
     { id: 'select' as Tool, icon: Move, label: 'Select' },
+    { id: 'lasso' as Tool, icon: Lasso, label: 'Lasso' },
     { id: 'brush' as Tool, icon: Paintbrush, label: 'Brush' },
     { id: 'eraser' as Tool, icon: Eraser, label: 'Eraser' },
     { id: 'crop' as Tool, icon: Crop, label: 'Crop' },
