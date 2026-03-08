@@ -764,6 +764,35 @@ export function Studio3DPage() {
     });
   }, [shaderCategory, shaderSearch]);
 
+  // Terrain & Procedural handlers
+  const handleAddTerrain = useCallback((config: TerrainConfig) => {
+    pushUndo();
+    const id = `terrain-${Date.now()}`;
+    const newObj: SceneObject = {
+      id, name: 'Terrain', type: 'plane',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      visible: true, locked: false, color: '#44aa44', metalness: 0, roughness: 0.9,
+      opacity: 1, wireframe: false, castShadow: true, receiveShadow: true,
+      ...defaultPBR,
+    };
+    setObjects(prev => [...prev, newObj]);
+    setSelectedId(id);
+  }, [pushUndo]);
+
+  const handleAddProcedural = useCallback((config: ProceduralConfig) => {
+    pushUndo();
+    const id = `proc-${config.type}-${Date.now()}`;
+    const newObj: SceneObject = {
+      id, name: config.type.charAt(0).toUpperCase() + config.type.slice(1), type: 'cube',
+      position: [0, 0, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
+      visible: true, locked: false, color: '#8888aa', metalness: 0.2, roughness: 0.6,
+      opacity: 1, wireframe: false, castShadow: true, receiveShadow: true,
+      ...defaultPBR,
+    };
+    setObjects(prev => [...prev, newObj]);
+    setSelectedId(id);
+  }, [pushUndo]);
+
   return (
     <div className="h-full flex flex-col bg-background/30">
       {/* ─── Top Toolbar ─── */}
