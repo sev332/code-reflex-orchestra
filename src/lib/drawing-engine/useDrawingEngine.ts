@@ -1324,7 +1324,31 @@ export function useDrawingEngine() {
     link.click();
   }, [state.scene]);
 
-  return {
+  // ── SVG Import ──
+
+  const importSVGFile = useCallback((svgString: string) => {
+    const result = importSVG(svgString);
+    if (result.entities.length === 0) return;
+    
+    setState(prev => {
+      const entities = { ...prev.scene.entities };
+      const layers = prev.scene.layers.map(l => {
+        if (l.id !== prev.scene.activeLayerId) return l;
+        const newLayerEntities = [...l.entities];
+        result.entities.forEach(e => {
+          entities[e.id] = e;
+          newLayerEntities.push(e.id);
+        });
+        return { ...l, entities: newLayerEntities };
+      });
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: result.entities.map(e => e.id) },
+      };
+    });
+  }, []);
+
     state,
     setState,
     preview,
