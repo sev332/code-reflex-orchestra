@@ -1,6 +1,6 @@
 // Illustrator App — Dark Pro Studio Drawing Engine
-// Full Blueprint Launch: Canvas + Pen + Brush + Shapes + Layers + Fills + Strokes
-import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+// Full Blueprint: Canvas + Pen + Brush + Shapes + Layers + Live Preview
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,14 +11,15 @@ import {
   MousePointer2, Pencil, PenTool, Paintbrush, Eraser, Square, Circle,
   Hexagon, Star, Minus, Type, Pipette, Hand, ZoomIn, PaintBucket,
   Undo, Redo, Plus, Eye, EyeOff, Lock, Unlock, Trash2, Copy,
-  Grid3x3, Magnet, Layers, ChevronDown, ChevronRight,
-  Download, Upload, MoreHorizontal, Maximize2, RotateCw,
+  Grid3x3, Magnet,
+  Download, Upload, Maximize2, RotateCw,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
 import { renderScene } from '@/lib/drawing-engine/renderer';
 import { ToolId, Vec2 } from '@/lib/drawing-engine/types';
+import type { RawInputSample } from '@/lib/drawing-engine/brush-core';
 
 // ============================================
 // TOOL DEFINITIONS
@@ -55,13 +56,12 @@ const PRESET_COLORS = [
 
 export function IllustratorApp() {
   const engine = useDrawingEngine();
-  const { state } = engine;
+  const { state, preview } = engine;
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });
   const [isDrawing, setIsDrawing] = useState(false);
   const [drawStart, setDrawStart] = useState<Vec2 | null>(null);
-  const [brushPoints, setBrushPoints] = useState<{ x: number; y: number; pressure: number }[]>([]);
   const [dragStart, setDragStart] = useState<Vec2 | null>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState<Vec2 | null>(null);
@@ -80,7 +80,7 @@ export function IllustratorApp() {
     return () => observer.disconnect();
   }, []);
 
-  // Render loop
+  // Render loop — passes live preview to renderer
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -105,40 +105,28 @@ export function IllustratorApp() {
         canvasSize.height,
         state.gridEnabled,
         state.gridSize,
+        preview, // ← live preview layer
       );
-
-      // Draw shape preview during creation
-      if (isDrawing && drawStart) {
-        // shape preview rendered in onMouseMove
-      }
 
       animRef.current = requestAnimationFrame(render);
     };
 
     animRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animRef.current);
-  }, [state, canvasSize, isDrawing, drawStart]);
+  }, [state, canvasSize, preview]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if (e.key === 'Delete' || e.key === 'Backspace') {
-        engine.deleteSelected();
+      if (e.key === 'Delete' || e.key === 'Backspace') { engine.deleteSelected(); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.shiftKey ? engine.redo() : engine.undo(); e.preventDefault(); return; }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') { engine.redo(); e.preventDefault(); return; }
+      if (e.key === 'Escape' && engine.penAnchors.length > 0) {
+        // Finish pen path on Escape
+        engine.finishPenPath();
         return;
       }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
-        e.shiftKey ? engine.redo() : engine.undo();
-        e.preventDefault();
-        return;
-      }
-      if ((e.metaKey || e.ctrlKey) && e.key === 'y') {
-        engine.redo();
-        e.preventDefault();
-        return;
-      }
-
       const tool = TOOLS.find(t => t.shortcut.toLowerCase() === e.key.toLowerCase());
       if (tool) engine.setTool(tool.id);
     };
@@ -147,7 +135,7 @@ export function IllustratorApp() {
   }, [engine]);
 
   // ============================================
-  // CANVAS INTERACTION
+  // POINTER INTERACTION (not mouse — for pressure)
   // ============================================
 
   const screenToWorld = useCallback((sx: number, sy: number): Vec2 => ({
@@ -155,20 +143,34 @@ export function IllustratorApp() {
     y: sy / state.viewport.zoom - state.viewport.panY,
   }), [state.viewport]);
 
-  const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
+  const makeSample = (e: React.PointerEvent, world: Vec2): RawInputSample => ({
+    x: world.x,
+    y: world.y,
+    pressure: e.pressure || 0.5,
+    tiltX: (e as any).tiltX || 0,
+    tiltY: (e as any).tiltY || 0,
+    timestamp: e.timeStamp,
+    pointerType: (e.pointerType as 'pen' | 'mouse' | 'touch') || 'mouse',
+  });
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const world = screenToWorld(sx, sy);
     const tool = state.tool.activeToolId;
 
-    // Space + drag = pan
+    // Capture pointer for smooth tracking
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+
+    // Pan
     if (tool === 'hand' || e.button === 1) {
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
       return;
     }
 
+    // Select
     if (tool === 'select') {
       const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
       if (hitId) {
@@ -180,28 +182,47 @@ export function IllustratorApp() {
         } else {
           engine.select([hitId]);
         }
-        setDragStart({ x: world.x, y: world.y });
+        setDragStart(world);
       } else {
         engine.select([]);
       }
       return;
     }
 
-    if (tool.startsWith('shape-') || tool === 'brush' || tool === 'pencil') {
+    // Pen tool — click to add anchor
+    if (tool === 'pen') {
+      engine.addPenAnchor({ x: world.x, y: world.y });
+      return;
+    }
+
+    // Brush / Pencil — start BrushSession
+    if (tool === 'brush' || tool === 'pencil') {
+      setIsDrawing(true);
+      engine.beginBrushStroke(makeSample(e, world));
+      return;
+    }
+
+    // Shape tools
+    if (tool.startsWith('shape-')) {
       setIsDrawing(true);
       setDrawStart(world);
-      if (tool === 'brush' || tool === 'pencil') {
-        setBrushPoints([{ x: world.x, y: world.y, pressure: (e.nativeEvent as PointerEvent).pressure || 0.5 }]);
+      if (tool === 'shape-line') {
+        engine.beginLinePreview(world, state.tool.strokeColor, state.tool.strokeWidth);
+      } else {
+        const shapeKind = tool.replace('shape-', '');
+        engine.beginShapePreview(world, shapeKind, state.tool.fillColor, state.tool.strokeColor, state.tool.strokeWidth);
       }
     }
-  }, [state.tool.activeToolId, state.viewport, state.selection.selectedIds, engine, screenToWorld]);
+  }, [state.tool, state.viewport, state.selection.selectedIds, engine, screenToWorld]);
 
-  const handleCanvasMouseMove = useCallback((e: React.MouseEvent) => {
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const world = screenToWorld(sx, sy);
+    const tool = state.tool.activeToolId;
 
+    // Pan
     if (isPanning && panStart) {
       const dx = (e.clientX - panStart.x) / state.viewport.zoom;
       const dy = (e.clientY - panStart.y) / state.viewport.zoom;
@@ -210,84 +231,91 @@ export function IllustratorApp() {
       return;
     }
 
+    // Drag selected
     if (dragStart && state.selection.selectedIds.length > 0) {
-      const dx = world.x - dragStart.x;
-      const dy = world.y - dragStart.y;
-      engine.moveSelected(dx, dy);
+      engine.moveSelected(world.x - dragStart.x, world.y - dragStart.y);
       setDragStart(world);
       return;
     }
 
+    // Brush / Pencil — update session
+    if (isDrawing && (tool === 'brush' || tool === 'pencil')) {
+      engine.updateBrushStroke(makeSample(e, world));
+      return;
+    }
+
+    // Shape preview
     if (isDrawing && drawStart) {
-      const tool = state.tool.activeToolId;
-      if (tool === 'brush' || tool === 'pencil') {
-        setBrushPoints(prev => [...prev, { x: world.x, y: world.y, pressure: (e.nativeEvent as PointerEvent).pressure || 0.5 }]);
+      if (tool === 'shape-line') {
+        engine.updateLinePreview(world);
+      } else {
+        engine.updateShapePreview(world);
       }
       return;
     }
 
-    // Hover detection
-    if (state.tool.activeToolId === 'select') {
-      const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
-      engine.setHovered(hitId);
+    // Pen cursor tracking
+    if (tool === 'pen') {
+      engine.updatePenCursor(world);
+      return;
+    }
+
+    // Hover
+    if (tool === 'select') {
+      engine.setHovered(engine.hitTestAtPoint({ x: sx, y: sy }));
     }
   }, [isPanning, panStart, dragStart, isDrawing, drawStart, state, engine, screenToWorld]);
 
-  const handleCanvasMouseUp = useCallback((e: React.MouseEvent) => {
-    if (isPanning) {
-      setIsPanning(false);
-      setPanStart(null);
-      return;
+  const handlePointerUp = useCallback((e: React.PointerEvent) => {
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+
+    if (isPanning) { setIsPanning(false); setPanStart(null); return; }
+    if (dragStart) { setDragStart(null); return; }
+
+    if (!isDrawing) return;
+
+    const rect = canvasRef.current!.getBoundingClientRect();
+    const sx = e.clientX - rect.left;
+    const sy = e.clientY - rect.top;
+    const world = screenToWorld(sx, sy);
+    const tool = state.tool.activeToolId;
+    const { fillColor, strokeColor, strokeWidth } = state.tool;
+
+    // Brush / Pencil — finalize
+    if (tool === 'brush' || tool === 'pencil') {
+      const size = tool === 'brush' ? engine.activeBrushPreset.baseSize : 2;
+      engine.endBrushStroke(makeSample(e, world), strokeColor, size);
     }
 
-    if (dragStart) {
-      setDragStart(null);
-      return;
+    // Shape finalization
+    if (drawStart && tool === 'shape-rect') {
+      const x = Math.min(drawStart.x, world.x), y = Math.min(drawStart.y, world.y);
+      const w = Math.abs(world.x - drawStart.x), h = Math.abs(world.y - drawStart.y);
+      if (w > 2 && h > 2) engine.addEntity(engine.createRectEntity(x, y, w, h, fillColor, strokeColor, strokeWidth));
+      engine.endShapePreview();
+    } else if (drawStart && tool === 'shape-ellipse') {
+      const cx = (drawStart.x + world.x) / 2, cy = (drawStart.y + world.y) / 2;
+      const rx = Math.abs(world.x - drawStart.x) / 2, ry = Math.abs(world.y - drawStart.y) / 2;
+      if (rx > 2 && ry > 2) engine.addEntity(engine.createEllipseEntity(cx, cy, rx, ry, fillColor, strokeColor, strokeWidth));
+      engine.endShapePreview();
+    } else if (drawStart && tool === 'shape-line') {
+      engine.addEntity(engine.createLineEntity(drawStart.x, drawStart.y, world.x, world.y, strokeColor, strokeWidth));
+      engine.endLinePreview();
+    } else if (drawStart && (tool === 'shape-polygon' || tool === 'shape-star')) {
+      const x = Math.min(drawStart.x, world.x), y = Math.min(drawStart.y, world.y);
+      const w = Math.abs(world.x - drawStart.x), h = Math.abs(world.y - drawStart.y);
+      if (w > 2 && h > 2) engine.addEntity(engine.createRectEntity(x, y, w, h, fillColor, strokeColor, strokeWidth));
+      engine.endShapePreview();
     }
 
-    if (isDrawing && drawStart) {
-      const rect = canvasRef.current!.getBoundingClientRect();
-      const sx = e.clientX - rect.left;
-      const sy = e.clientY - rect.top;
-      const world = screenToWorld(sx, sy);
-      const tool = state.tool.activeToolId;
-      const { fillColor, strokeColor, strokeWidth } = state.tool;
-
-      if (tool === 'shape-rect') {
-        const x = Math.min(drawStart.x, world.x);
-        const y = Math.min(drawStart.y, world.y);
-        const w = Math.abs(world.x - drawStart.x);
-        const h = Math.abs(world.y - drawStart.y);
-        if (w > 2 && h > 2) {
-          engine.addEntity(engine.createRectEntity(x, y, w, h, fillColor, strokeColor, strokeWidth));
-        }
-      } else if (tool === 'shape-ellipse') {
-        const cx = (drawStart.x + world.x) / 2;
-        const cy = (drawStart.y + world.y) / 2;
-        const rx = Math.abs(world.x - drawStart.x) / 2;
-        const ry = Math.abs(world.y - drawStart.y) / 2;
-        if (rx > 2 && ry > 2) {
-          engine.addEntity(engine.createEllipseEntity(cx, cy, rx, ry, fillColor, strokeColor, strokeWidth));
-        }
-      } else if (tool === 'shape-line') {
-        engine.addEntity(engine.createLineEntity(drawStart.x, drawStart.y, world.x, world.y, strokeColor, strokeWidth));
-      } else if (tool === 'brush' || tool === 'pencil') {
-        if (brushPoints.length > 2) {
-          engine.addEntity(engine.createBrushStrokeEntity(brushPoints, strokeColor, tool === 'brush' ? state.tool.brushPreset.size : 2));
-        }
-      }
-
-      setIsDrawing(false);
-      setDrawStart(null);
-      setBrushPoints([]);
-    }
-  }, [isDrawing, drawStart, isPanning, dragStart, brushPoints, state.tool, engine, screenToWorld]);
+    setIsDrawing(false);
+    setDrawStart(null);
+  }, [isDrawing, drawStart, isPanning, dragStart, state.tool, engine, screenToWorld]);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
     if (e.ctrlKey || e.metaKey) {
-      const delta = e.deltaY > 0 ? 0.9 : 1.1;
-      engine.setZoom(state.viewport.zoom * delta);
+      engine.setZoom(state.viewport.zoom * (e.deltaY > 0 ? 0.9 : 1.1));
     } else {
       engine.pan(-e.deltaX / state.viewport.zoom, -e.deltaY / state.viewport.zoom);
     }
@@ -297,7 +325,6 @@ export function IllustratorApp() {
   const selectedEntity = state.selection.selectedIds.length === 1
     ? state.scene.entities[state.selection.selectedIds[0]]
     : null;
-
   const entityCount = Object.keys(state.scene.entities).length;
 
   return (
@@ -402,15 +429,15 @@ export function IllustratorApp() {
         <div
           ref={containerRef}
           className="flex-1 relative overflow-hidden"
-          style={{ cursor: getCursorForTool(state.tool.activeToolId, isPanning) }}
+          style={{ cursor: getCursorForTool(state.tool.activeToolId, isPanning), touchAction: 'none' }}
         >
           <canvas
             ref={canvasRef}
             className="absolute inset-0"
-            onMouseDown={handleCanvasMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseUp={handleCanvasMouseUp}
-            onMouseLeave={() => { setIsDrawing(false); setIsPanning(false); setDragStart(null); }}
+            onPointerDown={handlePointerDown}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={() => { setIsDrawing(false); setIsPanning(false); setDragStart(null); }}
             onWheel={handleWheel}
             onContextMenu={e => e.preventDefault()}
           />
@@ -429,11 +456,19 @@ export function IllustratorApp() {
               <Maximize2 className="w-3 h-3" />
             </Button>
           </div>
+
+          {/* Brush preset indicator */}
+          {(state.tool.activeToolId === 'brush') && (
+            <div className="absolute top-3 left-3 bg-[hsl(220,27%,6%)/90] backdrop-blur-sm rounded-lg border border-[hsl(220,15%,15%)] px-3 py-1.5 text-[10px]">
+              <span className="text-muted-foreground">Brush:</span>{' '}
+              <span className="text-primary font-medium">{engine.activeBrushPreset.name}</span>
+              <span className="text-muted-foreground ml-2">{engine.activeBrushPreset.baseSize}px</span>
+            </div>
+          )}
         </div>
 
         {/* Right panel */}
         <div className="w-56 border-l border-[hsl(220,15%,12%)] bg-[hsl(220,27%,5%)] flex flex-col shrink-0">
-          {/* Panel tabs */}
           <div className="flex border-b border-[hsl(220,15%,12%)]">
             <button
               className={cn(
@@ -457,10 +492,7 @@ export function IllustratorApp() {
 
           <ScrollArea className="flex-1">
             {activePanel === 'properties' ? (
-              <PropertiesPanel
-                engine={engine}
-                selectedEntity={selectedEntity}
-              />
+              <PropertiesPanel engine={engine} selectedEntity={selectedEntity} />
             ) : (
               <LayersPanel engine={engine} />
             )}
@@ -483,8 +515,6 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
       {/* Fill & Stroke */}
       <div>
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Appearance</div>
-
-        {/* Fill */}
         <div className="space-y-1.5 mb-3">
           <div className="text-[10px] text-muted-foreground">Fill</div>
           <div className="flex flex-wrap gap-1">
@@ -501,8 +531,6 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
             ))}
           </div>
         </div>
-
-        {/* Stroke */}
         <div className="space-y-1.5">
           <div className="text-[10px] text-muted-foreground">Stroke</div>
           <div className="flex flex-wrap gap-1">
@@ -522,9 +550,7 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
             <span className="text-[10px] text-muted-foreground w-10">Width</span>
             <Slider
               value={[state.tool.strokeWidth]}
-              min={0}
-              max={20}
-              step={0.5}
+              min={0} max={20} step={0.5}
               onValueChange={([v]) => engine.setStrokeWidth(v)}
               className="flex-1"
             />
@@ -533,24 +559,42 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
         </div>
       </div>
 
-      {/* Brush settings */}
+      {/* Brush presets */}
       {(state.tool.activeToolId === 'brush' || state.tool.activeToolId === 'pencil') && (
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Brush</div>
-          <div className="space-y-2">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Brush Presets</div>
+          <div className="space-y-1">
+            {engine.brushPresets.map(preset => (
+              <button
+                key={preset.id}
+                className={cn(
+                  'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] transition-colors',
+                  engine.activeBrushPreset.id === preset.id
+                    ? 'bg-primary/15 text-primary'
+                    : 'text-muted-foreground hover:bg-[hsl(220,15%,10%)] hover:text-foreground'
+                )}
+                onClick={() => engine.setActiveBrushPreset(preset)}
+              >
+                <div className="w-4 h-4 rounded-full border border-[hsl(220,15%,20%)]" style={{ backgroundColor: preset.color }} />
+                <span className="flex-1 text-left">{preset.name}</span>
+                <span className="text-[8px] text-muted-foreground/60">{preset.baseSize}px</span>
+              </button>
+            ))}
+          </div>
+          <div className="mt-2 space-y-2">
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground w-14">Size</span>
-              <Slider value={[state.tool.brushPreset.size]} min={1} max={100} step={1} className="flex-1" />
-              <span className="text-[10px] font-mono w-6 text-right">{state.tool.brushPreset.size}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground w-14">Smooth</span>
-              <Slider value={[state.tool.brushPreset.smoothing * 100]} min={0} max={100} step={1} className="flex-1" />
+              <Slider value={[engine.activeBrushPreset.baseSize]} min={1} max={100} step={1} className="flex-1" />
+              <span className="text-[10px] font-mono w-6 text-right">{engine.activeBrushPreset.baseSize}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground w-14">Opacity</span>
-              <Slider value={[state.tool.brushPreset.opacity * 100]} min={0} max={100} step={1} className="flex-1" />
+              <Slider value={[engine.activeBrushPreset.opacity * 100]} min={0} max={100} step={1} className="flex-1" />
+              <span className="text-[10px] font-mono w-6 text-right">{Math.round(engine.activeBrushPreset.opacity * 100)}%</span>
             </div>
+          </div>
+          <div className="mt-2 text-[9px] text-muted-foreground/50">
+            Stabilizer: {engine.activeBrushPreset.session.stabilizer.mode} • Min dist: {engine.activeBrushPreset.session.minDistance}px
           </div>
         </div>
       )}
@@ -577,22 +621,17 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
               <Input value={Math.round(selectedEntity.shapeProps?.height ?? 0)} className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)]" readOnly />
             </div>
           </div>
-
           <div className="flex gap-1 mt-3">
             <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive" onClick={engine.deleteSelected}>
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7">
-              <Copy className="w-3.5 h-3.5" />
-            </Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7">
-              <RotateCw className="w-3.5 h-3.5" />
-            </Button>
+            <Button variant="ghost" size="icon" className="w-7 h-7"><Copy className="w-3.5 h-3.5" /></Button>
+            <Button variant="ghost" size="icon" className="w-7 h-7"><RotateCw className="w-3.5 h-3.5" /></Button>
           </div>
         </div>
       )}
 
-      {/* Alignment (when selected) */}
+      {/* Alignment */}
       {state.selection.selectedIds.length > 0 && (
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Align</div>
@@ -648,7 +687,6 @@ function LayersPanel({ engine }: { engine: ReturnType<typeof useDrawingEngine> }
               </Button>
             </div>
 
-            {/* Layer entities */}
             {isActive && layerEntities.length > 0 && (
               <div className="pl-6 border-l border-[hsl(220,15%,12%)] ml-3">
                 {layerEntities.map(entity => (
