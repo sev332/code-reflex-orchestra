@@ -2,6 +2,8 @@
 // Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
 // Sprint 2: Gradient tool, Proper booleans, Scissors/Knife, Groups, Isolation, Alignment
 // Sprint 3: Transform tools, Effects, Blend, Clipping masks, Warp tools
+// Sprint 4: Effects rendering, Smart guides, SVG import
+// Sprint 5: Appearance panel, Patterns, Symbols, Mesh gradient
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -30,6 +32,9 @@ import { BUILT_IN_FONTS } from '@/lib/drawing-engine/text-engine';
 import { createLinearGradient, createRadialGradient, GRADIENT_PRESETS } from '@/lib/drawing-engine/gradient-engine';
 import { EFFECT_PRESETS } from '@/lib/drawing-engine/effects-engine';
 import { WIDTH_PRESETS } from '@/lib/drawing-engine/reshape-engine';
+import { APPEARANCE_PRESETS } from '@/lib/drawing-engine/appearance-engine';
+import { PATTERN_PRESETS } from '@/lib/drawing-engine/pattern-engine';
+import { MESH_PRESETS } from '@/lib/drawing-engine/mesh-gradient-engine';
 
 // ============================================
 // TOOL DEFINITIONS
@@ -599,6 +604,69 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
               ))}
             </div>
           )}
+
+          {/* Appearance Presets (Sprint 5) */}
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Appearance Stack</div>
+            <div className="grid grid-cols-2 gap-1">
+              {APPEARANCE_PRESETS.map(preset => (
+                <Button key={preset.name} variant="ghost" size="sm" className="h-7 text-[9px]"
+                  onClick={() => engine.applyAppearancePreset(selectedEntity.id, preset)}>
+                  {preset.name}
+                </Button>
+              ))}
+            </div>
+            <div className="flex gap-1 mt-1">
+              <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1"
+                onClick={() => engine.addEntityAppearance(selectedEntity.id, engine.createFillEntry({ color: state.tool.fillColor }))}>
+                + Fill
+              </Button>
+              <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1"
+                onClick={() => engine.addEntityAppearance(selectedEntity.id, engine.createStrokeEntry({ color: state.tool.strokeColor, width: state.tool.strokeWidth }))}>
+                + Stroke
+              </Button>
+            </div>
+            {engine.entityAppearances[selectedEntity.id]?.entries.length > 0 && (
+              <div className="mt-1 space-y-0.5">
+                {engine.entityAppearances[selectedEntity.id].entries.map(entry => (
+                  <div key={entry.id} className="flex items-center justify-between text-[9px] px-1 py-0.5 bg-[hsl(220,15%,8%)] rounded">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded-sm border border-[hsl(220,15%,20%)]"
+                        style={{ backgroundColor: entry.type === 'fill' ? entry.fill?.color : entry.stroke?.color }} />
+                      <span className={entry.visible ? 'text-primary' : 'text-muted-foreground'}>
+                        {entry.type === 'fill' ? 'Fill' : `Stroke ${entry.stroke?.width}px`}
+                      </span>
+                    </div>
+                    <div className="flex gap-0.5">
+                      <button className="text-muted-foreground hover:text-foreground" onClick={() => engine.toggleEntityAppearance(selectedEntity.id, entry.id)}>
+                        {entry.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                      </button>
+                      <button className="text-muted-foreground hover:text-destructive" onClick={() => engine.removeEntityAppearance(selectedEntity.id, entry.id)}>
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mesh Gradient (Sprint 5) */}
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Mesh Gradient</div>
+            <div className="grid grid-cols-3 gap-1">
+              {MESH_PRESETS.map(preset => (
+                <Button key={preset.name} variant="ghost" size="sm" className="h-7 text-[9px]"
+                  onClick={() => engine.createMeshOnEntity(selectedEntity.id, preset.name)}>
+                  {preset.name}
+                </Button>
+              ))}
+              <Button variant="ghost" size="sm" className="h-7 text-[9px]"
+                onClick={() => engine.createMeshOnEntity(selectedEntity.id)}>
+                Custom
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -661,6 +729,62 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           )}
         </div>
       )}
+
+      {/* Pattern Presets (Sprint 5) */}
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Patterns</div>
+        <div className="grid grid-cols-4 gap-1">
+          {PATTERN_PRESETS.map(preset => (
+            <Tooltip key={preset.name}>
+              <TooltipTrigger asChild>
+                <button className="w-full h-8 rounded border border-[hsl(220,15%,20%)] hover:border-primary/50 transition-colors overflow-hidden bg-[hsl(220,15%,8%)]"
+                  onClick={() => engine.setActivePattern(preset.create())}>
+                  <canvas ref={el => {
+                    if (!el) return;
+                    const ctx = el.getContext('2d');
+                    if (!ctx) return;
+                    el.width = 40; el.height = 32;
+                    ctx.fillStyle = '#0a0a1a';
+                    ctx.fillRect(0, 0, 40, 32);
+                    preset.renderTile(ctx, preset.create().tile.width, preset.create().tile.height);
+                  }} className="w-full h-full" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent className="text-xs">{preset.name}</TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+      </div>
+
+      {/* Symbols (Sprint 5) */}
+      <div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Symbols</div>
+        <div className="flex gap-1 mb-1">
+          <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1"
+            onClick={engine.createSymbolFromSelection}
+            disabled={state.selection.selectedIds.length === 0}>
+            Create Symbol
+          </Button>
+          {selectedEntity?.type === 'symbol' && (
+            <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1"
+              onClick={() => engine.expandSymbolInstance(selectedEntity.id)}>
+              Expand
+            </Button>
+          )}
+        </div>
+        {engine.symbolLibrary.symbols.length > 0 && (
+          <div className="space-y-0.5">
+            {engine.symbolLibrary.symbols.map(sym => (
+              <div key={sym.id} className="flex items-center justify-between text-[9px] px-1 py-0.5 bg-[hsl(220,15%,8%)] rounded">
+                <span className="text-foreground truncate flex-1">{sym.name}</span>
+                <Badge variant="outline" className="text-[7px] h-3.5 px-1 border-[hsl(220,15%,20%)]">
+                  {sym.masterEntities.length}
+                </Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Node editing info */}
       {engine.nodeOverlay.enabled && (

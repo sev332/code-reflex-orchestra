@@ -2,6 +2,8 @@
 // Sprint 1: Added pen handle dragging, text tool, undo/redo wiring, SVG export
 // Sprint 2: Added gradient engine, proper booleans, scissors/knife, groups, isolation mode
 // Sprint 3: Transform tools, effects engine, blend/clipping masks, reshape/warp tools
+// Sprint 4: Effects rendering, smart guides, SVG import
+// Sprint 5: Appearance panel, pattern system, symbols, gradient mesh
 import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
@@ -57,6 +59,27 @@ import {
   ClippingMask, createClippingMask, releaseClippingMask,
   OpacityMask, createOpacityMask,
 } from './blend-engine';
+import {
+  AppearanceStack, emptyAppearanceStack, AppearanceEntry,
+  addAppearanceEntry, removeAppearanceEntry, updateAppearanceEntry,
+  toggleAppearanceEntry, reorderAppearanceEntry,
+  createFillEntry, createStrokeEntry, entityToAppearanceStack,
+  APPEARANCE_PRESETS, SavedGraphicStyle, createSavedStyle,
+} from './appearance-engine';
+import {
+  PatternDef, PatternPreset, PATTERN_PRESETS, createPattern, PatternLibrary,
+} from './pattern-engine';
+import {
+  SymbolDef, SymbolInstance, SymbolLibrary, emptySymbolLibrary,
+  createSymbolDef, createSymbolInstance, convertToSymbol, expandInstance,
+  addSymbolToLibrary, removeSymbolFromLibrary, addInstanceToLibrary,
+  spraySymbol, defaultSprayerConfig, SprayerConfig,
+} from './symbol-engine';
+import {
+  MeshGrid, createMeshGrid, setMeshPointColor, moveMeshPoint,
+  addMeshRow, addMeshCol, renderMeshGradient, hitTestMeshPoint,
+  MESH_PRESETS,
+} from './mesh-gradient-engine';
 import {
   WarpToolConfig, defaultWarpConfig, applyWarpAtPoint,
   WidthProfile, WIDTH_PRESETS, addWidthPoint, getWidthAtPosition,
@@ -117,6 +140,21 @@ export function useDrawingEngine() {
   
   // Sprint 3: Transform origin
   const [transformOriginPreset, setTransformOriginPreset] = useState<TransformOriginPreset>('center');
+
+  // Sprint 5: Appearance stacks per entity
+  const [entityAppearances, setEntityAppearances] = useState<Record<string, AppearanceStack>>({});
+  const [savedStyles, setSavedStyles] = useState<SavedGraphicStyle[]>([]);
+
+  // Sprint 5: Pattern library
+  const [patternLibrary, setPatternLibrary] = useState<PatternLibrary>({ patterns: [] });
+  const [activePattern, setActivePattern] = useState<PatternDef | null>(null);
+
+  // Sprint 5: Symbol library
+  const [symbolLibrary, setSymbolLibrary] = useState<SymbolLibrary>(emptySymbolLibrary);
+
+  // Sprint 5: Mesh gradient
+  const [activeMesh, setActiveMesh] = useState<MeshGrid | null>(null);
+  const [meshEditTarget, setMeshEditTarget] = useState<string | null>(null);
 
   const updateHistory = useCallback(() => {
     setCanUndo(historyRef.current.canUndo);
@@ -1349,6 +1387,167 @@ export function useDrawingEngine() {
     });
   }, []);
 
+  // ── SPRINT 5: Appearance Stack ──
+
+  const addEntityAppearance = useCallback((entityId: string, entry: AppearanceEntry) => {
+    setEntityAppearances(prev => ({
+      ...prev,
+      [entityId]: addAppearanceEntry(prev[entityId] ?? emptyAppearanceStack, entry),
+    }));
+  }, []);
+
+  const removeEntityAppearance = useCallback((entityId: string, entryId: string) => {
+    setEntityAppearances(prev => ({
+      ...prev,
+      [entityId]: removeAppearanceEntry(prev[entityId] ?? emptyAppearanceStack, entryId),
+    }));
+  }, []);
+
+  const toggleEntityAppearance = useCallback((entityId: string, entryId: string) => {
+    setEntityAppearances(prev => ({
+      ...prev,
+      [entityId]: toggleAppearanceEntry(prev[entityId] ?? emptyAppearanceStack, entryId),
+    }));
+  }, []);
+
+  const applyAppearancePreset = useCallback((entityId: string, preset: { stack: AppearanceStack }) => {
+    setEntityAppearances(prev => ({ ...prev, [entityId]: { ...preset.stack } }));
+  }, []);
+
+  const saveGraphicStyle = useCallback((name: string, entityId: string) => {
+    const stack = entityAppearances[entityId];
+    if (!stack) return;
+    const style = createSavedStyle(name, stack);
+    setSavedStyles(prev => [...prev, style]);
+  }, [entityAppearances]);
+
+  // ── SPRINT 5: Symbols ──
+
+  const createSymbolFromSelection = useCallback(() => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length === 0) return prev;
+      const selectedEntities = ids.map(id => prev.scene.entities[id]).filter(Boolean);
+      const { symbolDef, instance, removedIds } = convertToSymbol(selectedEntities, `Symbol ${symbolLibrary.symbols.length + 1}`);
+
+      setSymbolLibrary(lib => {
+        let updated = addSymbolToLibrary(lib, symbolDef);
+        updated = addInstanceToLibrary(updated, instance);
+        return updated;
+      });
+
+      const entities = { ...prev.scene.entities };
+      removedIds.forEach(id => delete entities[id]);
+      // Add instance as entity placeholder
+      const instanceEntity: DrawableEntity = {
+        id: instance.id,
+        type: 'symbol',
+        name: symbolDef.name,
+        visible: true, locked: false,
+        topologyMode: 'symbol',
+        transform: { translateX: instance.transform.x, translateY: instance.transform.y, rotation: instance.transform.rotation, scaleX: instance.transform.scaleX, scaleY: instance.transform.scaleY, skewX: 0, skewY: 0 },
+        blend: { mode: 'normal', opacity: 1 },
+        fill: { type: 'solid', color: '#4a9eff', opacity: 1 },
+        stroke: { color: '#ffffff', width: 0, opacity: 0, cap: 'round', join: 'round' },
+      };
+      entities[instance.id] = instanceEntity;
+
+      const layers = prev.scene.layers.map(l => ({
+        ...l,
+        entities: l.entities.filter(eid => !removedIds.includes(eid)),
+      }));
+      const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
+      if (activeLayer) activeLayer.entities.push(instance.id);
+
+      return { ...prev, scene: { ...prev.scene, entities, layers }, selection: { ...prev.selection, selectedIds: [instance.id] } };
+    });
+  }, [symbolLibrary]);
+
+  const placeSymbolInstance = useCallback((symbolId: string, position: Vec2) => {
+    const def = symbolLibrary.symbols.find(s => s.id === symbolId);
+    if (!def) return;
+    const instance = createSymbolInstance(def, position);
+    setSymbolLibrary(lib => addInstanceToLibrary(lib, instance));
+
+    const instanceEntity: DrawableEntity = {
+      id: instance.id,
+      type: 'symbol',
+      name: `${def.name} instance`,
+      visible: true, locked: false,
+      topologyMode: 'symbol',
+      transform: { translateX: position.x, translateY: position.y, rotation: 0, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 },
+      blend: { mode: 'normal', opacity: 1 },
+      fill: { type: 'solid', color: '#4a9eff', opacity: 1 },
+      stroke: { color: '#ffffff', width: 0, opacity: 0, cap: 'round', join: 'round' },
+    };
+    addEntity(instanceEntity);
+  }, [symbolLibrary, addEntity]);
+
+  const expandSymbolInstance = useCallback((instanceId: string) => {
+    setState(prev => {
+      const entity = prev.scene.entities[instanceId];
+      if (!entity || entity.type !== 'symbol') return prev;
+      
+      // Find instance and def
+      const instance = symbolLibrary.instances.find(i => i.id === instanceId);
+      if (!instance) return prev;
+      const def = symbolLibrary.symbols.find(s => s.id === instance.symbolId);
+      if (!def) return prev;
+
+      const expanded = expandInstance(instance, def);
+      const entities = { ...prev.scene.entities };
+      delete entities[instanceId];
+      expanded.forEach(e => { entities[e.id] = e; });
+
+      const layers = prev.scene.layers.map(l => ({
+        ...l,
+        entities: l.entities.filter(eid => eid !== instanceId),
+      }));
+      const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
+      if (activeLayer) expanded.forEach(e => activeLayer.entities.push(e.id));
+
+      return { ...prev, scene: { ...prev.scene, entities, layers }, selection: { ...prev.selection, selectedIds: expanded.map(e => e.id) } };
+    });
+  }, [symbolLibrary]);
+
+  // ── SPRINT 5: Mesh Gradient ──
+
+  const createMeshOnEntity = useCallback((entityId: string, preset?: string) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      const bounds = getEntityBounds(entity);
+      
+      let mesh: MeshGrid;
+      if (preset) {
+        const p = MESH_PRESETS.find(m => m.name === preset);
+        mesh = p ? p.create(bounds.x, bounds.y, bounds.width, bounds.height) : createMeshGrid(bounds.x, bounds.y, bounds.width, bounds.height);
+      } else {
+        mesh = createMeshGrid(bounds.x, bounds.y, bounds.width, bounds.height);
+      }
+      
+      setActiveMesh(mesh);
+      setMeshEditTarget(entityId);
+      return prev;
+    });
+  }, []);
+
+  const updateMeshColor = useCallback((row: number, col: number, color: string) => {
+    setActiveMesh(prev => prev ? setMeshPointColor(prev, row, col, color) : null);
+  }, []);
+
+  const moveMeshPt = useCallback((row: number, col: number, dx: number, dy: number) => {
+    setActiveMesh(prev => prev ? moveMeshPoint(prev, row, col, dx, dy) : null);
+  }, []);
+
+  const addMeshRowAt = useCallback((afterRow: number) => {
+    setActiveMesh(prev => prev ? addMeshRow(prev, afterRow) : null);
+  }, []);
+
+  const addMeshColAt = useCallback((afterCol: number) => {
+    setActiveMesh(prev => prev ? addMeshCol(prev, afterCol) : null);
+  }, []);
+
   return {
     state,
     setState,
@@ -1499,5 +1698,35 @@ export function useDrawingEngine() {
     downloadSVG,
     downloadPNG,
     importSVGFile,
+    // Sprint 5: Appearance
+    entityAppearances,
+    addEntityAppearance,
+    removeEntityAppearance,
+    toggleEntityAppearance,
+    applyAppearancePreset,
+    savedStyles,
+    saveGraphicStyle,
+    appearancePresets: APPEARANCE_PRESETS,
+    createFillEntry,
+    createStrokeEntry,
+    // Sprint 5: Patterns
+    patternLibrary,
+    activePattern,
+    setActivePattern,
+    patternPresets: PATTERN_PRESETS,
+    // Sprint 5: Symbols
+    symbolLibrary,
+    createSymbolFromSelection,
+    placeSymbolInstance,
+    expandSymbolInstance,
+    // Sprint 5: Mesh Gradient
+    activeMesh,
+    meshEditTarget,
+    createMeshOnEntity,
+    updateMeshColor,
+    moveMeshPt,
+    addMeshRowAt,
+    addMeshColAt,
+    meshPresets: MESH_PRESETS,
   };
 }
