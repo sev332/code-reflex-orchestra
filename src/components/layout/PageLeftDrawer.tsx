@@ -274,6 +274,14 @@ const pageConfigs: Record<PageId, PageDrawerConfig> = {
     ],
     subTabs: {},
   },
+  illustrator: {
+    sideIcons: [
+      { id: 'layers', icon: Layers, label: 'Layers' },
+      { id: 'assets', icon: FolderOpen, label: 'Assets' },
+      { id: 'settings', icon: Settings, label: 'Settings' },
+    ],
+    subTabs: {},
+  },
 };
 
 interface PageLeftDrawerProps {
