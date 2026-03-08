@@ -29,6 +29,15 @@ const CalendarPage = lazy(() => import("@/components/Productivity/CalendarPage")
 const EmailPage = lazy(() => import("@/components/Productivity/EmailPage").then(m => ({ default: m.EmailPage })));
 const TasksPage = lazy(() => import("@/components/Productivity/TasksPage").then(m => ({ default: m.TasksPage })));
 
+const TerminalPage = lazy(() => import("@/components/DevTools/TerminalPage").then(m => ({ default: m.TerminalPage })));
+const APIStudioPage = lazy(() => import("@/components/DevTools/APIStudioPage").then(m => ({ default: m.APIStudioPage })));
+const DatabaseExplorerPage = lazy(() => import("@/components/DevTools/DatabaseExplorerPage").then(m => ({ default: m.DatabaseExplorerPage })));
+const DashboardBuilderPage = lazy(() => import("@/components/DevTools/DashboardBuilderPage").then(m => ({ default: m.DashboardBuilderPage })));
+const BrowserPage = lazy(() => import("@/components/Knowledge/BrowserPage").then(m => ({ default: m.BrowserPage })));
+const NotesPage = lazy(() => import("@/components/Knowledge/NotesPage").then(m => ({ default: m.NotesPage })));
+const FileManagerPage = lazy(() => import("@/components/System/FileManagerPage").then(m => ({ default: m.FileManagerPage })));
+const CommsHubPage = lazy(() => import("@/components/System/CommsHubPage").then(m => ({ default: m.CommsHubPage })));
+
 const DEFAULT_PINNED: PageId[] = ['chat', 'orchestration', 'documents', 'spreadsheet', 'calendar', 'email', 'tasks', 'ide'];
 
 const Index = () => {
