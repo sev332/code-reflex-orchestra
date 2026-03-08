@@ -1378,12 +1378,65 @@ export function Studio3DPage() {
                 onAddProcedural={handleAddProcedural}
               />
             )}
+
+            {rightPanel === 'physics' && (
+              <PhysicsPanel
+                worldConfig={physicsWorld}
+                onWorldChange={setPhysicsWorld}
+                bodies={physicsBodies}
+                onBodiesChange={setPhysicsBodies}
+                constraints={physicsConstraints}
+                onConstraintsChange={setPhysicsConstraints}
+                selectedObjectId={selectedId}
+                sceneObjects={sceneObjectRefs}
+                onSimulate={startPhysics}
+                onPause={pausePhysics}
+                onReset={resetPhysics}
+                isSimulating={isSimulating}
+              />
+            )}
+
+            {rightPanel === 'viewport' && (
+              <ViewportManagerPanel
+                viewportMode={viewportMode}
+                onViewportModeChange={setViewportMode}
+                layout={viewportLayout}
+                onLayoutChange={setViewportLayout}
+                bookmarks={cameraBookmarks}
+                onBookmarksChange={setCameraBookmarks}
+                onRestoreBookmark={handleRestoreBookmark}
+                cinematic={cinematic}
+                onCinematicChange={setCinematic}
+                onScreenshot={handleScreenshot}
+              />
+            )}
+
+            {rightPanel === 'scene' && (
+              <SceneManagerPanel
+                layers={sceneLayers}
+                onLayersChange={setSceneLayers}
+                prefabs={prefabs}
+                onPrefabsChange={setPrefabs}
+                onInstantiatePrefab={handleInstantiatePrefab}
+                fog={fogConfig}
+                onFogChange={setFogConfig}
+                sky={skyConfig}
+                onSkyChange={setSkyConfig}
+                selectedObjectId={selectedId}
+                onSaveAsPrefab={handleSaveAsPrefab}
+              />
+            )}
           </div>
         </div>
       </div>
 
+      {/* ─── Blueprint Editor ─── */}
+      {showBlueprint && (
+        <BlueprintEditor className="h-64 border-t border-border/30" />
+      )}
+
       {/* ─── Animation Timeline ─── */}
-      {showTimeline && (
+      {showTimeline && !showBlueprint && (
         <AnimationTimeline
           clip={animClip}
           onClipChange={setAnimClip}
