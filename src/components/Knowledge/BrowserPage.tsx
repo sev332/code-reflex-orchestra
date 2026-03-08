@@ -97,14 +97,6 @@ export function BrowserPage() {
     });
   }, [activeTabId]);
 
-  const summarizeWithAI = useCallback(() => {
-    if (!activeTab.content) return;
-    setAiSummary('Analyzing page content...');
-    setSidePanel('ai');
-    setTimeout(() => {
-      setAiSummary(`## AI Summary\n\n**Page:** ${activeTab.title}\n**URL:** ${activeTab.url}\n\n### Key Points:\n- This page covers core documentation and reference material\n- Contains multiple sections with structured technical content\n- Relevant to software development and AI research\n\n### Topics Identified:\n1. Technical documentation\n2. Code examples and tutorials\n3. API references\n\n### Recommended Actions:\n- Bookmark key sections for reference\n- Cross-reference with related documentation\n- Extract code snippets for the IDE`);
-    }, 1000);
-  }, [activeTab]);
 
   return (
     <div className="h-full flex flex-col bg-background/30">
