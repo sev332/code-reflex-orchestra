@@ -1,13 +1,18 @@
 /**
  * useLassoTool — React hook for the Boundary Instrument lasso
- * Manages lifecycle: image loading, pointer events, rendering, mask output.
+ * Phase 2+3: Adds organic unzip, proximity close, junction/quality state.
  */
 
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { LassoTool, type LassoConfig, type LassoPhase, DEFAULT_LASSO_CONFIG } from './lasso-tool';
-import type { PathVertex } from './temporal-engine';
+import type { PathVertex, BacktrackEvent } from './temporal-engine';
 import type { FieldCache } from './field-engine';
-import { renderLassoPath, renderGradientOverlay, renderMaskOverlay } from './field-renderer';
+import type { Junction, ConfidenceZone, PathQualityReport } from './ambiguity-engine';
+import {
+  renderLassoPath, renderGradientOverlay, renderMaskOverlay,
+  renderProximityCloseIndicator, renderJunctions,
+  renderConfidenceZones, renderBacktrackGhost, renderQualityBadge,
+} from './field-renderer';
 
 export interface UseLassoToolReturn {
   lassoRef: React.MutableRefObject<LassoTool>;
@@ -16,6 +21,12 @@ export interface UseLassoToolReturn {
   confidence: number;
   fieldCache: FieldCache | null;
   mask: Uint8Array | null;
+  // Phase 2+3
+  distanceToStart: number;
+  junctions: Junction[];
+  confidenceZones: ConfidenceZone[];
+  qualityReport: PathQualityReport | null;
+  lastBacktrack: BacktrackEvent | null;
 
   loadImage: (canvas: HTMLCanvasElement) => void;
   handlePointerDown: (e: React.PointerEvent) => void;
@@ -34,12 +45,26 @@ export function useLassoTool(initialConfig?: Partial<LassoConfig>): UseLassoTool
   const [confidence, setConfidence] = useState(0);
   const [fieldCache, setFieldCache] = useState<FieldCache | null>(null);
   const [mask, setMask] = useState<Uint8Array | null>(null);
+  const [distanceToStart, setDistanceToStart] = useState(Infinity);
+  const [junctions, setJunctions] = useState<Junction[]>([]);
+  const [confidenceZones, setConfidenceZones] = useState<ConfidenceZone[]>([]);
+  const [qualityReport, setQualityReport] = useState<PathQualityReport | null>(null);
+  const [lastBacktrack, setLastBacktrack] = useState<BacktrackEvent | null>(null);
 
   useEffect(() => {
     const lasso = lassoRef.current;
-    lasso.onPhaseChange = setPhase;
+    lasso.onPhaseChange = (p) => {
+      setPhase(p);
+      if (p === 'closed') {
+        setJunctions(lasso.junctions);
+        setConfidenceZones(lasso.confidenceZones);
+      }
+    };
     lasso.onPathUpdate = (v) => setVertices([...v]);
     lasso.onConfidenceUpdate = setConfidence;
+    lasso.onProximityClose = setDistanceToStart;
+    lasso.onBacktrack = (evt) => setLastBacktrack(evt);
+    lasso.onQualityUpdate = setQualityReport;
   }, []);
 
   const loadImage = useCallback((canvas: HTMLCanvasElement) => {
@@ -50,6 +75,10 @@ export function useLassoTool(initialConfig?: Partial<LassoConfig>): UseLassoTool
     setFieldCache(lassoRef.current.getFieldCache());
     setMask(null);
     setVertices([]);
+    setJunctions([]);
+    setConfidenceZones([]);
+    setQualityReport(null);
+    setLastBacktrack(null);
   }, []);
 
   const getCanvasCoords = useCallback((e: React.PointerEvent): { x: number; y: number; pressure: number } => {
@@ -85,6 +114,11 @@ export function useLassoTool(initialConfig?: Partial<LassoConfig>): UseLassoTool
     lassoRef.current.reset();
     setMask(null);
     setVertices([]);
+    setJunctions([]);
+    setConfidenceZones([]);
+    setQualityReport(null);
+    setLastBacktrack(null);
+    setDistanceToStart(Infinity);
   }, []);
 
   const generateMask = useCallback(() => {
@@ -96,9 +130,19 @@ export function useLassoTool(initialConfig?: Partial<LassoConfig>): UseLassoTool
   const renderOverlay = useCallback((ctx: CanvasRenderingContext2D) => {
     const lasso = lassoRef.current;
 
-    // Field overlay (if enabled)
+    // Field overlay
     if (lasso.config.showField && lasso.fieldCache) {
       renderGradientOverlay(ctx, lasso.fieldCache, 0.25);
+    }
+
+    // Confidence zone highlights (before path)
+    if (lasso.config.showConfidenceZones && confidenceZones.length > 0 && vertices.length > 0) {
+      renderConfidenceZones(ctx, vertices, confidenceZones);
+    }
+
+    // Backtrack ghost trail
+    if (lasso.ghostVertices.length > 0) {
+      renderBacktrackGhost(ctx, lasso.ghostVertices, lasso.getGhostFade());
     }
 
     // Path
@@ -106,11 +150,32 @@ export function useLassoTool(initialConfig?: Partial<LassoConfig>): UseLassoTool
       renderLassoPath(ctx, vertices, lasso.path.closed, lasso.config.showConfidence);
     }
 
+    // Proximity close indicator (while drawing)
+    if (lasso.phase === 'drawing' && vertices.length > 10 && lasso.path.firstVertex) {
+      renderProximityCloseIndicator(
+        ctx,
+        lasso.path.firstVertex,
+        lasso.distanceToStart,
+        lasso.config.proximityCloseThreshold
+      );
+    }
+
+    // Junction markers (after close)
+    if (lasso.config.showJunctions && junctions.length > 0) {
+      renderJunctions(ctx, junctions);
+    }
+
     // Mask overlay
     if (mask && lasso.path.closed) {
       renderMaskOverlay(ctx, mask, lasso.imageWidth, lasso.imageHeight);
     }
-  }, [vertices, mask]);
+
+    // Quality badge
+    if (lasso.config.showQuality && qualityReport && lasso.path.closed) {
+      const scoreLabel = `${(qualityReport.overallScore * 100).toFixed(0)}% quality · ${qualityReport.junctionCount} junctions`;
+      renderQualityBadge(ctx, 8, 8, qualityReport.overallScore, scoreLabel);
+    }
+  }, [vertices, mask, junctions, confidenceZones, qualityReport]);
 
   const setConfig = useCallback((config: Partial<LassoConfig>) => {
     lassoRef.current.config = { ...lassoRef.current.config, ...config };
@@ -123,6 +188,11 @@ export function useLassoTool(initialConfig?: Partial<LassoConfig>): UseLassoTool
     confidence,
     fieldCache,
     mask,
+    distanceToStart,
+    junctions,
+    confidenceZones,
+    qualityReport,
+    lastBacktrack,
     loadImage,
     handlePointerDown,
     handlePointerMove,

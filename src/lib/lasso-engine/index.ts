@@ -5,7 +5,10 @@ export { stepMotion, initMotionState, DEFAULT_MOTION_CONFIG } from './motion-eng
 export type { Vec2, ForceWeights, MotionState, MotionConfig } from './motion-engine';
 
 export { PathBody, rasterizeMask, featherMask } from './temporal-engine';
-export type { PathVertex } from './temporal-engine';
+export type { PathVertex, BacktrackEvent } from './temporal-engine';
 
 export { LassoTool, DEFAULT_LASSO_CONFIG } from './lasso-tool';
 export type { LassoMode, LassoConfig, LassoPhase, LassoSnapshot } from './lasso-tool';
+
+export { detectJunctions, mapConfidenceZones, scorePathQuality } from './ambiguity-engine';
+export type { Junction, ConfidenceZone, PathQualityReport } from './ambiguity-engine';
