@@ -259,11 +259,32 @@ const executeAtomicCommand = (cmd: string, session: TerminalSession, pipeInput?:
           return { lines: [line(result)] };
         } catch (e: any) { return { lines: [line(e.message, 'error')] }; }
       }
-      return { lines: [line('Node.js v22.0.0 (WASM) — Interactive mode', 'system')] };
+      return { lines: [line('Node.js v22.0.0 (VM) — use `exec js <code>` for execution', 'system')] };
 
     case 'python':
-      if (args[0] === '-c') return { lines: [line(`>>> ${args.slice(1).join(' ')}`, 'system'), line('(Python simulation — output would appear here)')] };
-      return { lines: [line('Python 3.13.0 (WASM) — interactive mode', 'system')] };
+      if (args[0] === '-c') return { lines: [line(`>>> ${args.slice(1).join(' ')}`, 'system'), line('Use `exec python <code>` for VM execution')] };
+      return { lines: [line('Python 3.13.0 (VM) — use `exec python <code>` for execution', 'system')] };
+
+    case 'exec': {
+      const lang = args[0] || 'js';
+      const code = args.slice(1).join(' ');
+      if (!code) return { lines: [line('Usage: exec <language> <code>', 'error'), line('Languages: js, ts, python, json, shell, regex', 'system')] };
+      return { lines: [line(`⏳ Executing ${lang} via VM...`, 'system'), line(`[VM:browser] ${code}`, 'ai'), line('Use the VM hook for async execution in apps.', 'system')] };
+    }
+
+    case 'vm': {
+      if (args[0] === 'status' || !args[0]) return { lines: [
+        line('╭──── LUCID VM Status ────╮', 'system'),
+        line(`│ Backend: Browser + Edge   │`, 'system'),
+        line(`│ Processes: active          │`, 'system'),
+        line(`│ Filesystem: virtual        │`, 'system'),
+        line(`│ Languages: JS/TS/Py/JSON   │`, 'system'),
+        line(`│ Cloud VM: not configured   │`, 'system'),
+        line('╰──────────────────────────╯', 'system'),
+      ] };
+      if (args[0] === 'ps') return { lines: [line('VM Process list — use `ps` for process viewer', 'system')] };
+      return { lines: [line(`vm: unknown subcommand '${args[0]}'. Try: vm status, vm ps`, 'error')] };
+    }
 
     case 'ps': return { lines: [
       line('  PID  STAT  %CPU  %MEM  COMMAND', 'system'),
@@ -488,10 +509,10 @@ const createSession = (name?: string): TerminalSession => ({
   name: name || `Shell ${Math.floor(Math.random() * 100)}`,
   cwd: '~/lucid-project',
   lines: [
-    { id: 'w1', type: 'system', content: '╭─────────────────────────────────────────────╮', timestamp: new Date() },
-    { id: 'w2', type: 'system', content: '│  LUCID Terminal v2.0 — Browser OS Shell      │', timestamp: new Date() },
-    { id: 'w3', type: 'system', content: '│  Type "help" for commands • Pipes supported  │', timestamp: new Date() },
-    { id: 'w4', type: 'system', content: '╰─────────────────────────────────────────────╯', timestamp: new Date() },
+    { id: 'w1', type: 'system', content: '╭───────────────────────────────────────────────────╮', timestamp: new Date() },
+    { id: 'w2', type: 'system', content: '│  LUCID Terminal v2.0 — VM-Powered Browser Shell    │', timestamp: new Date() },
+    { id: 'w3', type: 'system', content: '│  Type "help" • Pipes • VM exec • exec js <code>   │', timestamp: new Date() },
+    { id: 'w4', type: 'system', content: '╰───────────────────────────────────────────────────╯', timestamp: new Date() },
   ],
   history: [],
   historyIndex: -1,
@@ -510,7 +531,7 @@ const allCommands = [
   'mkdir', 'touch', 'rm', 'clear', 'date', 'whoami', 'env', 'export', 'alias', 'history',
   'curl', 'node', 'python', 'ai', 'git', 'npm', 'bun', 'top', 'htop', 'ps',
   'neofetch', 'uname', 'hostname', 'uptime', 'tree', 'find', 'df', 'free', 'which',
-  'man', 'seq', 'yes', 'theme',
+  'man', 'seq', 'yes', 'theme', 'exec', 'vm',
 ];
 
 /* ─────────── Component ─────────── */
