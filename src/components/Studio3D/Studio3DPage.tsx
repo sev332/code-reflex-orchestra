@@ -51,6 +51,7 @@ import { type PhysicsBodyConfig, type PhysicsWorldConfig, type PhysicsConstraint
 import { ViewportManagerPanel, type ViewportMode, type ViewportLayout, type CameraBookmark, type CinematicSettings, type ScreenshotConfig, defaultCinematic } from './ViewportManager';
 import { SceneManagerPanel, type SceneLayer, type Prefab, type FogConfig, type SkyConfig, defaultFog, defaultSky } from './SceneManager';
 import { BlueprintEditor } from './BlueprintEditor';
+import { AuroraEffect } from './AuroraEffect';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -699,6 +700,7 @@ export function Studio3DPage() {
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(false);
   const [environment, setEnvironment] = useState<string>('studio');
+  const [lightingMode, setLightingMode] = useState<'night' | 'day'>('night');
   const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural' | 'physics' | 'viewport' | 'scene'>('inspector');
   const [particleEmitters, setParticleEmitters] = useState<ParticleEmitterConfig[]>([]);
   const [selectedEmitterId, setSelectedEmitterId] = useState<string | null>(null);
@@ -1126,6 +1128,21 @@ export function Studio3DPage() {
 
         <div className="flex-1" />
 
+        {/* Day/Night Toggle */}
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLightingMode(m => m === 'night' ? 'day' : 'night')}
+              className={cn('w-8 h-8', lightingMode === 'night' ? 'text-indigo-400' : 'text-amber-400')}
+            >
+              {lightingMode === 'night' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{lightingMode === 'night' ? 'Night Mode' : 'Day Mode'}</TooltipContent>
+        </Tooltip>
+
         {/* Environment */}
         <Select value={environment} onValueChange={setEnvironment}>
           <SelectTrigger className="w-28 h-7 text-xs bg-muted/30 border-border/30">
@@ -1184,31 +1201,51 @@ export function Studio3DPage() {
             <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={cinematic.fov} near={cinematic.near} far={cinematic.far} />
             <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
 
-            {/* Ambient */}
-            <ambientLight intensity={postProcessing.ambientIntensity} />
+            {/* Ambient + Environment based on lighting mode */}
+            <ambientLight intensity={lightingMode === 'night' ? postProcessing.ambientIntensity * 0.3 : postProcessing.ambientIntensity * 1.2} />
+            {lightingMode === 'day' && (
+              <directionalLight position={[10, 15, 8]} intensity={2.0} color="#fff5e0" castShadow
+                shadow-mapSize-width={2048} shadow-mapSize-height={2048}
+                shadow-camera-near={0.5} shadow-camera-far={50}
+                shadow-camera-left={-15} shadow-camera-right={15}
+                shadow-camera-top={15} shadow-camera-bottom={-15}
+              />
+            )}
+            {lightingMode === 'day' && (
+              <hemisphereLight args={['#87ceeb', '#3d6b35', 0.6]} />
+            )}
+            {lightingMode === 'night' && (
+              <directionalLight position={[5, 10, 3]} intensity={0.15} color="#8090c0" />
+            )}
+            {lightingMode === 'night' && (
+              <pointLight position={[0, 20, -30]} intensity={0.4} color="#4488ff" distance={80} />
+            )}
             <Suspense fallback={null}>
-              <Environment preset={environment as any} background={environment !== 'studio'} />
+              <Environment preset={environment as any} background={lightingMode === 'day' && environment !== 'studio'} />
             </Suspense>
 
             {/* Sky system */}
-            {skyConfig.enabled && skyConfig.type === 'procedural' && (
+            {lightingMode === 'day' && (
               <Sky
                 distance={450000}
                 sunPosition={[
-                  Math.cos(skyConfig.elevation * Math.PI / 180) * Math.sin(skyConfig.azimuth * Math.PI / 180) * 100,
-                  Math.sin(skyConfig.elevation * Math.PI / 180) * 100,
-                  Math.cos(skyConfig.elevation * Math.PI / 180) * Math.cos(skyConfig.azimuth * Math.PI / 180) * 100,
+                  Math.cos((skyConfig.enabled ? skyConfig.elevation : 45) * Math.PI / 180) * Math.sin((skyConfig.enabled ? skyConfig.azimuth : 180) * Math.PI / 180) * 100,
+                  Math.sin((skyConfig.enabled ? skyConfig.elevation : 45) * Math.PI / 180) * 100,
+                  Math.cos((skyConfig.enabled ? skyConfig.elevation : 45) * Math.PI / 180) * Math.cos((skyConfig.enabled ? skyConfig.azimuth : 180) * Math.PI / 180) * 100,
                 ]}
-                turbidity={skyConfig.turbidity}
-                rayleigh={skyConfig.rayleigh}
-                mieCoefficient={skyConfig.mieCoefficient}
-                mieDirectionalG={skyConfig.mieDirectionalG}
+                turbidity={skyConfig.enabled ? skyConfig.turbidity : 8}
+                rayleigh={skyConfig.enabled ? skyConfig.rayleigh : 2}
+                mieCoefficient={skyConfig.enabled ? skyConfig.mieCoefficient : 0.005}
+                mieDirectionalG={skyConfig.enabled ? skyConfig.mieDirectionalG : 0.8}
               />
             )}
 
-            {(!skyConfig.enabled || skyConfig.type !== 'procedural') && environment === 'studio' && (
+            {/* Night mode: stars + aurora */}
+            {lightingMode === 'night' && (
               <>
-                <Stars radius={100} depth={50} count={2000} factor={2} saturation={0} fade speed={1} />
+                <Stars radius={100} depth={50} count={3000} factor={3} saturation={0.2} fade speed={0.5} />
+                <AuroraEffect intensity={1.0} />
+                <color attach="background" args={['#050510']} />
               </>
             )}
 
@@ -1219,15 +1256,20 @@ export function Studio3DPage() {
             {fogConfig.enabled && fogConfig.type === 'exponential' && (
               <fogExp2 attach="fog" args={[fogConfig.color, fogConfig.density]} />
             )}
-            {!fogConfig.enabled && environment === 'studio' && (
-              <fog attach="fog" args={['#0a0a1a', 20, 60]} />
+            {!fogConfig.enabled && lightingMode === 'night' && (
+              <fog attach="fog" args={['#050510', 30, 80]} />
+            )}
+            {!fogConfig.enabled && lightingMode === 'day' && (
+              <fog attach="fog" args={['#c8d8e8', 40, 120]} />
             )}
 
             {showGrid && (
               <Grid
                 infiniteGrid cellSize={1} cellThickness={0.5}
                 sectionSize={5} sectionThickness={1}
-                cellColor="#444466" sectionColor="#6666aa" fadeDistance={30}
+                cellColor={lightingMode === 'night' ? '#222244' : '#888888'}
+                sectionColor={lightingMode === 'night' ? '#4444aa' : '#aaaacc'}
+                fadeDistance={30}
               />
             )}
 
