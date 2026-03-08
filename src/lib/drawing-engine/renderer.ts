@@ -70,6 +70,7 @@ export function renderArtboard(
 export function renderEntity(
   ctx: CanvasRenderingContext2D, entity: DrawableEntity,
   vp: ViewportState, isSelected: boolean, isHovered: boolean,
+  entityEffects?: Record<string, EffectStack>,
 ) {
   if (!entity.visible) return;
   const t = entity.transform;
@@ -78,9 +79,21 @@ export function renderEntity(
   const wx = (t.translateX + vp.panX) * vp.zoom;
   const wy = (t.translateY + vp.panY) * vp.zoom;
 
+  // Apply effects (drop shadow, glow, blur) before rendering
+  const effects = entityEffects?.[entity.id];
+  if (effects && effects.effects.length > 0) {
+    applyEffectsToContext(ctx, effects.effects, vp.zoom);
+  }
+
   if (entity.type === 'shape') renderShape(ctx, entity, wx, wy, vp.zoom);
   else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
-  else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); ctx.restore(); return; }
+  else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); clearEffectsFromContext(ctx); ctx.restore(); return; }
+  else if (entity.type === 'path') renderPathEntity(ctx, entity, vp);
+
+  // Clear effects after rendering
+  if (effects && effects.effects.length > 0) {
+    clearEffectsFromContext(ctx);
+  }
 
   if (isSelected || isHovered) renderSelectionOverlay(ctx, entity, wx, wy, vp.zoom, isSelected);
   ctx.restore();
