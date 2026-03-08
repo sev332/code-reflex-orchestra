@@ -1349,6 +1349,7 @@ export function useDrawingEngine() {
     });
   }, []);
 
+  return {
     state,
     setState,
     preview,
