@@ -364,14 +364,8 @@ export function CalendarUpcomingPanel() {
         ))}
       </div>
     </ScrollArea>
-  );
-            </p>
-          </div>
-        ))}
-      </div>
-    </ScrollArea>
-  );
 }
+
 
 // ============================================================
 // TASKS DRAWER PANELS
