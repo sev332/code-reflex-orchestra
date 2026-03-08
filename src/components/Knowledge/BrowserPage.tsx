@@ -142,15 +142,6 @@ export function BrowserPage() {
           />
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
         </div>
-        <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0" onClick={() => setSidePanel(sidePanel === 'bookmarks' ? null : 'bookmarks')}>
-          <Star className={cn('w-4 h-4', sidePanel === 'bookmarks' && 'text-amber-400 fill-amber-400')} />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0" onClick={() => setSidePanel(sidePanel === 'reading' ? null : 'reading')}>
-          <BookOpen className={cn('w-4 h-4', sidePanel === 'reading' && 'text-primary')} />
-        </Button>
-        <Button variant="ghost" size="icon" className="w-8 h-8 shrink-0" onClick={summarizeWithAI}>
-          <Wand2 className={cn('w-4 h-4', sidePanel === 'ai' && 'text-primary')} />
-        </Button>
       </div>
 
       {/* Content area — center only, no internal side panel */}
