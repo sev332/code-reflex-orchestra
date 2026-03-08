@@ -22,7 +22,7 @@ import { AdvancedPersistentChat } from '@/components/AIChat/AdvancedPersistentCh
 import { EnhancedRightDrawerPanel } from './EnhancedRightDrawerPanel';
 import { VaultPanel } from './VaultPanel';
 
-export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network';
+export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network' | 'vault';
 
 interface IconDef {
   id: RightTab;
