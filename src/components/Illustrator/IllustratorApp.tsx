@@ -441,11 +441,11 @@ export function IllustratorApp() {
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" title="Import SVG">
             <Upload className="w-3 h-3" /> Import
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-            <Download className="w-3 h-3" /> Export
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadSVG()}>
+            <Download className="w-3 h-3" /> SVG
           </Button>
         </div>
       </div>
