@@ -324,6 +324,18 @@ export function IllustratorApp() {
         </div>
 
         <div className="flex items-center gap-1">
+          {/* Image placement */}
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+              const file = (e.target as HTMLInputElement).files?.[0];
+              if (file) engine.placeImage(file);
+            };
+            input.click();
+          }}><Image className="w-3 h-3" /> Image</Button>
+          {/* SVG Import */}
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -333,8 +345,15 @@ export function IllustratorApp() {
               if (file) file.text().then(text => engine.importSVGFile(text));
             };
             input.click();
-          }}><Upload className="w-3 h-3" /> Import</Button>
+          }}><Upload className="w-3 h-3" /> SVG</Button>
+          {/* Export */}
           <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadSVG()}><Download className="w-3 h-3" /> SVG</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadPNG()}><Download className="w-3 h-3" /> PNG</Button>
+          <div className="w-px h-5 bg-[hsl(220,15%,15%)]" />
+          {/* Save/Load .lucid */}
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.saveDocument()}><Save className="w-3 h-3" /> Save</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadLucid()}><Download className="w-3 h-3" /> .lucid</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.uploadLucid()}><FolderOpen className="w-3 h-3" /> Open</Button>
         </div>
       </div>
 
