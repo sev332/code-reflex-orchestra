@@ -387,6 +387,7 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   if (page === 'calendar') {
     if (tab === 'calendars') return <CalendarListPanel />;
     if (tab === 'events') return <CalendarUpcomingPanel />;
+    if (tab === 'people') return <CalendarPeoplePanel />;
     if (tab === 'settings') return <GenericSettingsPanel />;
     return <CalendarListPanel />;
   }
@@ -395,7 +396,7 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   if (page === 'tasks') {
     if (tab === 'board') return <TasksBoardPanel />;
     if (tab === 'projects') return <TasksProjectsPanel />;
-    if (tab === 'filters') return <GenericSearchPanel />;
+    if (tab === 'filters') return <TasksFiltersPanel />;
     if (tab === 'analytics') return <TasksAnalyticsPanel />;
   }
 
@@ -412,6 +413,7 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
     if (tab === 'files') return <IDEFilesPanel />;
     if (tab === 'git') return <IDEGitPanel />;
     if (tab === 'search') return <GenericSearchPanel />;
+    if (tab === 'extensions') return <IDEExtensionsPanel />;
     if (tab === 'settings') return <GenericSettingsPanel />;
     return <IDEFilesPanel />;
   }
@@ -436,7 +438,7 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
     if (tab === 'tracks') return <AudioTracksPanel />;
     if (tab === 'effects') return <AudioEffectsPanel />;
     if (tab === 'library') return <AudioLibraryPanel />;
-    if (tab === 'ai-tools') return <ImageAIToolsPanel />;
+    if (tab === 'ai-tools') return <AudioAIToolsPanel />;
   }
 
   // Video
@@ -444,7 +446,7 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
     if (tab === 'timeline') return <VideoTimelinePanel />;
     if (tab === 'clips') return <VideoClipsPanel />;
     if (tab === 'effects') return <VideoEffectsPanel />;
-    if (tab === 'ai-tools') return <ImageAIToolsPanel />;
+    if (tab === 'ai-tools') return <VideoAIToolsPanel />;
   }
 
   // Orchestration
@@ -452,8 +454,8 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
     if (tab === 'tasks') return <OrchestrationTasksPanel />;
     if (tab === 'runs') return <OrchestrationRunsPanel />;
     if (tab === 'workflows') return <OrchestrationWorkflowsPanel />;
-    if (tab === 'analytics') return <TasksAnalyticsPanel />;
-    if (tab === 'history') return <GenericHistoryPanel />;
+    if (tab === 'analytics') return <OrchestrationAnalyticsPanel />;
+    if (tab === 'history') return <OrchestrationRunsPanel />;
     if (tab === 'search') return <GenericSearchPanel />;
   }
 
@@ -469,6 +471,7 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   if (page === 'map') {
     if (tab === 'layers') return <MapLayersPanel />;
     if (tab === 'places') return <MapPlacesPanel />;
+    if (tab === 'navigate') return <MapNavigatePanel />;
     if (tab === 'search') return <GenericSearchPanel />;
     return <MapLayersPanel />;
   }
@@ -477,7 +480,9 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   if (page === 'spreadsheet') {
     if (tab === 'sheets') return <SpreadsheetSheetsPanel />;
     if (tab === 'formulas') return <SpreadsheetFormulasPanel />;
-    if (tab === 'ai-tools') return <ImageAIToolsPanel />;
+    if (tab === 'charts') return <SpreadsheetChartsPanel />;
+    if (tab === 'data') return <SpreadsheetDataPanel />;
+    if (tab === 'ai-tools') return <SpreadsheetAIPanel />;
     return <SpreadsheetSheetsPanel />;
   }
 
@@ -493,6 +498,8 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   if (page === 'studio3d') {
     if (tab === 'scene') return <Studio3DScenePanel />;
     if (tab === 'assets') return <IllustratorAssetsPanel />;
+    if (tab === 'shaders') return <Studio3DShadersPanel />;
+    if (tab === 'materials') return <Studio3DMaterialsPanel />;
     if (tab === 'settings') return <GenericSettingsPanel />;
     return <Studio3DScenePanel />;
   }
@@ -500,7 +507,9 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   // Presentations
   if (page === 'presentations') {
     if (tab === 'slides') return <PresentationsSlidesPanel />;
-    if (tab === 'ai-tools') return <ImageAIToolsPanel />;
+    if (tab === 'templates') return <PresentationsTemplatesPanel />;
+    if (tab === 'elements') return <PresentationsElementsPanel />;
+    if (tab === 'ai-tools') return <SpreadsheetAIPanel />;
     if (tab === 'settings') return <GenericSettingsPanel />;
     return <PresentationsSlidesPanel />;
   }
@@ -509,41 +518,45 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   if (page === 'comms') {
     if (tab === 'channels') return <CommsChannelsPanel />;
     if (tab === 'dms') return <CommsDMsPanel />;
+    if (tab === 'threads') return <CommsThreadsPanel />;
     return <CommsChannelsPanel />;
   }
 
   // Terminal
   if (page === 'terminal') {
     if (tab === 'sessions') return <TerminalSessionsPanel />;
-    if (tab === 'history') return <GenericHistoryPanel />;
+    if (tab === 'history') return <TerminalHistoryPanel />;
     if (tab === 'settings') return <GenericSettingsPanel />;
   }
 
   // API Studio
   if (page === 'apistudio') {
     if (tab === 'collections') return <APICollectionsPanel />;
-    if (tab === 'history') return <GenericHistoryPanel />;
-    if (tab === 'environments') return <GenericSettingsPanel />;
+    if (tab === 'history') return <APIHistoryPanel />;
+    if (tab === 'environments') return <APIEnvironmentsPanel />;
   }
 
   // Database
   if (page === 'database') {
     if (tab === 'tables') return <DatabaseTablesPanel />;
-    if (tab === 'queries') return <GenericSearchPanel />;
+    if (tab === 'queries') return <DatabaseQueriesPanel />;
+    if (tab === 'schema') return <DatabaseSchemaPanel />;
     return <DatabaseTablesPanel />;
   }
 
   // Dashboard
   if (page === 'dashboard') {
     if (tab === 'dashboards') return <DashboardListPanel />;
+    if (tab === 'widgets') return <DashboardWidgetsPanel />;
+    if (tab === 'data') return <DashboardDataPanel />;
     return <DashboardListPanel />;
   }
 
   // Browser
   if (page === 'browser') {
     if (tab === 'bookmarks') return <BrowserBookmarksPanel />;
-    if (tab === 'history') return <GenericHistoryPanel />;
-    if (tab === 'reading') return <ChatLibraryPanel />;
+    if (tab === 'history') return <BrowserHistoryPanel />;
+    if (tab === 'reading') return <BrowserReadingListPanel />;
   }
 
   // Settings
@@ -552,7 +565,6 @@ function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   // Fallback
   if (tab === 'search') return <GenericSearchPanel />;
   if (tab === 'settings') return <GenericSettingsPanel />;
-  if (tab === 'history') return <GenericHistoryPanel />;
 
   return <GenericSearchPanel />;
 }
