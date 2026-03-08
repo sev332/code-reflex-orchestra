@@ -330,6 +330,216 @@ export function useDrawingEngine() {
     return null;
   }, [state]);
 
+  // ── Node editing (Direct Select) ──
+
+  const enterNodeEdit = useCallback((entityId: string) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      const converted = ensurePathData(entity);
+      if (converted === entity && !entity.pathData) return prev;
+      const entities = { ...prev.scene.entities, [entityId]: converted };
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+    setNodeOverlay({ enabled: true, entityId, activeNodeHit: null });
+  }, []);
+
+  const exitNodeEdit = useCallback(() => {
+    setNodeOverlay(emptyNodeOverlay);
+    setActiveNodeHit(null);
+    nodeDragRef.current = null;
+  }, []);
+
+  const beginNodeDrag = useCallback((worldPoint: Vec2): boolean => {
+    if (!nodeOverlay.enabled || !nodeOverlay.entityId) return false;
+    const entity = state.scene.entities[nodeOverlay.entityId];
+    if (!entity) return false;
+    const hit = hitTestNodes(entity, worldPoint, state.viewport.zoom);
+    if (!hit) return false;
+    setActiveNodeHit(hit);
+    setNodeOverlay(prev => ({ ...prev, activeNodeHit: hit }));
+    nodeDragRef.current = { hit, lastWorld: worldPoint };
+    return true;
+  }, [nodeOverlay, state.scene.entities, state.viewport.zoom]);
+
+  const updateNodeDrag = useCallback((worldPoint: Vec2) => {
+    const drag = nodeDragRef.current;
+    if (!drag) return;
+    const dx = worldPoint.x - drag.lastWorld.x;
+    const dy = worldPoint.y - drag.lastWorld.y;
+    setState(prev => {
+      const entity = prev.scene.entities[drag.hit.entityId];
+      if (!entity) return prev;
+      const updated = moveAnchor(entity, drag.hit, dx, dy);
+      return { ...prev, scene: { ...prev.scene, entities: { ...prev.scene.entities, [entity.id]: updated } } };
+    });
+    nodeDragRef.current = { ...drag, lastWorld: worldPoint };
+  }, []);
+
+  const endNodeDrag = useCallback(() => {
+    nodeDragRef.current = null;
+  }, []);
+
+  const addPointOnPath = useCallback((entityId: string, contourIndex: number, segIndex: number) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      const updated = addAnchorOnSegment(entity, contourIndex, segIndex);
+      return { ...prev, scene: { ...prev.scene, entities: { ...prev.scene.entities, [entityId]: updated } } };
+    });
+  }, []);
+
+  const deletePoint = useCallback((entityId: string, contourIndex: number, anchorIndex: number) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      const updated = deleteAnchor(entity, contourIndex, anchorIndex);
+      return { ...prev, scene: { ...prev.scene, entities: { ...prev.scene.entities, [entityId]: updated } } };
+    });
+  }, []);
+
+  // ── Transform handles (Select tool) ──
+
+  const computedTransformHandles = useMemo(() => {
+    if (state.tool.activeToolId !== 'select' || state.selection.selectedIds.length === 0) return [];
+    const entities = state.selection.selectedIds
+      .map(id => state.scene.entities[id])
+      .filter(Boolean);
+    return getTransformHandles(entities, state.viewport.zoom);
+  }, [state.tool.activeToolId, state.selection.selectedIds, state.scene.entities, state.viewport.zoom]);
+
+  const beginTransform = useCallback((worldPoint: Vec2): boolean => {
+    if (computedTransformHandles.length === 0) return false;
+    const hit = hitTestTransformHandle(computedTransformHandles, worldPoint, state.viewport.zoom);
+    if (!hit) return false;
+
+    const entities = state.selection.selectedIds.map(id => state.scene.entities[id]).filter(Boolean);
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const startTransforms: TransformState['startTransforms'] = {};
+    for (const e of entities) {
+      const b = getEntityBounds(e);
+      minX = Math.min(minX, b.x); minY = Math.min(minY, b.y);
+      maxX = Math.max(maxX, b.x + b.width); maxY = Math.max(maxY, b.y + b.height);
+      startTransforms[e.id] = {
+        tx: e.transform.translateX, ty: e.transform.translateY,
+        sx: e.transform.scaleX, sy: e.transform.scaleY,
+        r: e.transform.rotation,
+        w: e.shapeProps?.width, h: e.shapeProps?.height,
+      };
+    }
+
+    setTransformState({
+      active: true,
+      type: hit.type === 'rotate' ? 'rotate' : 'scale',
+      handle: hit.type,
+      origin: { x: (minX + maxX) / 2, y: (minY + maxY) / 2 },
+      startMouse: worldPoint,
+      startBounds: { x: minX, y: minY, w: maxX - minX, h: maxY - minY },
+      startTransforms,
+    });
+    return true;
+  }, [computedTransformHandles, state]);
+
+  const updateTransform = useCallback((worldPoint: Vec2) => {
+    if (!transformState.active) return;
+    const dx = worldPoint.x - transformState.startMouse.x;
+    const dy = worldPoint.y - transformState.startMouse.y;
+
+    setState(prev => {
+      const entities = { ...prev.scene.entities };
+      for (const id of prev.selection.selectedIds) {
+        const e = entities[id];
+        if (!e) continue;
+        const startData = transformState.startTransforms[id];
+        if (!startData) continue;
+
+        if (transformState.type === 'scale' && transformState.handle) {
+          entities[id] = applyScaleTransform(e, transformState.handle, dx, dy, transformState.startBounds, startData);
+        } else if (transformState.type === 'rotate') {
+          const angle1 = Math.atan2(transformState.startMouse.y - transformState.origin.y, transformState.startMouse.x - transformState.origin.x);
+          const angle2 = Math.atan2(worldPoint.y - transformState.origin.y, worldPoint.x - transformState.origin.x);
+          entities[id] = applyRotateTransform(e, transformState.origin, angle1, angle2, startData.r);
+        }
+      }
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, [transformState]);
+
+  const endTransform = useCallback(() => {
+    setTransformState(emptyTransformState);
+  }, []);
+
+  // ── Path operations ──
+
+  const pathSimplify = useCallback((tolerance?: number) => {
+    setState(prev => {
+      const entities = { ...prev.scene.entities };
+      for (const id of prev.selection.selectedIds) {
+        const e = entities[id];
+        if (e) entities[id] = simplifyPath(ensurePathData(e), tolerance);
+      }
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, []);
+
+  const pathReverse = useCallback(() => {
+    setState(prev => {
+      const entities = { ...prev.scene.entities };
+      for (const id of prev.selection.selectedIds) {
+        const e = entities[id];
+        if (e) entities[id] = reversePath(ensurePathData(e));
+      }
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, []);
+
+  const pathOffset = useCallback((distance: number) => {
+    setState(prev => {
+      const entities = { ...prev.scene.entities };
+      for (const id of prev.selection.selectedIds) {
+        const e = entities[id];
+        if (e) entities[id] = offsetPath(ensurePathData(e), distance);
+      }
+      return { ...prev, scene: { ...prev.scene, entities } };
+    });
+  }, []);
+
+  const pathBoolean = useCallback((op: 'union' | 'subtract' | 'intersect') => {
+    setState(prev => {
+      const ids = prev.selection.selectedIds;
+      if (ids.length < 2) return prev;
+      let a = ensurePathData(prev.scene.entities[ids[0]]);
+      let b = ensurePathData(prev.scene.entities[ids[1]]);
+      if (!a || !b) return prev;
+
+      let result: DrawableEntity;
+      switch (op) {
+        case 'union': result = booleanUnion(a, b); break;
+        case 'subtract': result = booleanSubtract(a, b); break;
+        case 'intersect': result = booleanIntersect(a, b); break;
+      }
+
+      const entities = { ...prev.scene.entities };
+      delete entities[ids[0]];
+      delete entities[ids[1]];
+      entities[result.id] = result;
+
+      const layers = prev.scene.layers.map(l => ({
+        ...l,
+        entities: l.entities.filter(eid => !ids.includes(eid)),
+      }));
+      // Add result to active layer
+      const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
+      if (activeLayer) activeLayer.entities.push(result.id);
+
+      return {
+        ...prev,
+        scene: { ...prev.scene, entities, layers },
+        selection: { ...prev.selection, selectedIds: [result.id] },
+      };
+    });
+  }, []);
+
   return {
     state,
     setState,
@@ -383,5 +593,26 @@ export function useDrawingEngine() {
     updatePenCursor,
     finishPenPath,
     penAnchors,
+    // Node editing (direct-select)
+    nodeOverlay,
+    enterNodeEdit,
+    exitNodeEdit,
+    beginNodeDrag,
+    updateNodeDrag,
+    endNodeDrag,
+    addPointOnPath,
+    deletePoint,
+    activeNodeHit,
+    // Transform handles
+    computedTransformHandles,
+    beginTransform,
+    updateTransform,
+    endTransform,
+    transformState,
+    // Path operations
+    pathSimplify,
+    pathReverse,
+    pathOffset,
+    pathBoolean,
   };
 }
