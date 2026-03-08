@@ -1336,65 +1336,217 @@ export function BrowserBookmarksPanel() {
 }
 
 // ============================================================
-// CHAT DRAWER PANELS
+// CHAT DRAWER PANELS (Perfected)
 // ============================================================
 
 export function ChatHistoryPanel() {
+  const [activeChat, setActiveChat] = useState<string | null>('c1');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const chats = [
-    { title: 'AIMOS Architecture Discussion', time: '2m ago', msgs: 12 },
-    { title: 'Code Review Request', time: '1h ago', msgs: 8 },
-    { title: 'Bug Investigation', time: '3h ago', msgs: 24 },
-    { title: 'Feature Planning', time: '1d ago', msgs: 15 },
-    { title: 'Research Synthesis', time: '2d ago', msgs: 30 },
+    { id: 'c1', title: 'AIMOS Architecture Discussion', time: '2m ago', msgs: 12, pinned: true, hasUnread: true },
+    { id: 'c2', title: 'Code Review — Drawer Refactor', time: '45m ago', msgs: 8, pinned: true, hasUnread: false },
+    { id: 'c3', title: 'Bug Investigation: Canvas Rendering', time: '3h ago', msgs: 24, pinned: false, hasUnread: false },
+    { id: 'c4', title: 'Sprint 6 Feature Planning', time: '1d ago', msgs: 15, pinned: false, hasUnread: false },
+    { id: 'c5', title: 'Research: Multi-Modal LLMs', time: '2d ago', msgs: 30, pinned: false, hasUnread: false },
+    { id: 'c6', title: 'Orchestration Pipeline Design', time: '3d ago', msgs: 18, pinned: false, hasUnread: false },
+    { id: 'c7', title: 'Performance Optimization Notes', time: '5d ago', msgs: 9, pinned: false, hasUnread: false },
   ];
+
+  const pinned = chats.filter(c => c.pinned);
+  const recent = chats.filter(c => !c.pinned);
+  const filtered = searchQuery
+    ? chats.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : null;
+
+  const renderChat = (c: typeof chats[0]) => (
+    <button
+      key={c.id}
+      onClick={() => { setActiveChat(c.id); emitPageDrawerAction({ page: 'chat', action: 'open-chat', value: c.id }); }}
+      className={cn(
+        'w-full text-left px-2.5 py-2 rounded-lg transition-all group',
+        activeChat === c.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/30 border border-transparent',
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <MessageSquare className={cn('w-3.5 h-3.5 mt-0.5 shrink-0', activeChat === c.id ? 'text-primary' : 'text-muted-foreground')} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <p className={cn('text-xs truncate flex-1', c.hasUnread && 'font-semibold')}>{c.title}</p>
+            {c.hasUnread && <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{c.msgs} messages · {c.time}</p>
+        </div>
+        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted/50 shrink-0">
+          <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+        </button>
+      </div>
+    </button>
+  );
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-0.5">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs mb-1">
-          <Plus className="w-3.5 h-3.5" /> New Chat
+      <div className="p-2 space-y-3">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs">
+          <Plus className="w-3.5 h-3.5" /> New Conversation
         </Button>
-        {chats.map(c => (
-          <Button key={c.title} variant="ghost" size="sm" className="w-full justify-start h-auto py-2 px-2 text-left">
-            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0 mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium truncate">{c.title}</p>
-              <p className="text-[10px] text-muted-foreground">{c.msgs} msgs · {c.time}</p>
+
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-7 text-xs bg-muted/20 border-border/30"
+          />
+        </div>
+
+        {filtered ? (
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">{filtered.length} results</p>
+            {filtered.map(renderChat)}
+          </div>
+        ) : (
+          <>
+            {pinned.length > 0 && (
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 flex items-center gap-1">
+                  <Star className="w-3 h-3" /> Pinned
+                </p>
+                {pinned.map(renderChat)}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Recent</p>
+              {recent.map(renderChat)}
             </div>
-          </Button>
-        ))}
+          </>
+        )}
       </div>
     </ScrollArea>
   );
 }
 
 export function ChatLibraryPanel() {
-  const docs = [
-    { name: 'AIMOS Documentation', type: 'doc' },
-    { name: 'UI Canon', type: 'doc' },
-    { name: 'Architecture Spec', type: 'doc' },
-    { name: 'API Reference', type: 'doc' },
+  const [activeSection, setActiveSection] = useState('docs');
+  const sections = [
+    { id: 'docs', label: 'Documents', icon: FileText },
+    { id: 'knowledge', label: 'Knowledge Base', icon: Database },
+    { id: 'snippets', label: 'Saved Snippets', icon: Code2 },
   ];
+
+  const docs = [
+    { name: 'AIMOS Documentation', size: '24 KB', type: 'txt', updated: '1d ago' },
+    { name: 'UI Canon Specification', size: '18 KB', type: 'md', updated: '2d ago' },
+    { name: 'Architecture Spec', size: '32 KB', type: 'md', updated: '3d ago' },
+    { name: 'API Reference', size: '45 KB', type: 'md', updated: '1w ago' },
+    { name: 'Drawing Engine Docs', size: '28 KB', type: 'txt', updated: '1w ago' },
+    { name: 'Principia Morphica', size: '15 KB', type: 'txt', updated: '2w ago' },
+  ];
+
+  const knowledge = [
+    { name: 'Reasoning Chains', entries: 23 },
+    { name: 'Memory Context', entries: 156 },
+    { name: 'Dream Insights', entries: 45 },
+  ];
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-0.5">
-        {docs.map(d => (
-          <Button key={d.name} variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
-            <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="truncate">{d.name}</span>
-          </Button>
-        ))}
+      <div className="p-2 space-y-3">
+        <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
+          {sections.map(s => {
+            const Icon = s.icon;
+            return (
+              <Button
+                key={s.id}
+                variant={activeSection === s.id ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveSection(s.id)}
+                className={cn('flex-1 h-6 text-[10px] gap-1 px-1', activeSection === s.id && 'bg-primary/15 text-primary')}
+              >
+                <Icon className="w-3 h-3" />
+                {s.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        {activeSection === 'docs' && (
+          <div className="space-y-0.5">
+            <Button size="sm" variant="ghost" className="w-full justify-start text-xs h-7 gap-1.5">
+              <Upload className="w-3.5 h-3.5" /> Upload Document
+            </Button>
+            {docs.map(d => (
+              <button
+                key={d.name}
+                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted/30 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs truncate">{d.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{d.size} · .{d.type} · {d.updated}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeSection === 'knowledge' && (
+          <div className="space-y-1">
+            {knowledge.map(k => (
+              <div key={k.name} className="px-2.5 py-2 rounded-lg hover:bg-muted/30 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium">{k.name}</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 h-4">{k.entries}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeSection === 'snippets' && (
+          <div className="p-3 text-center">
+            <Code2 className="w-6 h-6 text-muted-foreground/20 mx-auto mb-1" />
+            <p className="text-[10px] text-muted-foreground">Save code snippets from chat</p>
+          </div>
+        )}
       </div>
     </ScrollArea>
   );
 }
 
 export function ChatFavoritesPanel() {
+  const starred = [
+    { text: 'The CMC memory system uses RS scoring with decay...', chat: 'AIMOS Architecture', time: '2h ago' },
+    { text: 'Canvas rendering optimization: batch draws per frame...', chat: 'Bug Investigation', time: '1d ago' },
+  ];
+
   return (
-    <div className="p-4 text-center">
-      <Star className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-      <p className="text-xs text-muted-foreground">No starred messages yet</p>
-      <p className="text-[10px] text-muted-foreground/50 mt-1">Star messages to save them here</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        {starred.length === 0 ? (
+          <div className="p-6 text-center">
+            <Star className="w-8 h-8 text-muted-foreground/15 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">No starred messages yet</p>
+            <p className="text-[10px] text-muted-foreground/50 mt-1">Star important messages to save them here</p>
+          </div>
+        ) : (
+          starred.map((s, i) => (
+            <div key={i} className="px-2.5 py-2 rounded-lg border border-border/20 hover:border-primary/30 cursor-pointer transition-colors">
+              <div className="flex items-start gap-2">
+                <Star className="w-3 h-3 text-amber-400 fill-amber-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs line-clamp-2">{s.text}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">from {s.chat} · {s.time}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </ScrollArea>
   );
 }
 
