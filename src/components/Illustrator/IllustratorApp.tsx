@@ -80,7 +80,7 @@ export function IllustratorApp() {
     return () => observer.disconnect();
   }, []);
 
-  // Render loop — passes live preview to renderer
+  // Render loop — passes live preview, node overlay, and transform handles to renderer
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -105,7 +105,9 @@ export function IllustratorApp() {
         canvasSize.height,
         state.gridEnabled,
         state.gridSize,
-        preview, // ← live preview layer
+        preview,
+        engine.nodeOverlay,
+        engine.computedTransformHandles,
       );
 
       animRef.current = requestAnimationFrame(render);
@@ -113,7 +115,7 @@ export function IllustratorApp() {
 
     animRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animRef.current);
-  }, [state, canvasSize, preview]);
+  }, [state, canvasSize, preview, engine.nodeOverlay, engine.computedTransformHandles]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -170,8 +172,32 @@ export function IllustratorApp() {
       return;
     }
 
-    // Select
+    // Direct Select — node editing
+    if (tool === 'direct-select') {
+      // Try node drag first
+      if (engine.nodeOverlay.enabled && engine.beginNodeDrag(world)) {
+        setIsDrawing(true);
+        return;
+      }
+      // Try to enter node edit on an entity
+      const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
+      if (hitId) {
+        engine.select([hitId]);
+        engine.enterNodeEdit(hitId);
+      } else {
+        engine.exitNodeEdit();
+        engine.select([]);
+      }
+      return;
+    }
+
+    // Select — with transform handles
     if (tool === 'select') {
+      // Try transform handle first
+      if (engine.beginTransform(world)) {
+        setIsDrawing(true);
+        return;
+      }
       const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
       if (hitId) {
         if (e.shiftKey) {
@@ -186,6 +212,8 @@ export function IllustratorApp() {
       } else {
         engine.select([]);
       }
+      // Exit node edit when switching to select
+      engine.exitNodeEdit();
       return;
     }
 
@@ -231,6 +259,18 @@ export function IllustratorApp() {
       return;
     }
 
+    // Node drag (direct-select)
+    if (isDrawing && tool === 'direct-select') {
+      engine.updateNodeDrag(world);
+      return;
+    }
+
+    // Transform drag (select)
+    if (isDrawing && tool === 'select' && engine.transformState.active) {
+      engine.updateTransform(world);
+      return;
+    }
+
     // Drag selected
     if (dragStart && state.selection.selectedIds.length > 0) {
       engine.moveSelected(world.x - dragStart.x, world.y - dragStart.y);
@@ -272,13 +312,28 @@ export function IllustratorApp() {
     if (isPanning) { setIsPanning(false); setPanStart(null); return; }
     if (dragStart) { setDragStart(null); return; }
 
+    const tool = state.tool.activeToolId;
+
+    // End node drag
+    if (tool === 'direct-select' && isDrawing) {
+      engine.endNodeDrag();
+      setIsDrawing(false);
+      return;
+    }
+
+    // End transform
+    if (tool === 'select' && engine.transformState.active) {
+      engine.endTransform();
+      setIsDrawing(false);
+      return;
+    }
+
     if (!isDrawing) return;
 
     const rect = canvasRef.current!.getBoundingClientRect();
     const sx = e.clientX - rect.left;
     const sy = e.clientY - rect.top;
     const world = screenToWorld(sx, sy);
-    const tool = state.tool.activeToolId;
     const { fillColor, strokeColor, strokeWidth } = state.tool;
 
     // Brush / Pencil — finalize
@@ -311,6 +366,7 @@ export function IllustratorApp() {
     setIsDrawing(false);
     setDrawStart(null);
   }, [isDrawing, drawStart, isPanning, dragStart, state.tool, engine, screenToWorld]);
+
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
@@ -640,6 +696,51 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
               <Button key={i} variant="ghost" size="icon" className="w-7 h-7"><Icon className="w-3.5 h-3.5" /></Button>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Path Operations */}
+      {state.selection.selectedIds.length > 0 && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Path Ops</div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathSimplify(2)}>
+              Simplify
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathReverse()}>
+              Reverse
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathOffset(5)}>
+              Offset
+            </Button>
+          </div>
+          {state.selection.selectedIds.length >= 2 && (
+            <>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">Boolean</div>
+              <div className="grid grid-cols-3 gap-1">
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('union')}>
+                  Union
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('subtract')}>
+                  Subtract
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('intersect')}>
+                  Intersect
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Node editing info */}
+      {engine.nodeOverlay.enabled && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Node Editing</div>
+          <p className="text-[9px] text-muted-foreground">Click anchors to move them. Drag handles to reshape curves. Press Delete to remove selected anchor.</p>
+          <Button variant="ghost" size="sm" className="h-7 text-[9px] mt-1 w-full" onClick={() => engine.exitNodeEdit()}>
+            Exit Node Edit
+          </Button>
         </div>
       )}
     </div>
