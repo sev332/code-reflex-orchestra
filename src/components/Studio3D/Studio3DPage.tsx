@@ -1,5 +1,5 @@
 // 3D Studio — Unreal-class scene editor built on React Three Fiber
-// Phase 1+2: Post-Processing Pipeline + PBR + Animation Timeline
+// Phases 1-8: Full Unreal-class engine
 import React, { useState, useCallback, useRef, useMemo, Suspense, useEffect } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
@@ -31,7 +31,7 @@ import {
   ChevronDown, Layers, Sun, Moon, Palette, Wand2, Download, Upload,
   Settings, Play, Pause, SkipBack, Code2, Search, Grid3x3, Magnet,
   Maximize, Minimize, Lightbulb, Camera, Undo2, Redo2, MousePointer,
-  Square, Hexagon, Cone, Sparkles, SlidersHorizontal,
+  Square, Hexagon, Cone, Sparkles, SlidersHorizontal, Zap, Mountain, Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RenderSettingsPanel, defaultPostProcessing, type PostProcessingSettings } from './RenderSettings';
@@ -46,6 +46,11 @@ import type { ParticleEmitterConfig } from '@/lib/3d-engine/particle-system';
 import { interpolateColorOverLife } from '@/lib/3d-engine/particle-system';
 import { ProceduralToolsPanel } from './ProceduralTools';
 import { generateTerrainGeometry, generateProceduralGeometry, type TerrainConfig, type ProceduralConfig } from '@/lib/3d-engine/terrain-generator';
+import { PhysicsPanel } from './PhysicsPanel';
+import { type PhysicsBodyConfig, type PhysicsWorldConfig, type PhysicsConstraint, defaultPhysicsWorld, SimplePhysicsEngine } from '@/lib/3d-engine/physics-config';
+import { ViewportManagerPanel, type ViewportMode, type ViewportLayout, type CameraBookmark, type CinematicSettings, type ScreenshotConfig, defaultCinematic } from './ViewportManager';
+import { SceneManagerPanel, type SceneLayer, type Prefab, type FogConfig, type SkyConfig, defaultFog, defaultSky } from './SceneManager';
+import { BlueprintEditor } from './BlueprintEditor';
 
 // ─── Types ─────────────────────────────────────────
 
