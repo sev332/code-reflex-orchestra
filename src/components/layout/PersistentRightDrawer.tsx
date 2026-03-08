@@ -15,6 +15,7 @@ import {
   Cpu,
   Network,
   Palette,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AdvancedPersistentChat } from '@/components/AIChat/AdvancedPersistentChat';
