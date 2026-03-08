@@ -3008,3 +3008,1073 @@ export function GenericHistoryPanel() {
     </ScrollArea>
   );
 }
+
+// ============================================================
+// CALENDAR — People/Contacts Panel
+// ============================================================
+
+export function CalendarPeoplePanel() {
+  const [activeContact, setActiveContact] = useState<string | null>(null);
+  const contacts = [
+    { id: 'c1', name: 'Alex Chen', email: 'alex@team.io', status: 'online', meetings: 3, initials: 'AC', color: 'bg-primary' },
+    { id: 'c2', name: 'Jordan Lee', email: 'jordan@team.io', status: 'busy', meetings: 2, initials: 'JL', color: 'bg-[hsl(270,80%,60%)]' },
+    { id: 'c3', name: 'Sam Rivera', email: 'sam@team.io', status: 'offline', meetings: 1, initials: 'SR', color: 'bg-[hsl(150,100%,60%)]' },
+    { id: 'c4', name: 'Taylor Kim', email: 'taylor@ext.co', status: 'online', meetings: 0, initials: 'TK', color: 'bg-[hsl(45,100%,65%)]' },
+  ];
+  const statusColors: Record<string, string> = { online: 'bg-[hsl(150,100%,60%)]', busy: 'bg-destructive', offline: 'bg-muted-foreground/30' };
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input placeholder="Search people..." className="pl-8 h-7 text-xs bg-muted/20 border-border/30" />
+        </div>
+        <div className="space-y-0.5">
+          {contacts.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setActiveContact(activeContact === c.id ? null : c.id)}
+              className={cn(
+                'w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg transition-all',
+                activeContact === c.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="relative shrink-0">
+                <div className={cn('w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-bold text-background', c.color)}>{c.initials}</div>
+                <div className={cn('absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-background', statusColors[c.status])} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium truncate">{c.name}</p>
+                <p className="text-[10px] text-muted-foreground truncate">{c.email}</p>
+              </div>
+              {c.meetings > 0 && <Badge variant="outline" className="text-[9px] px-1 h-4">{c.meetings}</Badge>}
+            </button>
+          ))}
+        </div>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-xs h-7 gap-2 text-muted-foreground">
+          <Plus className="w-3.5 h-3.5" /> Add Contact
+        </Button>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// AUDIO — AI Tools Panel
+// ============================================================
+
+export function AudioAIToolsPanel() {
+  const tools = [
+    { label: 'Stem Separation', desc: 'Isolate vocals, drums, bass, other', icon: Layers, status: 'ready' },
+    { label: 'Noise Reduction', desc: 'AI-powered noise & hum removal', icon: Wand2, status: 'ready' },
+    { label: 'Auto Master', desc: 'One-click mastering chain', icon: Sparkles, status: 'ready' },
+    { label: 'Vocal Tuner', desc: 'Pitch correction & auto-tune', icon: Music, status: 'ready' },
+    { label: 'Beat Detection', desc: 'Analyze tempo, key & rhythm', icon: Zap, status: 'ready' },
+    { label: 'Audio to MIDI', desc: 'Convert audio to MIDI notes', icon: Code2, status: 'beta' },
+    { label: 'Voice Cloning', desc: 'Clone voice from samples', icon: Copy, status: 'beta' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Audio AI Tools</p>
+        {tools.map(t => {
+          const Icon = t.icon;
+          return (
+            <button key={t.label} className="w-full text-left flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-muted/25 transition-all group border border-transparent hover:border-border/30">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Icon className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-medium">{t.label}</p>
+                  {t.status === 'beta' && <Badge className="bg-primary/20 text-primary text-[8px] px-1 h-3.5">BETA</Badge>}
+                </div>
+                <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+              </div>
+              <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// VIDEO — AI Tools Panel
+// ============================================================
+
+export function VideoAIToolsPanel() {
+  const tools = [
+    { label: 'Auto Captions', desc: 'Generate & style subtitles', icon: Type, status: 'ready' },
+    { label: 'Scene Detection', desc: 'Auto-split by scene changes', icon: Scissors, status: 'ready' },
+    { label: 'Color Match', desc: 'Match grading across clips', icon: Palette, status: 'ready' },
+    { label: 'AI B-Roll', desc: 'Generate stock footage', icon: Film, status: 'beta' },
+    { label: 'Voice Enhancement', desc: 'Clean dialogue audio', icon: Volume2, status: 'ready' },
+    { label: 'Smart Crop', desc: 'Reframe for any aspect ratio', icon: Scissors, status: 'ready' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Video AI Tools</p>
+        {tools.map(t => {
+          const Icon = t.icon;
+          return (
+            <button key={t.label} className="w-full text-left flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-muted/25 transition-all group border border-transparent hover:border-border/30">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                <Icon className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <p className="text-xs font-medium">{t.label}</p>
+                  {t.status === 'beta' && <Badge className="bg-primary/20 text-primary text-[8px] px-1 h-3.5">BETA</Badge>}
+                </div>
+                <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+              </div>
+              <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// SPREADSHEET — Charts Panel
+// ============================================================
+
+export function SpreadsheetChartsPanel() {
+  const [activeChart, setActiveChart] = useState<string | null>(null);
+  const chartTypes = [
+    { id: 'bar', label: 'Bar Chart', icon: BarChart3, variants: ['Vertical', 'Horizontal', 'Stacked', 'Grouped'] },
+    { id: 'line', label: 'Line Chart', icon: ArrowRight, variants: ['Basic', 'Area', 'Stepped', 'Spline'] },
+    { id: 'pie', label: 'Pie Chart', icon: Circle, variants: ['Pie', 'Donut', 'Semi-Circle'] },
+    { id: 'scatter', label: 'Scatter Plot', icon: Circle, variants: ['Points', 'Bubble', 'Connected'] },
+    { id: 'radar', label: 'Radar Chart', icon: Globe, variants: ['Basic', 'Filled'] },
+  ];
+  const existing = [
+    { name: 'Revenue by Quarter', type: 'bar', range: 'A1:E5' },
+    { name: 'Growth Trend', type: 'line', range: 'F1:G12' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-3">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Existing Charts</p>
+        {existing.map(c => (
+          <button key={c.name} className="w-full text-left flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/25 transition-all border border-border/20">
+            <BarChart3 className="w-4 h-4 text-primary shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium truncate">{c.name}</p>
+              <p className="text-[10px] text-muted-foreground">{c.type} · {c.range}</p>
+            </div>
+          </button>
+        ))}
+
+        <div className="border-t border-border/20 pt-2">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Insert Chart</p>
+          {chartTypes.map(ct => {
+            const Icon = ct.icon;
+            return (
+              <div key={ct.id}>
+                <button
+                  onClick={() => setActiveChart(activeChart === ct.id ? null : ct.id)}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/25 text-xs"
+                >
+                  <Icon className="w-4 h-4 text-primary shrink-0" />
+                  <span className="flex-1 text-left font-medium">{ct.label}</span>
+                  {activeChart === ct.id ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+                </button>
+                {activeChart === ct.id && (
+                  <div className="pl-9 space-y-0.5 mb-1">
+                    {ct.variants.map(v => (
+                      <Button key={v} variant="ghost" size="sm" className="w-full justify-start h-6 text-[10px] px-2 gap-1.5">
+                        <Plus className="w-3 h-3 text-primary" /> {v}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// SPREADSHEET — Data Sources Panel
+// ============================================================
+
+export function SpreadsheetDataPanel() {
+  const sources = [
+    { name: 'Local CSV Import', status: 'connected', records: '1,200', icon: FileText },
+    { name: 'API Endpoint', status: 'active', records: '∞', icon: Globe },
+    { name: 'Supabase Table', status: 'connected', records: '3,450', icon: Database },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> Connect Source</Button>
+
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Connected Sources</p>
+          {sources.map(s => {
+            const Icon = s.icon;
+            return (
+              <div key={s.name} className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-muted/25 border border-border/20">
+                <Icon className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium">{s.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{s.records} records</p>
+                </div>
+                <div className="w-1.5 h-1.5 rounded-full bg-[hsl(150,100%,60%)] shrink-0" />
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="border-t border-border/20 pt-2 space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Quick Actions</p>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2"><Upload className="w-3 h-3" /> Import CSV</Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2"><Download className="w-3 h-3" /> Export Data</Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2"><Zap className="w-3 h-3 text-primary" /> Auto-Refresh</Button>
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// SPREADSHEET — AI Analysis Panel
+// ============================================================
+
+export function SpreadsheetAIPanel() {
+  const tools = [
+    { label: 'Auto Summary', desc: 'Summarize data patterns', icon: Sparkles },
+    { label: 'Anomaly Detection', desc: 'Find outliers & irregularities', icon: AlertCircle },
+    { label: 'Trend Forecast', desc: 'Predict future values', icon: ArrowUp },
+    { label: 'Data Cleaning', desc: 'Fix duplicates, nulls, types', icon: Wand2 },
+    { label: 'Natural Language Query', desc: 'Ask questions about your data', icon: MessageSquare },
+    { label: 'Formula Suggest', desc: 'AI-generated formulas', icon: Code2 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">AI Data Analysis</p>
+        {tools.map(t => {
+          const Icon = t.icon;
+          return (
+            <button key={t.label} className="w-full text-left flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-muted/25 transition-all group border border-transparent hover:border-border/30">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20">
+                <Icon className="w-4 h-4 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-medium">{t.label}</p>
+                <p className="text-[10px] text-muted-foreground">{t.desc}</p>
+              </div>
+              <ChevronRight className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// PRESENTATIONS — Templates Panel
+// ============================================================
+
+export function PresentationsTemplatesPanel() {
+  const templates = [
+    { name: 'Minimal Dark', slides: 12, preview: 'Clean dark theme' },
+    { name: 'Corporate Blue', slides: 18, preview: 'Professional blue palette' },
+    { name: 'Pitch Deck', slides: 10, preview: 'Investor-ready layout' },
+    { name: 'Creative Showcase', slides: 15, preview: 'Bold visual design' },
+    { name: 'Data Report', slides: 20, preview: 'Chart-heavy analytics' },
+    { name: 'Blank Canvas', slides: 1, preview: 'Start from scratch' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Input placeholder="Search templates..." className="text-xs h-7 bg-muted/20 border-border/30" />
+        <div className="grid grid-cols-2 gap-1.5">
+          {templates.map(t => (
+            <button key={t.name} className="text-left rounded-lg border border-border/30 hover:border-primary/50 transition-all overflow-hidden group">
+              <div className="aspect-video bg-muted/15 flex items-center justify-center">
+                <Presentation className="w-5 h-5 text-muted-foreground/20 group-hover:text-primary/30 transition-colors" />
+              </div>
+              <div className="px-2 py-1.5">
+                <p className="text-[10px] font-medium truncate">{t.name}</p>
+                <p className="text-[8px] text-muted-foreground">{t.slides} slides</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// PRESENTATIONS — Elements Panel
+// ============================================================
+
+export function PresentationsElementsPanel() {
+  const categories = [
+    { label: 'Shapes', items: ['Rectangle', 'Circle', 'Triangle', 'Arrow', 'Star', 'Line'] },
+    { label: 'Text', items: ['Heading', 'Subheading', 'Body Text', 'Caption', 'Quote'] },
+    { label: 'Media', items: ['Image', 'Video', 'Audio', 'Icon', 'Embed'] },
+    { label: 'Charts', items: ['Bar Chart', 'Line Chart', 'Pie Chart', 'Table'] },
+    { label: 'Layout', items: ['Two Columns', 'Three Columns', 'Grid', 'Timeline'] },
+  ];
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({ Shapes: true, Text: true });
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        {categories.map(cat => (
+          <div key={cat.label}>
+            <button
+              onClick={() => setExpanded(prev => ({ ...prev, [cat.label]: !prev[cat.label] }))}
+              className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/20 text-xs font-medium"
+            >
+              {expanded[cat.label] ? <ChevronDown className="w-3 h-3 text-muted-foreground" /> : <ChevronRight className="w-3 h-3 text-muted-foreground" />}
+              <span className="flex-1 text-left">{cat.label}</span>
+              <span className="text-[10px] text-muted-foreground">{cat.items.length}</span>
+            </button>
+            {expanded[cat.label] && (
+              <div className="pl-6 space-y-0.5 mb-1">
+                {cat.items.map(item => (
+                  <Button key={item} variant="ghost" size="sm" className="w-full justify-start h-7 text-[10px] px-2 gap-1.5">
+                    <Plus className="w-3 h-3 text-primary" /> {item}
+                  </Button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// STUDIO 3D — Shaders Panel
+// ============================================================
+
+export function Studio3DShadersPanel() {
+  const [activeShader, setActiveShader] = useState<string | null>(null);
+  const shaders = [
+    { name: 'Standard PBR', type: 'built-in', desc: 'Physically-based rendering' },
+    { name: 'Unlit', type: 'built-in', desc: 'No lighting calculations' },
+    { name: 'Toon Shader', type: 'custom', desc: 'Cel-shaded look' },
+    { name: 'Glass', type: 'built-in', desc: 'Transparent refractive' },
+    { name: 'Wireframe', type: 'utility', desc: 'Debug wireframe overlay' },
+    { name: 'Custom GLSL', type: 'custom', desc: 'Write your own shader' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> New Shader</Button>
+        <div className="space-y-0.5">
+          {shaders.map(s => (
+            <button
+              key={s.name}
+              onClick={() => setActiveShader(activeShader === s.name ? null : s.name)}
+              className={cn(
+                'w-full text-left px-2.5 py-2 rounded-lg transition-all',
+                activeShader === s.name ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Palette className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-medium">{s.name}</p>
+                    <Badge variant="outline" className="text-[8px] px-1 h-3.5">{s.type}</Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{s.desc}</p>
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// STUDIO 3D — Materials Panel
+// ============================================================
+
+export function Studio3DMaterialsPanel() {
+  const materials = [
+    { name: 'Chrome Metal', color: '#c0c0c0', roughness: 0.1, metalness: 1.0 },
+    { name: 'Wood Oak', color: '#8B6914', roughness: 0.8, metalness: 0 },
+    { name: 'Red Plastic', color: '#cc2222', roughness: 0.4, metalness: 0 },
+    { name: 'Concrete', color: '#888888', roughness: 0.9, metalness: 0 },
+    { name: 'Gold', color: '#FFD700', roughness: 0.2, metalness: 1.0 },
+    { name: 'Glass Clear', color: '#aaddff', roughness: 0.05, metalness: 0 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> New Material</Button>
+        <div className="grid grid-cols-3 gap-1.5">
+          {materials.map(m => (
+            <button key={m.name} className="group rounded-lg border border-border/30 hover:border-primary/50 transition-all overflow-hidden">
+              <div className="aspect-square flex items-center justify-center" style={{ background: m.color }}>
+                <Box className="w-5 h-5 text-white/30" />
+              </div>
+              <div className="px-1.5 py-1">
+                <p className="text-[9px] font-medium truncate">{m.name}</p>
+                <p className="text-[7px] text-muted-foreground">R:{m.roughness} M:{m.metalness}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// DATABASE — Queries Panel
+// ============================================================
+
+export function DatabaseQueriesPanel() {
+  const [activeQuery, setActiveQuery] = useState<string | null>('q1');
+  const savedQueries = [
+    { id: 'q1', name: 'All Users', sql: 'SELECT * FROM users LIMIT 100', time: '45ms', rows: 100 },
+    { id: 'q2', name: 'Active Sessions', sql: 'SELECT * FROM sessions WHERE...', time: '12ms', rows: 23 },
+    { id: 'q3', name: 'Memory Usage', sql: 'SELECT tier, COUNT(*) FROM cmc...', time: '8ms', rows: 5 },
+    { id: 'q4', name: 'Dream Insights', sql: 'SELECT * FROM dream_insights...', time: '22ms', rows: 45 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> New Query</Button>
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Saved Queries</p>
+          {savedQueries.map(q => (
+            <button
+              key={q.id}
+              onClick={() => { setActiveQuery(q.id); emitPageDrawerAction({ page: 'database', action: 'open-query', value: q.id }); }}
+              className={cn(
+                'w-full text-left px-2.5 py-2 rounded-lg transition-all',
+                activeQuery === q.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Code2 className="w-3.5 h-3.5 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium truncate">{q.name}</p>
+                  <p className="text-[10px] text-muted-foreground font-mono truncate">{q.sql}</p>
+                </div>
+              </div>
+              {activeQuery === q.id && (
+                <div className="flex gap-3 mt-1.5 pl-5 text-[10px] text-muted-foreground">
+                  <span>⏱ {q.time}</span>
+                  <span>📊 {q.rows} rows</span>
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+        <div className="border-t border-border/20 pt-2">
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2">
+            <Wand2 className="w-3 h-3 text-primary" /> Natural Language → SQL
+          </Button>
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// DATABASE — Schema Panel
+// ============================================================
+
+export function DatabaseSchemaPanel() {
+  const tables = [
+    { name: 'agents', columns: 11, relations: 0, size: '12 KB' },
+    { name: 'cmc_memories', columns: 22, relations: 0, size: '2.4 MB' },
+    { name: 'dream_sessions', columns: 11, relations: 5, size: '156 KB' },
+    { name: 'tasks', columns: 18, relations: 2, size: '89 KB' },
+    { name: 'documents', columns: 13, relations: 2, size: '1.1 MB' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <div className="bg-muted/15 rounded-lg px-3 py-2 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold">{tables.length} Tables</p>
+            <p className="text-[10px] text-muted-foreground">9 relationships</p>
+          </div>
+          <Button variant="ghost" size="sm" className="h-6 text-[10px] gap-1"><Globe className="w-3 h-3" /> ERD View</Button>
+        </div>
+        <div className="space-y-0.5">
+          {tables.map(t => (
+            <button key={t.name} className="w-full text-left flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/25 transition-all">
+              <Database className="w-3.5 h-3.5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-mono font-medium truncate">{t.name}</p>
+                <p className="text-[10px] text-muted-foreground">{t.columns} cols · {t.relations} FK · {t.size}</p>
+              </div>
+              <ChevronRight className="w-3 h-3 text-muted-foreground/30" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// DASHBOARD — Widgets Panel
+// ============================================================
+
+export function DashboardWidgetsPanel() {
+  const widgets = [
+    { label: 'Metric Card', desc: 'Single KPI with trend', icon: BarChart3 },
+    { label: 'Line Chart', desc: 'Time-series visualization', icon: ArrowRight },
+    { label: 'Bar Chart', desc: 'Category comparison', icon: BarChart3 },
+    { label: 'Pie / Donut', desc: 'Proportional breakdown', icon: Circle },
+    { label: 'Data Table', desc: 'Sortable & filterable grid', icon: Table2 },
+    { label: 'Map Widget', desc: 'Geographic visualization', icon: Map },
+    { label: 'Timeline', desc: 'Event sequence display', icon: Clock },
+    { label: 'Text / HTML', desc: 'Rich content block', icon: Type },
+    { label: 'Gauge', desc: 'Progress or threshold meter', icon: Sliders },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Widget Library</p>
+        {widgets.map(w => {
+          const Icon = w.icon;
+          return (
+            <button key={w.label} className="w-full text-left flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/25 transition-all group">
+              <div className="w-7 h-7 rounded-md bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20">
+                <Icon className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">{w.label}</p>
+                <p className="text-[9px] text-muted-foreground">{w.desc}</p>
+              </div>
+              <Plus className="w-3 h-3 text-muted-foreground/30 group-hover:text-primary shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// DASHBOARD — Data Sources Panel
+// ============================================================
+
+export function DashboardDataPanel() {
+  const sources = [
+    { name: 'System Metrics', type: 'realtime', status: 'streaming', interval: '5s' },
+    { name: 'Supabase Tables', type: 'database', status: 'connected', interval: '30s' },
+    { name: 'API Endpoints', type: 'rest', status: 'polling', interval: '60s' },
+    { name: 'Log Aggregation', type: 'logs', status: 'connected', interval: '10s' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> Add Data Source</Button>
+        <div className="space-y-0.5">
+          {sources.map(s => (
+            <div key={s.name} className="flex items-center gap-2.5 px-2.5 py-2.5 rounded-lg hover:bg-muted/25 border border-border/20">
+              <Database className="w-4 h-4 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">{s.name}</p>
+                <p className="text-[10px] text-muted-foreground">{s.type} · {s.interval} refresh</p>
+              </div>
+              <div className="w-1.5 h-1.5 rounded-full bg-[hsl(150,100%,60%)] shrink-0" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// BROWSER — Reading List Panel
+// ============================================================
+
+export function BrowserReadingListPanel() {
+  const items = [
+    { title: 'Understanding Liquid Neural Networks', source: 'arxiv.org', saved: '2h ago', progress: 45 },
+    { title: 'Building Adaptive UIs with React', source: 'react.dev', saved: '1d ago', progress: 0 },
+    { title: 'Sub-Quadratic Attention Mechanisms', source: 'arxiv.org', saved: '3d ago', progress: 100 },
+    { title: 'Advanced CSS Grid Techniques', source: 'css-tricks.com', saved: '1w ago', progress: 80 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Plus className="w-3.5 h-3.5" /> Add URL</Button>
+        <div className="space-y-0.5">
+          {items.map(item => (
+            <button key={item.title} className="w-full text-left px-2.5 py-2.5 rounded-lg hover:bg-muted/25 transition-all border border-transparent hover:border-border/30">
+              <p className="text-xs font-medium line-clamp-2">{item.title}</p>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="text-[9px] text-muted-foreground">{item.source}</span>
+                <span className="text-[9px] text-muted-foreground">· {item.saved}</span>
+                {item.progress > 0 && item.progress < 100 && (
+                  <div className="flex items-center gap-1 ml-auto">
+                    <div className="w-8 h-1 bg-muted/30 rounded-full overflow-hidden">
+                      <div className="h-full bg-primary rounded-full" style={{ width: `${item.progress}%` }} />
+                    </div>
+                    <span className="text-[8px] text-muted-foreground">{item.progress}%</span>
+                  </div>
+                )}
+                {item.progress === 100 && <CheckCircle2 className="w-3 h-3 text-[hsl(150,100%,60%)] ml-auto" />}
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// BROWSER — History Panel (browser-specific)
+// ============================================================
+
+export function BrowserHistoryPanel() {
+  const sections = [
+    { label: 'Today', items: [
+      { title: 'React Documentation', url: 'react.dev/reference', time: '10m ago' },
+      { title: 'Tailwind CSS Docs', url: 'tailwindcss.com/docs', time: '30m ago' },
+      { title: 'GitHub - lucid-os', url: 'github.com/lucid-os', time: '1h ago' },
+    ]},
+    { label: 'Yesterday', items: [
+      { title: 'MDN Canvas API', url: 'developer.mozilla.org', time: 'yesterday' },
+      { title: 'Stack Overflow', url: 'stackoverflow.com', time: 'yesterday' },
+    ]},
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input placeholder="Search history..." className="pl-8 h-7 text-xs bg-muted/20 border-border/30" />
+        </div>
+        {sections.map(section => (
+          <div key={section.label} className="space-y-0.5">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase px-1">{section.label}</p>
+            {section.items.map(item => (
+              <button key={item.url} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/25 transition-all">
+                <Globe className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs truncate">{item.title}</p>
+                  <p className="text-[9px] text-muted-foreground truncate">{item.url} · {item.time}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        ))}
+        <Button variant="ghost" size="sm" className="w-full text-xs h-7 text-destructive gap-1.5">
+          <Trash2 className="w-3 h-3" /> Clear History
+        </Button>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// COMMS — Threads Panel
+// ============================================================
+
+export function CommsThreadsPanel() {
+  const threads = [
+    { id: 't1', title: 'Drawer system overhaul discussion', channel: '#engineering', replies: 8, lastReply: '5m ago', unread: 2 },
+    { id: 't2', title: 'Design review feedback', channel: '#design', replies: 4, lastReply: '1h ago', unread: 0 },
+    { id: 't3', title: 'API rate limiting issue', channel: '#help', replies: 12, lastReply: '3h ago', unread: 0 },
+    { id: 't4', title: 'Sprint retrospective action items', channel: '#general', replies: 6, lastReply: '1d ago', unread: 0 },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Active Threads</p>
+        {threads.map(t => (
+          <button
+            key={t.id}
+            className="w-full text-left px-2.5 py-2.5 rounded-lg hover:bg-muted/25 transition-all border border-transparent hover:border-border/30"
+          >
+            <p className="text-xs font-medium line-clamp-1">{t.title}</p>
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline" className="text-[8px] px-1 h-3.5">{t.channel}</Badge>
+              <span className="text-[9px] text-muted-foreground">{t.replies} replies</span>
+              <span className="text-[9px] text-muted-foreground">· {t.lastReply}</span>
+              {t.unread > 0 && (
+                <span className="text-[9px] font-semibold bg-primary text-primary-foreground px-1 rounded-full ml-auto">{t.unread}</span>
+              )}
+            </div>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// IDE — Extensions Panel
+// ============================================================
+
+export function IDEExtensionsPanel() {
+  const [activeTab, setActiveTab] = useState<'installed' | 'marketplace'>('installed');
+  const installed = [
+    { name: 'TypeScript', desc: 'Language support & intellisense', enabled: true, version: '5.4.2' },
+    { name: 'Prettier', desc: 'Code formatter', enabled: true, version: '3.2.5' },
+    { name: 'ESLint', desc: 'Linter integration', enabled: true, version: '9.0.0' },
+    { name: 'Tailwind Intellisense', desc: 'CSS class autocomplete', enabled: true, version: '0.12.1' },
+    { name: 'GitLens', desc: 'Git blame & annotations', enabled: false, version: '15.2.0' },
+  ];
+  const marketplace = [
+    { name: 'AI Copilot', desc: 'AI-powered code suggestions', downloads: '2.1M' },
+    { name: 'Docker', desc: 'Container management', downloads: '890K' },
+    { name: 'REST Client', desc: 'Send HTTP requests inline', downloads: '1.5M' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
+          {(['installed', 'marketplace'] as const).map(tab => (
+            <Button key={tab} variant={activeTab === tab ? 'secondary' : 'ghost'} size="sm"
+              onClick={() => setActiveTab(tab)}
+              className={cn('flex-1 h-6 text-[10px] capitalize', activeTab === tab && 'bg-primary/15 text-primary')}
+            >{tab}</Button>
+          ))}
+        </div>
+
+        {activeTab === 'installed' && (
+          <div className="space-y-0.5">
+            {installed.map(ext => (
+              <div key={ext.name} className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/20">
+                <Box className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-medium">{ext.name}</p>
+                    <span className="text-[8px] text-muted-foreground">v{ext.version}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">{ext.desc}</p>
+                </div>
+                <Checkbox checked={ext.enabled} className="w-3.5 h-3.5" />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'marketplace' && (
+          <div className="space-y-0.5">
+            {marketplace.map(ext => (
+              <div key={ext.name} className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/20">
+                <Box className="w-4 h-4 text-muted-foreground shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium">{ext.name}</p>
+                  <p className="text-[10px] text-muted-foreground">{ext.desc} · {ext.downloads}</p>
+                </div>
+                <Button size="sm" variant="outline" className="h-5 text-[9px] px-1.5">Install</Button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// TASKS — Filters Panel
+// ============================================================
+
+export function TasksFiltersPanel() {
+  const [savedViews] = useState([
+    { name: 'My Tasks', filter: 'assignee:me', active: true },
+    { name: 'High Priority', filter: 'priority:high,urgent', active: false },
+    { name: 'Overdue', filter: 'due:past', active: false },
+    { name: 'This Sprint', filter: 'sprint:current', active: false },
+  ]);
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input placeholder="Filter tasks..." className="pl-8 h-7 text-xs bg-muted/20 border-border/30" />
+        </div>
+
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Saved Views</p>
+          {savedViews.map(v => (
+            <button key={v.name} className={cn(
+              'w-full text-left flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all',
+              v.active ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+            )}>
+              <Search className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">{v.name}</p>
+                <p className="text-[9px] text-muted-foreground font-mono">{v.filter}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <div className="border-t border-border/20 pt-2 space-y-1.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Quick Filters</p>
+          {['Assigned to me', 'Created by me', 'Due this week', 'No assignee', 'Has attachments'].map(f => (
+            <Button key={f} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs gap-2 px-2.5">
+              <Checkbox className="w-3 h-3" /> {f}
+            </Button>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// MAP — Navigate Panel
+// ============================================================
+
+export function MapNavigatePanel() {
+  const [mode, setMode] = useState<'driving' | 'walking' | 'transit'>('driving');
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-3">
+        <div className="space-y-1.5">
+          <div className="relative">
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary" />
+            <Input placeholder="Start location" className="pl-7 h-7 text-xs bg-muted/20 border-border/30" />
+          </div>
+          <div className="relative">
+            <div className="absolute left-2.5 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-destructive" />
+            <Input placeholder="Destination" className="pl-7 h-7 text-xs bg-muted/20 border-border/30" />
+          </div>
+        </div>
+
+        <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
+          {(['driving', 'walking', 'transit'] as const).map(m => (
+            <Button key={m} variant={mode === m ? 'secondary' : 'ghost'} size="sm"
+              onClick={() => setMode(m)}
+              className={cn('flex-1 h-6 text-[10px] capitalize', mode === m && 'bg-primary/15 text-primary')}
+            >{m}</Button>
+          ))}
+        </div>
+
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Recent Routes</p>
+          {[
+            { from: 'Office', to: 'Airport', time: '35 min', dist: '18 km' },
+            { from: 'Home', to: 'Downtown', time: '22 min', dist: '9 km' },
+          ].map(r => (
+            <button key={`${r.from}-${r.to}`} className="w-full text-left flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/25">
+              <Navigation className="w-3.5 h-3.5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs">{r.from} → {r.to}</p>
+                <p className="text-[10px] text-muted-foreground">{r.time} · {r.dist}</p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs"><Navigation className="w-3.5 h-3.5" /> Get Directions</Button>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// ORCHESTRATION — Analytics Panel (dedicated)
+// ============================================================
+
+export function OrchestrationAnalyticsPanel() {
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-3 space-y-3">
+        <div className="grid grid-cols-2 gap-2">
+          {[
+            { label: 'Total Runs', value: '47', color: 'text-primary', trend: '+12' },
+            { label: 'Success Rate', value: '89%', color: 'text-[hsl(150,100%,60%)]', trend: '+3%' },
+            { label: 'Avg Duration', value: '4.2m', color: 'text-muted-foreground', trend: '-0.8m' },
+            { label: 'Failed', value: '5', color: 'text-destructive', trend: '-2' },
+          ].map(s => (
+            <div key={s.label} className="bg-muted/15 rounded-xl p-2.5 border border-border/10">
+              <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                <span className={cn('text-[9px]', s.trend.startsWith('-') ? 'text-[hsl(150,100%,60%)]' : 'text-[hsl(45,100%,65%)]')}>{s.trend}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-xl border border-border/20 bg-muted/5 p-3 space-y-2">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase">Runs / Day</p>
+          <div className="h-20 flex items-end justify-between gap-1 px-1">
+            {[6, 8, 5, 12, 9, 7, 10].map((v, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full rounded-t-sm bg-primary/30 hover:bg-primary/60 transition-colors" style={{ height: `${(v / 12) * 100}%` }} />
+                <span className="text-[8px] text-muted-foreground">{['M','T','W','T','F','S','S'][i]}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase px-1">Top Workflows</p>
+          {[
+            { name: 'CI/CD Pipeline', runs: 18, rate: '94%' },
+            { name: 'Data ETL', runs: 12, rate: '83%' },
+            { name: 'AI Training', runs: 8, rate: '88%' },
+          ].map(w => (
+            <div key={w.name} className="flex items-center gap-2 px-2">
+              <Workflow className="w-3.5 h-3.5 text-primary shrink-0" />
+              <span className="text-xs flex-1">{w.name}</span>
+              <span className="text-[10px] text-muted-foreground">{w.runs} runs</span>
+              <Badge variant="outline" className="text-[9px] h-4 px-1">{w.rate}</Badge>
+            </div>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// TERMINAL — History Panel (dedicated)
+// ============================================================
+
+export function TerminalHistoryPanel() {
+  const commands = [
+    { cmd: 'npm run build', time: '2m ago', status: 'success', duration: '12s' },
+    { cmd: 'git status', time: '5m ago', status: 'success', duration: '0.1s' },
+    { cmd: 'pnpm install', time: '15m ago', status: 'success', duration: '8s' },
+    { cmd: 'vitest run', time: '30m ago', status: 'failed', duration: '45s' },
+    { cmd: 'tsc --noEmit', time: '1h ago', status: 'success', duration: '3s' },
+    { cmd: 'curl localhost:3000', time: '2h ago', status: 'success', duration: '0.2s' },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <div className="relative mb-2">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input placeholder="Search history..." className="pl-8 h-7 text-xs bg-muted/20 border-border/30" />
+        </div>
+        {commands.map((c, i) => (
+          <button key={i} className="w-full text-left flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/20 transition-all">
+            <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', c.status === 'success' ? 'bg-[hsl(150,100%,60%)]' : 'bg-destructive')} />
+            <span className="text-xs font-mono flex-1 truncate">{c.cmd}</span>
+            <span className="text-[9px] text-muted-foreground shrink-0">{c.duration}</span>
+          </button>
+        ))}
+        <Button variant="ghost" size="sm" className="w-full text-xs h-7 text-destructive gap-1.5 mt-2">
+          <Trash2 className="w-3 h-3" /> Clear History
+        </Button>
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// API STUDIO — History Panel (dedicated)
+// ============================================================
+
+export function APIHistoryPanel() {
+  const requests = [
+    { method: 'GET', url: '/api/users', status: 200, time: '2m ago', duration: '45ms' },
+    { method: 'POST', url: '/api/chat', status: 201, time: '10m ago', duration: '230ms' },
+    { method: 'GET', url: '/api/agents', status: 200, time: '30m ago', duration: '12ms' },
+    { method: 'PUT', url: '/api/tasks/t1', status: 200, time: '1h ago', duration: '89ms' },
+    { method: 'DELETE', url: '/api/sessions/old', status: 404, time: '2h ago', duration: '5ms' },
+  ];
+  const methodColors: Record<string, string> = {
+    GET: 'text-[hsl(150,100%,60%)]', POST: 'text-[hsl(45,100%,65%)]',
+    PUT: 'text-[hsl(210,80%,60%)]', DELETE: 'text-destructive', PATCH: 'text-[hsl(270,80%,60%)]',
+  };
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-1">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Request History</p>
+        {requests.map((r, i) => (
+          <button key={i} className="w-full text-left flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted/20 transition-all">
+            <Badge variant="outline" className={cn('text-[9px] px-1 h-4 font-mono w-10 justify-center', methodColors[r.method])}>{r.method}</Badge>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-mono truncate">{r.url}</p>
+              <p className="text-[9px] text-muted-foreground">{r.time} · {r.duration}</p>
+            </div>
+            <span className={cn('text-[10px] font-mono', r.status >= 400 ? 'text-destructive' : 'text-[hsl(150,100%,60%)]')}>{r.status}</span>
+          </button>
+        ))}
+      </div>
+    </ScrollArea>
+  );
+}
+
+// ============================================================
+// API STUDIO — Environments Panel (dedicated)
+// ============================================================
+
+export function APIEnvironmentsPanel() {
+  const [activeEnv, setActiveEnv] = useState('dev');
+  const envs = [
+    { id: 'dev', name: 'Development', url: 'http://localhost:3000', vars: 5, active: true },
+    { id: 'staging', name: 'Staging', url: 'https://staging.api.io', vars: 5, active: false },
+    { id: 'prod', name: 'Production', url: 'https://api.lucid.io', vars: 4, active: false },
+  ];
+  const vars = [
+    { key: 'BASE_URL', value: 'http://localhost:3000', secret: false },
+    { key: 'API_KEY', value: '••••••••', secret: true },
+    { key: 'TOKEN', value: '••••••••', secret: true },
+    { key: 'VERSION', value: 'v1', secret: false },
+    { key: 'TIMEOUT', value: '30000', secret: false },
+  ];
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Environments</p>
+          {envs.map(e => (
+            <button
+              key={e.id}
+              onClick={() => setActiveEnv(e.id)}
+              className={cn(
+                'w-full text-left flex items-center gap-2 px-2.5 py-2 rounded-lg transition-all',
+                activeEnv === e.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className={cn('w-1.5 h-1.5 rounded-full shrink-0', activeEnv === e.id ? 'bg-[hsl(150,100%,60%)]' : 'bg-muted-foreground/30')} />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-medium">{e.name}</p>
+                <p className="text-[9px] text-muted-foreground font-mono truncate">{e.url}</p>
+              </div>
+              <Badge variant="outline" className="text-[9px] h-4 px-1">{e.vars}</Badge>
+            </button>
+          ))}
+        </div>
+
+        <div className="border-t border-border/20 pt-2 space-y-0.5">
+          <div className="flex items-center justify-between px-1 mb-1">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase">Variables</p>
+            <Button variant="ghost" size="icon" className="w-5 h-5"><Plus className="w-3 h-3" /></Button>
+          </div>
+          {vars.map(v => (
+            <div key={v.key} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/20 text-xs">
+              <span className="font-mono text-primary flex-1 truncate">{v.key}</span>
+              <span className="font-mono text-muted-foreground truncate max-w-[80px]">{v.value}</span>
+              {v.secret && <Lock className="w-3 h-3 text-muted-foreground/40 shrink-0" />}
+            </div>
+          ))}
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
