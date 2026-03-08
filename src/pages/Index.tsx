@@ -22,6 +22,8 @@ const GlassMapPage = lazy(() => import("@/components/Map/GlassMapPage").then(m =
 const ImageEditor = lazy(() => import("@/components/MediaEditors/ImageEditor").then(m => ({ default: m.ImageEditor })));
 const AudioEditor = lazy(() => import("@/components/MediaEditors/AudioEditor").then(m => ({ default: m.AudioEditor })));
 const VideoEditor = lazy(() => import("@/components/MediaEditors/VideoEditor").then(m => ({ default: m.VideoEditor })));
+const Studio3DPage = lazy(() => import("@/components/Studio3D/Studio3DPage").then(m => ({ default: m.Studio3DPage })));
+const PresentationsPage = lazy(() => import("@/components/Presentations/PresentationsPage").then(m => ({ default: m.PresentationsPage })));
 const SpreadsheetPage = lazy(() => import("@/components/Productivity/SpreadsheetPage").then(m => ({ default: m.SpreadsheetPage })));
 const CalendarPage = lazy(() => import("@/components/Productivity/CalendarPage").then(m => ({ default: m.CalendarPage })));
 const EmailPage = lazy(() => import("@/components/Productivity/EmailPage").then(m => ({ default: m.EmailPage })));
@@ -64,6 +66,8 @@ const Index = () => {
       case 'audio': return <Suspense fallback={<LoadingFallback />}><AudioEditor /></Suspense>;
       case 'video': return <Suspense fallback={<LoadingFallback />}><VideoEditor /></Suspense>;
       case 'map': return <Suspense fallback={<LoadingFallback />}><GlassMapPage /></Suspense>;
+      case 'studio3d': return <Suspense fallback={<LoadingFallback />}><Studio3DPage /></Suspense>;
+      case 'presentations': return <Suspense fallback={<LoadingFallback />}><PresentationsPage /></Suspense>;
       case 'spreadsheet': return <Suspense fallback={<LoadingFallback />}><SpreadsheetPage /></Suspense>;
       case 'calendar': return <Suspense fallback={<LoadingFallback />}><CalendarPage /></Suspense>;
       case 'email': return <Suspense fallback={<LoadingFallback />}><EmailPage /></Suspense>;
