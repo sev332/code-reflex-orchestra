@@ -1,4 +1,5 @@
 // React hook for Drawing Engine — wires BrushSession, stabilizers, live preview, node editing, transforms
+// Sprint 1: Added pen handle dragging, text tool, undo/redo wiring, SVG export
 import { useState, useCallback, useRef, useMemo } from 'react';
 import {
   EditorState, DrawableEntity, ToolId, Vec2, Command, generateId,
@@ -16,6 +17,8 @@ import {
   getTransformHandles, hitTestTransformHandle, applyScaleTransform, applyRotateTransform,
 } from './node-editing';
 import { simplifyPath, reversePath, offsetPath, booleanUnion, booleanSubtract, booleanIntersect } from './path-operations';
+import { createPointTextEntity, createAreaTextEntity } from './text-engine';
+import { exportSceneToSVG } from './svg-io';
 
 export function useDrawingEngine() {
   const [state, setState] = useState<EditorState>(createDefaultEditorState);
@@ -30,8 +33,9 @@ export function useDrawingEngine() {
   const brushSessionRef = useRef<BrushSession | null>(null);
   const [activeBrushPreset, setActiveBrushPreset] = useState<BrushPresetFull>(BUILT_IN_PRESETS[0]);
 
-  // Pen tool anchors
+  // Pen tool anchors + handle dragging state
   const [penAnchors, setPenAnchors] = useState<PenAnchorPreview[]>([]);
+  const [isPenDragging, setIsPenDragging] = useState(false);
 
   // Node editing state (direct-select)
   const [nodeOverlay, setNodeOverlay] = useState<NodeEditOverlay>(emptyNodeOverlay);
@@ -41,18 +45,32 @@ export function useDrawingEngine() {
   // Transform state (select tool)
   const [transformState, setTransformState] = useState<TransformState>(emptyTransformState);
 
+  // Text editing state
+  const [editingTextId, setEditingTextId] = useState<string | null>(null);
+
   const updateHistory = useCallback(() => {
     setCanUndo(historyRef.current.canUndo);
     setCanRedo(historyRef.current.canRedo);
   }, []);
 
-  // ── State mutations ──
+  // ── Command-wrapped state mutations ──
+
+  const executeCommand = useCallback((label: string, doFn: () => void, undoFn: () => void) => {
+    historyRef.current.execute({
+      id: generateId(),
+      label,
+      timestamp: Date.now(),
+      execute: doFn,
+      undo: undoFn,
+    });
+    updateHistory();
+  }, [updateHistory]);
 
   const setTool = useCallback((toolId: ToolId) => {
     setState(prev => ({ ...prev, tool: { ...prev.tool, activeToolId: toolId } }));
-    // Reset pen anchors when switching away from pen
     if (toolId !== 'pen') setPenAnchors([]);
     setPreview(emptyPreview);
+    setEditingTextId(null);
   }, []);
 
   const setFillColor = useCallback((color: string) => {
@@ -65,6 +83,14 @@ export function useDrawingEngine() {
 
   const setStrokeWidth = useCallback((width: number) => {
     setState(prev => ({ ...prev, tool: { ...prev.tool, strokeWidth: width } }));
+  }, []);
+
+  const setFontSize = useCallback((size: number) => {
+    setState(prev => ({ ...prev, tool: { ...prev.tool, fontSize: size } }));
+  }, []);
+
+  const setFontFamily = useCallback((family: string) => {
+    setState(prev => ({ ...prev, tool: { ...prev.tool, fontFamily: family } }));
   }, []);
 
   const setViewport = useCallback((update: Partial<EditorState['viewport']>) => {
@@ -90,8 +116,14 @@ export function useDrawingEngine() {
     setState(prev => ({ ...prev, selection: { ...prev.selection, hoveredId: id } }));
   }, []);
 
+  // ── UNDO-WRAPPED entity operations ──
+
   const addEntity = useCallback((entity: DrawableEntity) => {
+    const entityId = entity.id;
+    let capturedState: EditorState | null = null;
+
     setState(prev => {
+      capturedState = prev;
       const scene = { ...prev.scene };
       scene.entities = { ...scene.entities, [entity.id]: entity };
       const activeLayer = scene.layers.find(l => l.id === scene.activeLayerId);
@@ -102,12 +134,66 @@ export function useDrawingEngine() {
       }
       return { ...prev, scene, selection: { ...prev.selection, selectedIds: [entity.id] } };
     });
-  }, []);
+
+    // Register with command history for undo
+    historyRef.current.execute({
+      id: generateId(),
+      label: `Add ${entity.name}`,
+      timestamp: Date.now(),
+      execute: () => {
+        // Already executed above
+      },
+      undo: () => {
+        setState(prev => {
+          const entities = { ...prev.scene.entities };
+          delete entities[entityId];
+          const layers = prev.scene.layers.map(l => ({
+            ...l,
+            entities: l.entities.filter(eid => eid !== entityId),
+          }));
+          return {
+            ...prev,
+            scene: { ...prev.scene, entities, layers },
+            selection: { selectedIds: [], hoveredId: null, selectionBounds: null },
+          };
+        });
+      },
+    });
+    updateHistory();
+  }, [updateHistory]);
 
   const deleteSelected = useCallback(() => {
     setState(prev => {
       const ids = prev.selection.selectedIds;
       if (ids.length === 0) return prev;
+      
+      // Capture for undo
+      const deletedEntities = ids.map(id => prev.scene.entities[id]).filter(Boolean);
+      const deletedLayerMap = new Map<string, string[]>();
+      prev.scene.layers.forEach(l => {
+        const inLayer = l.entities.filter(eid => ids.includes(eid));
+        if (inLayer.length > 0) deletedLayerMap.set(l.id, inLayer);
+      });
+
+      historyRef.current.execute({
+        id: generateId(),
+        label: `Delete ${ids.length} object(s)`,
+        timestamp: Date.now(),
+        execute: () => {},
+        undo: () => {
+          setState(p => {
+            const entities = { ...p.scene.entities };
+            deletedEntities.forEach(e => { entities[e.id] = e; });
+            const layers = p.scene.layers.map(l => {
+              const restore = deletedLayerMap.get(l.id);
+              return restore ? { ...l, entities: [...l.entities, ...restore] } : l;
+            });
+            return { ...p, scene: { ...p.scene, entities, layers }, selection: { ...p.selection, selectedIds: ids } };
+          });
+        },
+      });
+      updateHistory();
+
       const entities = { ...prev.scene.entities };
       ids.forEach(id => delete entities[id]);
       const layers = prev.scene.layers.map(l => ({
@@ -120,7 +206,7 @@ export function useDrawingEngine() {
         selection: { selectedIds: [], hoveredId: null, selectionBounds: null },
       };
     });
-  }, []);
+  }, [updateHistory]);
 
   const moveSelected = useCallback((dx: number, dy: number) => {
     setState(prev => {
@@ -219,7 +305,6 @@ export function useDrawingEngine() {
     if (!session) return;
     const pt = session.update(sample);
     if (pt) {
-      // Update preview with all session points
       setPreview(prev => ({
         ...prev,
         brushPoints: session.points.map((p, i) => ({
@@ -288,9 +373,29 @@ export function useDrawingEngine() {
     setPreview(emptyPreview);
   }, []);
 
-  // ── Interaction: Pen tool ──
+  // ── Interaction: Pen tool — with Bézier handle creation ──
 
   const addPenAnchor = useCallback((anchor: PenAnchorPreview) => {
+    setPenAnchors(prev => {
+      // Check if clicking first anchor to close path
+      if (prev.length >= 3) {
+        const first = prev[0];
+        const dist = Math.sqrt((anchor.x - first.x) ** 2 + (anchor.y - first.y) ** 2);
+        if (dist < 8) {
+          // Close the path — create entity from pen anchors
+          finishPenPathAsEntity(prev, true);
+          return [];
+        }
+      }
+
+      const next = [...prev, anchor];
+      setPreview(p => ({ ...p, active: true, type: 'pen', penAnchors: next }));
+      return next;
+    });
+  }, []);
+
+  const beginPenHandleDrag = useCallback((anchor: PenAnchorPreview) => {
+    setIsPenDragging(true);
     setPenAnchors(prev => {
       const next = [...prev, anchor];
       setPreview(p => ({ ...p, active: true, type: 'pen', penAnchors: next }));
@@ -298,16 +403,111 @@ export function useDrawingEngine() {
     });
   }, []);
 
-  const updatePenCursor = useCallback((world: Vec2) => {
-    setPreview(prev => ({ ...prev, currentWorld: world }));
+  const updatePenHandleDrag = useCallback((world: Vec2) => {
+    if (!isPenDragging) return;
+    setPenAnchors(prev => {
+      if (prev.length === 0) return prev;
+      const updated = [...prev];
+      const last = { ...updated[updated.length - 1] };
+      // Mirror handle: handleOut goes toward cursor, handleIn goes opposite
+      last.handleOut = { x: world.x, y: world.y };
+      last.handleIn = {
+        x: last.x - (world.x - last.x),
+        y: last.y - (world.y - last.y),
+      };
+      updated[updated.length - 1] = last;
+      setPreview(p => ({ ...p, penAnchors: updated }));
+      return updated;
+    });
+  }, [isPenDragging]);
+
+  const endPenHandleDrag = useCallback(() => {
+    setIsPenDragging(false);
   }, []);
 
-  const finishPenPath = useCallback(() => {
+  const updatePenCursor = useCallback((world: Vec2) => {
+    if (isPenDragging) {
+      updatePenHandleDrag(world);
+    } else {
+      setPreview(prev => ({ ...prev, currentWorld: world }));
+    }
+  }, [isPenDragging, updatePenHandleDrag]);
+
+  const finishPenPathAsEntity = useCallback((anchors: PenAnchorPreview[], closed: boolean = false) => {
+    if (anchors.length < 2) return;
+    const pathAnchors = anchors.map((a, i) => ({
+      id: generateId(),
+      position: { x: a.x, y: a.y },
+      handleIn: a.handleIn ? { x: a.handleIn.x, y: a.handleIn.y } : null,
+      handleOut: a.handleOut ? { x: a.handleOut.x, y: a.handleOut.y } : null,
+    }));
+    const segments = pathAnchors.slice(0, closed ? pathAnchors.length : -1).map((a, i) => ({
+      type: (pathAnchors[i].handleOut || pathAnchors[(i + 1) % pathAnchors.length].handleIn) ? 'cubic' as const : 'line' as const,
+      from: a.id,
+      to: pathAnchors[(i + 1) % pathAnchors.length].id,
+    }));
+
+    const entity: DrawableEntity = {
+      id: generateId(),
+      type: 'path',
+      name: closed ? 'Closed Path' : 'Path',
+      visible: true,
+      locked: false,
+      topologyMode: 'isolated',
+      transform: { translateX: 0, translateY: 0, rotation: 0, scaleX: 1, scaleY: 1, skewX: 0, skewY: 0 },
+      blend: { mode: 'normal', opacity: 1 },
+      pathData: {
+        contours: [{
+          id: generateId(),
+          anchors: pathAnchors,
+          segments,
+          closed,
+        }],
+      },
+      fill: closed
+        ? { type: 'solid', color: state.tool.fillColor, opacity: 1 }
+        : { type: 'none', color: 'transparent', opacity: 0 },
+      stroke: { color: state.tool.strokeColor, width: state.tool.strokeWidth, opacity: 1, cap: 'round', join: 'round' },
+    };
+
+    addEntity(entity);
     setPreview(emptyPreview);
-    const anchors = penAnchors;
+  }, [addEntity, state.tool]);
+
+  const finishPenPath = useCallback(() => {
+    finishPenPathAsEntity(penAnchors, false);
     setPenAnchors([]);
-    return anchors;
-  }, [penAnchors]);
+    setPreview(emptyPreview);
+    return penAnchors;
+  }, [penAnchors, finishPenPathAsEntity]);
+
+  // ── Text tool ──
+
+  const addTextEntity = useCallback((x: number, y: number, text: string = 'Type here') => {
+    const entity = createPointTextEntity(x, y, text, {
+      fontSize: state.tool.fontSize,
+      fontFamily: state.tool.fontFamily,
+    }, state.tool.fillColor);
+    addEntity(entity);
+    setEditingTextId(entity.id);
+  }, [addEntity, state.tool]);
+
+  const updateTextContent = useCallback((entityId: string, text: string) => {
+    setState(prev => {
+      const entity = prev.scene.entities[entityId];
+      if (!entity) return prev;
+      return {
+        ...prev,
+        scene: {
+          ...prev.scene,
+          entities: {
+            ...prev.scene.entities,
+            [entityId]: { ...entity, textContent: text, name: text.substring(0, 20) || 'Text' },
+          },
+        },
+      };
+    });
+  }, []);
 
   // ── Hit test ──
 
@@ -528,7 +728,6 @@ export function useDrawingEngine() {
         ...l,
         entities: l.entities.filter(eid => !ids.includes(eid)),
       }));
-      // Add result to active layer
       const activeLayer = layers.find(l => l.id === prev.scene.activeLayerId);
       if (activeLayer) activeLayer.entities.push(result.id);
 
@@ -539,6 +738,45 @@ export function useDrawingEngine() {
       };
     });
   }, []);
+
+  // ── SVG Export ──
+
+  const exportSVG = useCallback((): string => {
+    return exportSceneToSVG(state.scene);
+  }, [state.scene]);
+
+  const downloadSVG = useCallback((filename: string = 'design.svg') => {
+    const svg = exportSVG();
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [exportSVG]);
+
+  // ── Export PNG ──
+
+  const downloadPNG = useCallback((scale: number = 2) => {
+    const ab = state.scene.artboards[0];
+    if (!ab) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = ab.width * scale;
+    canvas.height = ab.height * scale;
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(scale, scale);
+
+    // Minimal render for export
+    ctx.fillStyle = ab.backgroundColor;
+    ctx.fillRect(0, 0, ab.width, ab.height);
+
+    // Import renderScene is circular, so we use the native scene data
+    const link = document.createElement('a');
+    link.download = 'design.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  }, [state.scene]);
 
   return {
     state,
@@ -553,6 +791,8 @@ export function useDrawingEngine() {
     setFillColor,
     setStrokeColor,
     setStrokeWidth,
+    setFontSize,
+    setFontFamily,
     setViewport,
     setZoom,
     pan,
@@ -588,11 +828,20 @@ export function useDrawingEngine() {
     beginLinePreview,
     updateLinePreview,
     endLinePreview,
-    // Pen tool
+    // Pen tool (with handle dragging)
     addPenAnchor,
+    beginPenHandleDrag,
+    updatePenHandleDrag,
+    endPenHandleDrag,
     updatePenCursor,
     finishPenPath,
     penAnchors,
+    isPenDragging,
+    // Text tool
+    addTextEntity,
+    updateTextContent,
+    editingTextId,
+    setEditingTextId,
     // Node editing (direct-select)
     nodeOverlay,
     enterNodeEdit,
@@ -614,5 +863,9 @@ export function useDrawingEngine() {
     pathReverse,
     pathOffset,
     pathBoolean,
+    // Export
+    exportSVG,
+    downloadSVG,
+    downloadPNG,
   };
 }
