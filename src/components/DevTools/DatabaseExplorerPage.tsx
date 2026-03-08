@@ -450,6 +450,38 @@ export function DatabaseExplorerPage() {
         <Badge variant="outline" className="text-[9px] h-4 border-border/30">
           {mockTables.reduce((a, t) => a + t.rowCount, 0).toLocaleString()} rows
         </Badge>
+
+        <div className="relative w-44">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input value={tableSearch} onChange={e => setTableSearch(e.target.value)} placeholder="Filter tables..." className="h-7 text-xs pl-8 bg-muted/30 border-border/30" />
+        </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
+              <Table2 className="w-3.5 h-3.5" />
+              {selectedTable.name}
+              <ChevronDown className="w-3 h-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56">
+            {filteredTables.map((table) => (
+              <DropdownMenuItem
+                key={table.name}
+                onClick={() => {
+                  setSelectedTable(table);
+                  setQuery(`SELECT * FROM ${table.name} LIMIT 20;`);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Table2 className="w-3.5 h-3.5 text-blue-400" />
+                <span className="flex-1">{table.name}</span>
+                <span className="text-[10px] text-muted-foreground">{table.rowCount}</span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         <div className="flex-1" />
         <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
           {views.map(v => {
@@ -467,59 +499,6 @@ export function DatabaseExplorerPage() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Table list sidebar */}
-        <div className="w-56 bg-background/60 backdrop-blur-xl border-r border-border/30 flex flex-col shrink-0">
-          <div className="p-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input value={tableSearch} onChange={e => setTableSearch(e.target.value)} placeholder="Filter tables..." className="h-7 text-xs pl-8 bg-muted/30 border-border/30" />
-            </div>
-          </div>
-          <ScrollArea className="flex-1">
-            <div className="px-1 pb-2">
-              {filteredTables.map(table => (
-                <div key={table.name}>
-                  <button
-                    onClick={() => { setSelectedTable(table); toggleTable(table.name); setQuery(`SELECT * FROM ${table.name} LIMIT 20;`); }}
-                    className={cn(
-                      'w-full flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors group',
-                      selectedTable.name === table.name ? 'bg-primary/15 text-primary' : 'hover:bg-muted/30'
-                    )}
-                  >
-                    {expandedTables.has(table.name) ? <ChevronDown className="w-3 h-3 shrink-0" /> : <ChevronRight className="w-3 h-3 shrink-0" />}
-                    <Table2 className="w-3.5 h-3.5 shrink-0 text-blue-400" />
-                    <span className="truncate flex-1 text-left">{table.name}</span>
-                    <span className="text-[9px] text-muted-foreground">{table.rowCount}</span>
-                    {table.rls && <Badge variant="outline" className="text-[7px] px-1 h-3 border-emerald-500/30 text-emerald-400 opacity-0 group-hover:opacity-100">RLS</Badge>}
-                  </button>
-                  {expandedTables.has(table.name) && (
-                    <div className="ml-6 space-y-0.5 py-0.5">
-                      {table.columns.map(col => {
-                        const TypeIcon = typeIcons[col.type] || Type;
-                        return (
-                          <div key={col.name} className="flex items-center gap-1.5 px-2 py-0.5 text-[10px] text-muted-foreground hover:text-foreground cursor-default">
-                            {col.isPrimary ? <Key className="w-2.5 h-2.5 text-amber-400 shrink-0" /> :
-                             col.isForeign ? <Link2 className="w-2.5 h-2.5 text-blue-400 shrink-0" /> :
-                             <TypeIcon className="w-2.5 h-2.5 shrink-0" />}
-                            <span className="truncate">{col.name}</span>
-                            <span className="text-[8px] opacity-60 ml-auto">{col.type.slice(0, 8)}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-          <div className="p-2 border-t border-border/20">
-            <div className="text-[10px] text-muted-foreground space-y-0.5">
-              <div className="flex justify-between"><span>Schema</span><span>public</span></div>
-              <div className="flex justify-between"><span>Total size</span><span>{mockTables.reduce((s, t) => s + parseFloat(t.size), 0).toFixed(0)} KB</span></div>
-            </div>
-          </div>
-        </div>
-
         {/* Main content */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* ─── Data View ─── */}

@@ -347,106 +347,22 @@ export function CommsHubPage() {
 
   return (
     <div className="h-full flex bg-background/30">
-      {/* ─── Channel Sidebar ─── */}
-      <div className="w-60 bg-background/60 backdrop-blur-xl border-r border-border/30 flex flex-col shrink-0">
-        {/* Server header */}
-        <div className="h-12 px-4 border-b border-border/30 flex items-center justify-between cursor-pointer hover:bg-muted/10 transition-colors">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center">
-              <Zap className="w-3.5 h-3.5 text-primary" />
-            </div>
-            <span className="text-sm font-semibold">LUCID Workspace</span>
-          </div>
-          <ChevronDown className="w-4 h-4 text-muted-foreground" />
-        </div>
-
-        {/* Quick stats */}
-        {(totalUnread > 0 || totalMentions > 0) && (
-          <div className="px-3 py-1.5 border-b border-border/20 flex items-center gap-2">
-            {totalUnread > 0 && <Badge className="text-[9px] h-4 px-1.5 bg-muted/30 text-muted-foreground border-0">{totalUnread} unread</Badge>}
-            {totalMentions > 0 && <Badge className="text-[9px] h-4 px-1.5 bg-red-500/20 text-red-400 border-0">@{totalMentions}</Badge>}
-          </div>
-        )}
-
-        <ScrollArea className="flex-1">
-          <div className="py-1">
-            {categories.map(cat => {
-              const catChannels = channels.filter(c => c.category === cat);
-              const isCollapsed = collapsedCats.has(cat);
-              return (
-                <div key={cat} className="mb-0.5">
-                  <button
-                    onClick={() => toggleCategory(cat)}
-                    className="w-full flex items-center gap-1 px-3 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
-                  >
-                    <ChevronDown className={cn('w-3 h-3 transition-transform', isCollapsed && '-rotate-90')} />
-                    {cat}
-                    {catChannels.some(c => c.unread > 0) && <div className="w-1.5 h-1.5 rounded-full bg-primary ml-auto" />}
-                  </button>
-                  {!isCollapsed && catChannels.map(ch => (
-                    <button
-                      key={ch.id}
-                      onClick={() => setActiveChannelId(ch.id)}
-                      className={cn(
-                        'w-full flex items-center gap-1.5 px-3 py-1.5 mx-1 rounded-md text-sm transition-colors',
-                        activeChannelId === ch.id ? 'bg-primary/15 text-foreground' : ch.unread > 0 ? 'text-foreground font-medium hover:bg-muted/30' : 'text-muted-foreground hover:bg-muted/20 hover:text-foreground'
-                      )}
-                    >
-                      {ch.type === 'voice' ? <Volume2 className="w-4 h-4 shrink-0" /> :
-                       ch.type === 'announcement' ? <Bell className="w-4 h-4 shrink-0" /> :
-                       <Hash className={cn('w-4 h-4 shrink-0', ch.isPrivate && 'text-amber-400')} />}
-                      <span className="truncate flex-1 text-left text-xs">{ch.name}</span>
-                      {ch.mentions && ch.mentions > 0 && (
-                        <Badge className="bg-red-500 text-white text-[9px] h-4 min-w-[16px] px-1 border-0">{ch.mentions}</Badge>
-                      )}
-                      {!ch.mentions && ch.unread > 0 && (
-                        <div className="w-2 h-2 rounded-full bg-foreground/30" />
-                      )}
-                    </button>
-                  ))}
-                  {/* Show connected users in voice channels */}
-                  {!isCollapsed && catChannels.filter(c => c.type === 'voice').map(vc => (
-                    vc.id === 'c5' && voiceUsers.length > 0 && (
-                      <div key={`${vc.id}-users`} className="pl-8 pb-1">
-                        {voiceUsers.map(u => (
-                          <div key={u} className="flex items-center gap-1.5 py-0.5 text-[11px] text-muted-foreground">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span>{u}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )
-                  ))}
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-
-        {/* User bar */}
-        <div className="h-14 px-2 border-t border-border/30 flex items-center gap-2 bg-background/40">
-          <div className="relative">
-            <Avatar className="w-8 h-8">
-              <AvatarFallback className="bg-primary/20 text-primary text-xs">A</AvatarFallback>
-            </Avatar>
-            <div className={cn('absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background', statusColors.online)} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium truncate">Alex</p>
-            <p className="text-[10px] text-muted-foreground truncate">🚀 Building the future</p>
-          </div>
-          <div className="flex items-center gap-0.5">
-            <Button variant="ghost" size="icon" className="w-7 h-7"><Mic className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7"><Headphones className="w-3.5 h-3.5" /></Button>
-            <Button variant="ghost" size="icon" className="w-7 h-7"><Settings className="w-3.5 h-3.5" /></Button>
-          </div>
-        </div>
-      </div>
-
       {/* ─── Chat Area ─── */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Channel header */}
-        <div className="h-12 px-4 border-b border-border/30 flex items-center gap-3 shrink-0 bg-background/40">
+        <div className="h-12 px-4 border-b border-border/30 flex items-center gap-2.5 shrink-0 bg-background/40">
+          <select
+            value={activeChannelId}
+            onChange={(e) => setActiveChannelId(e.target.value)}
+            className="h-8 min-w-52 rounded-md border border-border/30 bg-muted/30 px-2 text-xs text-foreground"
+          >
+            {channels.map((channel) => (
+              <option key={channel.id} value={channel.id}>
+                {channel.category} · {channel.name}
+              </option>
+            ))}
+          </select>
+
           {activeChannel.type === 'voice' ? <Volume2 className="w-5 h-5 text-muted-foreground" /> :
            activeChannel.type === 'announcement' ? <Bell className="w-5 h-5 text-muted-foreground" /> :
            <Hash className="w-5 h-5 text-muted-foreground" />}

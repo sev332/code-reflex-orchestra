@@ -487,6 +487,33 @@ export function NotesPage() {
       <div className="h-10 bg-background/80 backdrop-blur-xl border-b border-border/30 flex items-center px-3 gap-2 shrink-0">
         <BookOpen className="w-4 h-4 text-primary" />
         <span className="text-xs font-semibold">Notes & Wiki</span>
+
+        <div className="relative w-48">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search notes..." className="h-7 text-xs pl-8 bg-muted/30 border-border/30" />
+        </div>
+
+        <select
+          value={activeFolder || 'all'}
+          onChange={(e) => setActiveFolder(e.target.value === 'all' ? null : e.target.value)}
+          className="h-7 rounded-md border border-border/30 bg-muted/30 px-2 text-xs text-foreground"
+        >
+          <option value="all">All folders</option>
+          {folders.map((folder) => (
+            <option key={folder} value={folder}>{folder}</option>
+          ))}
+        </select>
+
+        <select
+          value={activeNoteId}
+          onChange={(e) => { setActiveNoteId(e.target.value); setIsEditing(false); }}
+          className="h-7 min-w-48 rounded-md border border-border/30 bg-muted/30 px-2 text-xs text-foreground"
+        >
+          {(filteredNotes.length > 0 ? filteredNotes : notes).map((note) => (
+            <option key={note.id} value={note.id}>{note.title}</option>
+          ))}
+        </select>
+
         <div className="flex-1" />
         <Button variant="ghost" size="sm" onClick={createNote} className="h-7 text-xs gap-1">
           <Plus className="w-3.5 h-3.5" /> New Note
@@ -497,71 +524,6 @@ export function NotesPage() {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Notes list */}
-        <div className="w-60 bg-background/60 backdrop-blur-xl border-r border-border/30 flex flex-col shrink-0">
-          <div className="p-2">
-            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <Input value={searchQuery} onChange={e => setSearchQuery(e.target.value)} placeholder="Search notes..." className="h-7 text-xs pl-8 bg-muted/30 border-border/30" />
-            </div>
-          </div>
-
-          <div className="px-2 pb-1 flex flex-wrap gap-1">
-            <Button variant="ghost" size="sm" onClick={() => setActiveFolder(null)}
-              className={cn('h-5 text-[10px] px-1.5', !activeFolder && 'bg-primary/15 text-primary')}>All</Button>
-            {folders.map(f => (
-              <Button key={f} variant="ghost" size="sm" onClick={() => setActiveFolder(f)}
-                className={cn('h-5 text-[10px] px-1.5', activeFolder === f && 'bg-primary/15 text-primary')}>{f}</Button>
-            ))}
-          </div>
-
-          <ScrollArea className="flex-1">
-            <div className="p-1 space-y-0.5">
-              {filteredNotes.map(note => (
-                <button
-                  key={note.id}
-                  onClick={() => { setActiveNoteId(note.id); setIsEditing(false); }}
-                  className={cn(
-                    'w-full text-left p-2 rounded-lg transition-colors',
-                    activeNoteId === note.id ? 'bg-primary/15' : 'hover:bg-muted/30'
-                  )}
-                >
-                  <div className="flex items-start gap-1.5">
-                    {note.icon && <span className="text-sm shrink-0">{note.icon}</span>}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        {note.pinned && <Pin className="w-2.5 h-2.5 text-amber-400 shrink-0" />}
-                        <p className="text-xs font-medium truncate">{note.title}</p>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">
-                        {note.blocks.find(b => b.type === 'paragraph')?.content.slice(0, 50)}
-                      </p>
-                      <div className="flex items-center gap-1 mt-0.5">
-                        <Clock className="w-2.5 h-2.5 text-muted-foreground/50" />
-                        <span className="text-[9px] text-muted-foreground/50">{note.updatedAt.toLocaleDateString()}</span>
-                        {note.links.length > 0 && (
-                          <Badge variant="outline" className="text-[8px] h-3.5 px-1 ml-auto">{note.links.length} <Link2 className="w-2 h-2 ml-0.5" /></Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </ScrollArea>
-
-          <div className="p-2 border-t border-border/20">
-            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Tags</p>
-            <div className="flex flex-wrap gap-1">
-              {allTags.slice(0, 8).map(([tag, count]) => (
-                <button key={tag} onClick={() => setSearchQuery(tag)} className="text-[10px] text-muted-foreground hover:text-primary transition-colors">
-                  #{tag} <span className="opacity-50">({count})</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
         {/* Note content */}
         {activeNote ? (
           <div className="flex-1 flex flex-col overflow-hidden">
