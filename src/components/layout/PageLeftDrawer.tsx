@@ -282,6 +282,12 @@ const pageConfigs: Record<PageId, PageDrawerConfig> = {
     ],
     subTabs: {},
   },
+  settings: {
+    sideIcons: [
+      { id: 'general', icon: Settings, label: 'General' },
+    ],
+    subTabs: {},
+  },
 };
 
 interface PageLeftDrawerProps {

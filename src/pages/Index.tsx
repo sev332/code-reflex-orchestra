@@ -1,6 +1,6 @@
 // Main application entry with page-based navigation layout
 import { Helmet } from "react-helmet-async";
-import { useState, lazy, Suspense, useCallback } from "react";
+import { useState, useEffect, lazy, Suspense, useCallback } from "react";
 import { WisdomNETProvider } from "@/contexts/WisdomNETContext";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { PageTopBar, PageId } from "@/components/layout/PageTopBar";
@@ -14,6 +14,8 @@ import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackgr
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
 import { BottomDock } from "@/components/layout/BottomDock";
+import { CommandPalette } from "@/components/layout/CommandPalette";
+import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 
 // Lazy load all heavy pages
@@ -39,6 +41,7 @@ const BrowserPage = lazy(() => import("@/components/Knowledge/BrowserPage").then
 const NotesPage = lazy(() => import("@/components/Knowledge/NotesPage").then(m => ({ default: m.NotesPage })));
 const FileManagerPage = lazy(() => import("@/components/System/FileManagerPage").then(m => ({ default: m.FileManagerPage })));
 const CommsHubPage = lazy(() => import("@/components/System/CommsHubPage").then(m => ({ default: m.CommsHubPage })));
+const SettingsPage = lazy(() => import("@/components/System/SettingsPage").then(m => ({ default: m.SettingsPage })));
 
 const DEFAULT_PINNED: PageId[] = ['chat', 'orchestration', 'documents', 'spreadsheet', 'calendar', 'email', 'tasks', 'ide'];
 
@@ -49,19 +52,31 @@ const Index = () => {
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
 
   const {
     isStreaming, orchestrationPlan, thinkingSteps,
     agents: streamingAgents, discordMessages, discordThreads, currentMode,
   } = useAIMOSStreaming();
 
+  // Global ⌘K shortcut
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setShowCommandPalette(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
   const handleOpenFullscreen = useCallback((type: string) => {
     if (type === 'discord') setShowFullDiscord(true);
   }, []);
 
-  const handleTogglePin = useCallback((id: PageId) => {
-    // no-op, kept for AppLauncher compatibility
-  }, []);
+  const handleTogglePin = useCallback((id: PageId) => {}, []);
 
   const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
   const rightWidth = rightDrawerOpen ? 48 + 380 : 48;
@@ -91,6 +106,7 @@ const Index = () => {
       case 'notes': return <Suspense fallback={<LoadingFallback />}><NotesPage /></Suspense>;
       case 'files': return <Suspense fallback={<LoadingFallback />}><FileManagerPage /></Suspense>;
       case 'comms': return <Suspense fallback={<LoadingFallback />}><CommsHubPage /></Suspense>;
+      case 'settings': return <Suspense fallback={<LoadingFallback />}><SettingsPage /></Suspense>;
       default: return <PlaceholderPage name={activePage} />;
     }
   };
@@ -114,6 +130,21 @@ const Index = () => {
             onPageChange={setActivePage}
             systemStatus={isStreaming ? 'processing' : 'online'}
             activeAgents={streamingAgents?.length || 0}
+            onOpenCommandPalette={() => setShowCommandPalette(true)}
+            onOpenNotifications={() => setShowNotifications(prev => !prev)}
+            unreadNotifications={3}
+          />
+
+          <CommandPalette
+            isOpen={showCommandPalette}
+            onClose={() => setShowCommandPalette(false)}
+            onNavigate={(page) => setActivePage(page)}
+            activePage={activePage}
+          />
+
+          <NotificationCenter
+            isOpen={showNotifications}
+            onClose={() => setShowNotifications(false)}
           />
 
           <AppLauncher
@@ -176,7 +207,7 @@ function LoadingFallback() {
   return (
     <div className="flex items-center justify-center h-full">
       <div className="text-center">
-        <div className="w-8 h-8 border-2 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2" />
         <p className="text-sm text-muted-foreground">Loading...</p>
       </div>
     </div>
