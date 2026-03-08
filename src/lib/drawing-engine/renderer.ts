@@ -90,6 +90,7 @@ export function renderEntity(
   else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
   else if (entity.type === 'text') { renderTextEntity(ctx, entity, vp, isSelected, isHovered); clearEffectsFromContext(ctx); ctx.restore(); return; }
   else if (entity.type === 'path') renderPathEntity(ctx, entity, vp);
+  else if (entity.type === 'image') { renderImageEntity(ctx, entity, vp); }
 
   // Clear effects after rendering
   if (effects && effects.effects.length > 0) {
