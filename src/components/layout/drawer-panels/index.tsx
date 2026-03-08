@@ -27,53 +27,86 @@ import { cn } from '@/lib/utils';
 import { emitPageDrawerAction } from '@/lib/page-drawer-events';
 
 // ============================================================
-// EMAIL DRAWER PANELS
+// EMAIL DRAWER PANELS (Perfected)
 // ============================================================
 
 const EMAIL_FOLDERS = [
-  { id: 'inbox', label: 'Inbox', icon: Inbox, count: 3 },
-  { id: 'starred', label: 'Starred', icon: Star, count: 2 },
-  { id: 'snoozed', label: 'Snoozed', icon: AlarmClock, count: 1 },
-  { id: 'sent', label: 'Sent', icon: Send, count: 0 },
-  { id: 'scheduled', label: 'Scheduled', icon: CalendarClock, count: 0 },
-  { id: 'drafts', label: 'Drafts', icon: FileText, count: 1 },
-  { id: 'archive', label: 'Archive', icon: Archive, count: 0 },
-  { id: 'trash', label: 'Trash', icon: Trash2, count: 0 },
+  { id: 'inbox', label: 'Inbox', icon: Inbox, count: 3, color: '' },
+  { id: 'starred', label: 'Starred', icon: Star, count: 2, color: 'text-amber-400' },
+  { id: 'snoozed', label: 'Snoozed', icon: AlarmClock, count: 1, color: 'text-blue-400' },
+  { id: 'sent', label: 'Sent', icon: Send, count: 0, color: '' },
+  { id: 'scheduled', label: 'Scheduled', icon: CalendarClock, count: 0, color: '' },
+  { id: 'drafts', label: 'Drafts', icon: FileText, count: 1, color: '' },
+  { id: 'archive', label: 'Archive', icon: Archive, count: 0, color: '' },
+  { id: 'trash', label: 'Trash', icon: Trash2, count: 0, color: '' },
 ];
 
 const EMAIL_LABELS = [
-  { name: 'Architecture', color: 'bg-violet-500/20 text-violet-400' },
-  { name: 'Sprint', color: 'bg-amber-500/20 text-amber-400' },
-  { name: '3D Studio', color: 'bg-emerald-500/20 text-emerald-400' },
-  { name: 'Urgent', color: 'bg-red-500/20 text-red-400' },
-  { name: 'Personal', color: 'bg-blue-500/20 text-blue-400' },
+  { name: 'Architecture', color: 'hsl(270, 80%, 60%)', count: 3 },
+  { name: 'Sprint', color: 'hsl(45, 100%, 65%)', count: 2 },
+  { name: '3D Studio', color: 'hsl(150, 100%, 60%)', count: 1 },
+  { name: 'Urgent', color: 'hsl(0, 80%, 60%)', count: 1 },
+  { name: 'Personal', color: 'hsl(210, 80%, 60%)', count: 4 },
 ];
 
 export function EmailInboxPanel() {
   const [activeFolder, setActiveFolder] = useState('inbox');
+  const totalUnread = EMAIL_FOLDERS.reduce((a, f) => a + f.count, 0);
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-1">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs mb-2">
-          <Plus className="w-3.5 h-3.5" /> Compose
+      <div className="p-2 space-y-2">
+        <Button size="sm" className="w-full h-9 gap-1.5 text-xs font-medium">
+          <Plus className="w-4 h-4" /> Compose
         </Button>
-        {EMAIL_FOLDERS.map(f => {
-          const Icon = f.icon;
-          const isActive = activeFolder === f.id;
-          return (
-            <Button
-              key={f.id}
-              variant="ghost"
-              size="sm"
-              onClick={() => { setActiveFolder(f.id); emitPageDrawerAction({ page: 'email', action: 'folder', value: f.id }); }}
-              className={cn('w-full justify-start h-8 px-2 text-xs gap-2', isActive && 'bg-primary/10 text-primary')}
-            >
-              <Icon className={cn('w-4 h-4', isActive ? 'text-primary' : 'text-muted-foreground')} />
-              <span className="flex-1 text-left">{f.label}</span>
-              {f.count > 0 && <Badge variant="outline" className="text-[10px] px-1.5 h-4">{f.count}</Badge>}
-            </Button>
-          );
-        })}
+
+        {/* Unread summary */}
+        <div className="bg-muted/15 rounded-lg px-3 py-2 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-medium">{totalUnread} unread</p>
+            <p className="text-[10px] text-muted-foreground">across all folders</p>
+          </div>
+          <Mail className="w-5 h-5 text-primary/40" />
+        </div>
+
+        <div className="space-y-0.5">
+          {EMAIL_FOLDERS.map(f => {
+            const Icon = f.icon;
+            const isActive = activeFolder === f.id;
+            return (
+              <button
+                key={f.id}
+                onClick={() => { setActiveFolder(f.id); emitPageDrawerAction({ page: 'email', action: 'folder', value: f.id }); }}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all',
+                  isActive ? 'bg-primary/10 text-primary border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+                )}
+              >
+                <Icon className={cn('w-4 h-4 shrink-0', isActive ? 'text-primary' : f.color || 'text-muted-foreground')} />
+                <span className="flex-1 text-left font-medium">{f.label}</span>
+                {f.count > 0 && (
+                  <span className={cn(
+                    'text-[10px] font-semibold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                    isActive ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-muted-foreground',
+                  )}>
+                    {f.count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Quick actions */}
+        <div className="border-t border-border/20 pt-2 space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Quick Actions</p>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2">
+            <CheckCircle2 className="w-3.5 h-3.5 text-muted-foreground" /> Mark all read
+          </Button>
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2">
+            <Wand2 className="w-3.5 h-3.5 text-primary" /> AI Sort inbox
+          </Button>
+        </div>
       </div>
     </ScrollArea>
   );
@@ -83,39 +116,79 @@ export function EmailLabelsPanel() {
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-1">
-        <div className="flex items-center justify-between px-2 mb-2">
-          <span className="text-xs font-medium text-muted-foreground">Labels</span>
+      <div className="p-2 space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <span className="text-[10px] font-medium text-muted-foreground uppercase">Labels</span>
           <Button variant="ghost" size="icon" className="w-6 h-6"><Plus className="w-3 h-3" /></Button>
         </div>
-        {EMAIL_LABELS.map(l => (
-          <Button
-            key={l.name}
-            variant="ghost"
-            size="sm"
-            onClick={() => { setActiveLabel(activeLabel === l.name ? null : l.name); emitPageDrawerAction({ page: 'email', action: 'label', value: l.name }); }}
-            className={cn('w-full justify-start h-8 px-2 text-xs gap-2', activeLabel === l.name && 'bg-primary/10')}
-          >
-            <div className={cn('w-3 h-3 rounded-full', l.color.split(' ')[0])} />
-            <span>{l.name}</span>
+
+        <div className="space-y-0.5">
+          {EMAIL_LABELS.map(l => (
+            <button
+              key={l.name}
+              onClick={() => { setActiveLabel(activeLabel === l.name ? null : l.name); emitPageDrawerAction({ page: 'email', action: 'label', value: l.name }); }}
+              className={cn(
+                'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all',
+                activeLabel === l.name ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="w-3 h-3 rounded-full shrink-0" style={{ background: l.color }} />
+              <span className="flex-1 text-left">{l.name}</span>
+              <Badge variant="outline" className="text-[10px] px-1.5 h-4">{l.count}</Badge>
+            </button>
+          ))}
+        </div>
+
+        <div className="border-t border-border/20 pt-2">
+          <Button variant="ghost" size="sm" className="w-full justify-start h-7 px-2.5 text-xs gap-2 text-muted-foreground">
+            <Settings className="w-3.5 h-3.5" /> Manage Labels
           </Button>
-        ))}
+        </div>
       </div>
     </ScrollArea>
   );
 }
 
 export function EmailSearchPanel() {
+  const [query, setQuery] = useState('');
+  const filters = [
+    { label: 'Unread', icon: Mail, active: false },
+    { label: 'Has Attachments', icon: FileText, active: false },
+    { label: 'Flagged', icon: Flag, active: false },
+    { label: 'This Week', icon: Clock, active: false },
+    { label: 'From: Me', icon: Send, active: false },
+  ];
   return (
     <div className="p-3 space-y-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Search emails..." className="pl-9 bg-muted/30 border-none" autoFocus />
+        <Input
+          placeholder="Search emails..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="pl-9 bg-muted/30 border-none"
+          autoFocus
+        />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Quick Filters</p>
-        {['Unread', 'Has Attachments', 'Flagged', 'This Week'].map(f => (
-          <Button key={f} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs">{f}</Button>
+        {filters.map(f => {
+          const Icon = f.icon;
+          return (
+            <Button key={f.label} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs gap-2">
+              <Icon className="w-3.5 h-3.5 text-muted-foreground" />
+              {f.label}
+            </Button>
+          );
+        })}
+      </div>
+      <div className="space-y-0.5">
+        <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Recent Searches</p>
+        {['AIMOS architecture', 'security audit', 'shader catalog'].map(s => (
+          <Button key={s} variant="ghost" size="sm" className="w-full justify-start h-7 text-xs gap-2 text-muted-foreground">
+            <History className="w-3 h-3" />
+            {s}
+          </Button>
         ))}
       </div>
     </div>
@@ -123,82 +196,170 @@ export function EmailSearchPanel() {
 }
 
 // ============================================================
-// CALENDAR DRAWER PANELS
+// CALENDAR DRAWER PANELS (Perfected)
 // ============================================================
 
 export function CalendarListPanel() {
   const calendars = [
-    { name: 'Work', color: 'bg-primary', enabled: true },
-    { name: 'Personal', color: 'bg-[hsl(270,80%,60%)]', enabled: true },
-    { name: 'Team', color: 'bg-[hsl(150,100%,60%)]', enabled: true },
-    { name: 'Holidays', color: 'bg-[hsl(45,100%,65%)]', enabled: false },
+    { name: 'Work', color: 'hsl(var(--primary))', enabled: true, events: 12 },
+    { name: 'Personal', color: 'hsl(270, 80%, 60%)', enabled: true, events: 5 },
+    { name: 'Team', color: 'hsl(150, 100%, 60%)', enabled: true, events: 8 },
+    { name: 'Holidays', color: 'hsl(45, 100%, 65%)', enabled: false, events: 3 },
+    { name: 'Birthdays', color: 'hsl(340, 80%, 60%)', enabled: false, events: 2 },
   ];
+
   const [enabled, setEnabled] = useState<Record<string, boolean>>(
     Object.fromEntries(calendars.map(c => [c.name, c.enabled]))
   );
 
+  const [selectedDate, setSelectedDate] = useState(8);
+  const [miniCalMonth, setMiniCalMonth] = useState({ month: 2, year: 2026 });
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  // Days with events (for dots)
+  const eventDays = new Set([8, 9, 10, 11, 12, 13, 15, 18, 22]);
+
+  // Generate mini calendar days properly
+  const firstDay = new Date(miniCalMonth.year, miniCalMonth.month, 1).getDay();
+  const daysInMonth = new Date(miniCalMonth.year, miniCalMonth.month + 1, 0).getDate();
+  const prevMonthDays = new Date(miniCalMonth.year, miniCalMonth.month, 0).getDate();
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-3">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs">
-          <Plus className="w-3.5 h-3.5" /> New Calendar
+      <div className="p-2 space-y-3">
+        <Button size="sm" className="w-full h-9 gap-1.5 text-xs font-medium">
+          <Plus className="w-4 h-4" /> New Event
         </Button>
-        <div className="space-y-1">
+
+        {/* Interactive Mini Calendar */}
+        <div className="border border-border/30 rounded-xl p-2.5 bg-muted/5">
+          <div className="flex items-center justify-between mb-2">
+            <button
+              className="text-muted-foreground hover:text-foreground p-0.5"
+              onClick={() => setMiniCalMonth(prev => {
+                const m = prev.month - 1;
+                return m < 0 ? { month: 11, year: prev.year - 1 } : { ...prev, month: m };
+              })}
+            >
+              <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+            </button>
+            <span className="text-xs font-semibold">{monthNames[miniCalMonth.month]} {miniCalMonth.year}</span>
+            <button
+              className="text-muted-foreground hover:text-foreground p-0.5"
+              onClick={() => setMiniCalMonth(prev => {
+                const m = prev.month + 1;
+                return m > 11 ? { month: 0, year: prev.year + 1 } : { ...prev, month: m };
+              })}
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          <div className="grid grid-cols-7 gap-0 text-center">
+            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
+              <div key={i} className="text-[9px] text-muted-foreground/60 font-medium py-1">{d}</div>
+            ))}
+            {/* Previous month overflow */}
+            {Array.from({ length: firstDay }, (_, i) => (
+              <div key={`prev-${i}`} className="text-[10px] py-1 text-muted-foreground/20">
+                {prevMonthDays - firstDay + i + 1}
+              </div>
+            ))}
+            {/* Current month */}
+            {Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const isSelected = day === selectedDate;
+              const isToday = day === 8 && miniCalMonth.month === 2 && miniCalMonth.year === 2026;
+              const hasEvent = eventDays.has(day);
+              return (
+                <button
+                  key={day}
+                  onClick={() => { setSelectedDate(day); emitPageDrawerAction({ page: 'calendar', action: 'select-date', value: `${miniCalMonth.year}-${miniCalMonth.month + 1}-${day}` }); }}
+                  className={cn(
+                    'text-[10px] py-1 rounded-md relative transition-all',
+                    isSelected ? 'bg-primary text-primary-foreground font-bold' : 'hover:bg-muted/30',
+                    isToday && !isSelected && 'font-bold text-primary ring-1 ring-primary/40',
+                  )}
+                >
+                  {day}
+                  {hasEvent && !isSelected && (
+                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Calendars */}
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">My Calendars</p>
           {calendars.map(cal => (
-            <div key={cal.name} className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/20">
+            <div key={cal.name} className="flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-muted/20 group">
               <Checkbox
                 checked={enabled[cal.name]}
                 onCheckedChange={(checked) => setEnabled(prev => ({ ...prev, [cal.name]: !!checked }))}
+                className="border-muted-foreground/40"
               />
-              <div className={cn('w-3 h-3 rounded-full', cal.color)} />
-              <span className="text-xs flex-1">{cal.name}</span>
+              <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: cal.color }} />
+              <span className={cn('text-xs flex-1', !enabled[cal.name] && 'text-muted-foreground')}>{cal.name}</span>
+              <span className="text-[10px] text-muted-foreground">{cal.events}</span>
             </div>
           ))}
         </div>
 
-        {/* Mini Calendar */}
-        <div className="border border-border/30 rounded-lg p-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium">March 2026</span>
-          </div>
-          <div className="grid grid-cols-7 gap-px text-center">
-            {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => (
-              <div key={i} className="text-[9px] text-muted-foreground py-0.5">{d}</div>
-            ))}
-            {Array.from({ length: 31 }, (_, i) => (
-              <button
-                key={i}
-                className={cn(
-                  'text-[10px] py-0.5 rounded hover:bg-primary/20',
-                  i + 1 === 8 && 'bg-primary text-primary-foreground font-bold',
-                )}
-              >
-                {i + 1}
-              </button>
-            ))}
-          </div>
-        </div>
+        <Button variant="ghost" size="sm" className="w-full justify-start text-xs h-7 gap-2 text-muted-foreground">
+          <Plus className="w-3.5 h-3.5" /> Add Calendar
+        </Button>
       </div>
     </ScrollArea>
   );
 }
 
 export function CalendarUpcomingPanel() {
-  const upcoming = [
-    { title: 'Team Standup', time: '9:00 AM', color: 'border-l-primary' },
-    { title: 'Design Review', time: '2:00 PM', color: 'border-l-[hsl(270,80%,60%)]' },
-    { title: 'Sprint Planning', time: 'Tomorrow 10:00 AM', color: 'border-l-[hsl(150,100%,60%)]' },
-    { title: 'AI Deep Dive', time: 'Mar 10, 1:00 PM', color: 'border-l-destructive' },
+  const sections = [
+    { label: 'Today · March 8', events: [
+      { title: 'Team Standup', time: '9:00 – 9:30 AM', color: 'hsl(var(--primary))', location: 'Virtual' },
+      { title: 'Lunch Break', time: '12:00 – 1:00 PM', color: 'hsl(210, 90%, 55%)', location: null },
+      { title: 'Design Review', time: '2:00 – 3:30 PM', color: 'hsl(270, 80%, 60%)', location: 'Room 3B' },
+    ]},
+    { label: 'Tomorrow · March 9', events: [
+      { title: 'Sprint Planning', time: '10:00 – 11:30 AM', color: 'hsl(150, 100%, 60%)', location: null },
+    ]},
+    { label: 'Tuesday · March 10', events: [
+      { title: 'AI Architecture Deep Dive', time: '1:00 – 4:00 PM', color: 'hsl(0, 80%, 55%)', location: null },
+    ]},
+    { label: 'Wednesday · March 11', events: [
+      { title: 'Code Review', time: '11:00 AM – 12:00 PM', color: 'hsl(45, 100%, 65%)', location: null },
+    ]},
   ];
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-1.5">
-        {upcoming.map((ev, i) => (
-          <div key={i} className={cn('border-l-2 pl-3 py-2 rounded-r-md hover:bg-muted/20 cursor-pointer', ev.color)}>
-            <p className="text-xs font-medium">{ev.title}</p>
-            <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {ev.time}
-            </p>
+      <div className="p-2 space-y-3">
+        {sections.map(section => (
+          <div key={section.label} className="space-y-1">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase px-1">{section.label}</p>
+            {section.events.map((ev, i) => (
+              <button
+                key={i}
+                className="w-full text-left rounded-lg hover:bg-muted/20 transition-colors group"
+              >
+                <div className="flex gap-2 px-1 py-1.5">
+                  <div className="w-0.5 rounded-full shrink-0 self-stretch" style={{ background: ev.color }} />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs font-medium">{ev.title}</p>
+                    <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {ev.time}
+                    </p>
+                    {ev.location && (
+                      <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                        <MapPin className="w-3 h-3" /> {ev.location}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </button>
+            ))}
           </div>
         ))}
       </div>
@@ -206,56 +367,109 @@ export function CalendarUpcomingPanel() {
   );
 }
 
+
 // ============================================================
-// TASKS DRAWER PANELS
+// TASKS DRAWER PANELS (Perfected)
 // ============================================================
 
 export function TasksBoardPanel() {
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const statusCounts = [
-    { label: 'Backlog', count: 2, icon: Circle, color: 'text-muted-foreground' },
-    { label: 'To Do', count: 3, icon: Circle, color: 'text-[hsl(210,80%,60%)]' },
-    { label: 'In Progress', count: 2, icon: Timer, color: 'text-[hsl(45,100%,65%)]' },
-    { label: 'Review', count: 1, icon: PauseCircle, color: 'text-[hsl(270,80%,65%)]' },
-    { label: 'Done', count: 4, icon: CheckCircle2, color: 'text-[hsl(150,100%,60%)]' },
+    { id: 'backlog', label: 'Backlog', count: 2, icon: Circle, color: 'text-muted-foreground', bgColor: 'bg-muted/10' },
+    { id: 'todo', label: 'To Do', count: 3, icon: Circle, color: 'text-[hsl(210,80%,60%)]', bgColor: 'bg-[hsl(210,80%,60%)]/5' },
+    { id: 'in_progress', label: 'In Progress', count: 2, icon: Timer, color: 'text-[hsl(45,100%,65%)]', bgColor: 'bg-[hsl(45,100%,65%)]/5' },
+    { id: 'review', label: 'Review', count: 1, icon: PauseCircle, color: 'text-[hsl(270,80%,65%)]', bgColor: 'bg-[hsl(270,80%,65%)]/5' },
+    { id: 'done', label: 'Done', count: 4, icon: CheckCircle2, color: 'text-[hsl(150,100%,60%)]', bgColor: 'bg-[hsl(150,100%,60%)]/5' },
   ];
   const total = statusCounts.reduce((a, s) => a + s.count, 0);
   const done = statusCounts.find(s => s.label === 'Done')?.count || 0;
+  const inProgress = statusCounts.find(s => s.label === 'In Progress')?.count || 0;
   const completion = Math.round((done / total) * 100);
+
+  // Quick task input
+  const [quickTask, setQuickTask] = useState('');
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-3">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs">
-          <Plus className="w-3.5 h-3.5" /> New Task
-        </Button>
+      <div className="p-2 space-y-3">
+        {/* Quick add */}
+        <div className="flex gap-1">
+          <Input
+            placeholder="Quick add task..."
+            value={quickTask}
+            onChange={(e) => setQuickTask(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && quickTask.trim()) { emitPageDrawerAction({ page: 'tasks', action: 'add-task', value: quickTask }); setQuickTask(''); } }}
+            className="h-8 text-xs bg-muted/20 border-border/30 flex-1"
+          />
+          <Button size="sm" className="h-8 w-8 p-0 shrink-0">
+            <Plus className="w-4 h-4" />
+          </Button>
+        </div>
 
-        <div className="bg-muted/20 rounded-lg p-3 space-y-2">
+        {/* Progress card */}
+        <div className="rounded-xl border border-border/20 bg-muted/10 p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium">Progress</span>
-            <span className="text-xs text-primary">{completion}%</span>
+            <div>
+              <p className="text-xs font-semibold">{completion}% Complete</p>
+              <p className="text-[10px] text-muted-foreground">{done}/{total} tasks done</p>
+            </div>
+            <div className="w-10 h-10 relative">
+              <svg className="w-10 h-10 -rotate-90" viewBox="0 0 36 36">
+                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--muted))" strokeWidth="3" opacity="0.2" />
+                <circle cx="18" cy="18" r="15" fill="none" stroke="hsl(var(--primary))" strokeWidth="3" strokeDasharray={`${completion} ${100 - completion}`} strokeLinecap="round" />
+              </svg>
+            </div>
           </div>
-          <Progress value={completion} className="h-1.5" />
-          <div className="flex justify-between text-[10px] text-muted-foreground">
-            <span>{done} done</span>
-            <span>{total} total</span>
+          <div className="flex gap-3 text-[10px]">
+            <span className="text-[hsl(45,100%,65%)]">● {inProgress} active</span>
+            <span className="text-destructive">● 1 overdue</span>
           </div>
         </div>
 
+        {/* Status filters */}
         <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">By Status</p>
           {statusCounts.map(s => {
             const Icon = s.icon;
+            const isActive = activeFilter === s.id;
             return (
-              <Button
-                key={s.label}
-                variant="ghost"
-                size="sm"
-                className="w-full justify-start h-8 px-2 text-xs gap-2"
-                onClick={() => emitPageDrawerAction({ page: 'tasks', action: 'filter-status', value: s.label })}
+              <button
+                key={s.id}
+                onClick={() => { setActiveFilter(isActive ? null : s.id); emitPageDrawerAction({ page: 'tasks', action: 'filter-status', value: s.id }); }}
+                className={cn(
+                  'w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-all',
+                  isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+                )}
               >
                 <Icon className={cn('w-4 h-4', s.color)} />
-                <span className="flex-1 text-left">{s.label}</span>
-                <Badge variant="outline" className="text-[10px] px-1.5 h-4">{s.count}</Badge>
-              </Button>
+                <span className="flex-1 text-left font-medium">{s.label}</span>
+                <span className={cn(
+                  'text-[10px] font-semibold min-w-[18px] h-[18px] rounded-full flex items-center justify-center',
+                  isActive ? 'bg-primary text-primary-foreground' : 'bg-muted/40 text-muted-foreground',
+                )}>
+                  {s.count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Priority breakdown */}
+        <div className="space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">By Priority</p>
+          {[
+            { label: 'Urgent', icon: AlertCircle, color: 'text-destructive', count: 1 },
+            { label: 'High', icon: ArrowUp, color: 'text-[hsl(30,100%,60%)]', count: 3 },
+            { label: 'Medium', icon: ArrowRight, color: 'text-[hsl(45,100%,65%)]', count: 5 },
+            { label: 'Low', icon: ArrowDown, color: 'text-[hsl(210,70%,55%)]', count: 3 },
+          ].map(p => {
+            const Icon = p.icon;
+            return (
+              <button key={p.label} className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-xs hover:bg-muted/25 transition-all">
+                <Icon className={cn('w-3.5 h-3.5', p.color)} />
+                <span className="flex-1 text-left">{p.label}</span>
+                <span className="text-[10px] text-muted-foreground">{p.count}</span>
+              </button>
             );
           })}
         </div>
@@ -265,24 +479,50 @@ export function TasksBoardPanel() {
 }
 
 export function TasksProjectsPanel() {
+  const [activeProject, setActiveProject] = useState('Browser OS');
   const projects = [
-    { name: 'Browser OS', tasks: 8, color: 'bg-primary' },
-    { name: 'AIMOS Engine', tasks: 5, color: 'bg-[hsl(270,80%,60%)]' },
-    { name: 'Design System', tasks: 3, color: 'bg-[hsl(150,100%,60%)]' },
+    { name: 'Browser OS', tasks: 8, done: 3, color: 'hsl(var(--primary))' },
+    { name: 'AIMOS Engine', tasks: 5, done: 1, color: 'hsl(270, 80%, 60%)' },
+    { name: 'Design System', tasks: 3, done: 2, color: 'hsl(150, 100%, 60%)' },
+    { name: 'Documentation', tasks: 4, done: 4, color: 'hsl(45, 100%, 65%)' },
   ];
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-2">
+      <div className="p-2 space-y-2">
         <Button variant="ghost" size="sm" className="w-full justify-start text-xs gap-2 h-7">
           <Plus className="w-3.5 h-3.5" /> New Project
         </Button>
-        {projects.map(p => (
-          <div key={p.name} className="flex items-center gap-2 px-2 py-2 rounded-md hover:bg-muted/20 cursor-pointer">
-            <div className={cn('w-3 h-3 rounded', p.color)} />
-            <span className="text-xs flex-1">{p.name}</span>
-            <Badge variant="outline" className="text-[10px] px-1 h-4">{p.tasks}</Badge>
-          </div>
-        ))}
+        {projects.map(p => {
+          const isActive = activeProject === p.name;
+          const pct = Math.round((p.done / p.tasks) * 100);
+          return (
+            <button
+              key={p.name}
+              onClick={() => { setActiveProject(p.name); emitPageDrawerAction({ page: 'tasks', action: 'select-project', value: p.name }); }}
+              className={cn(
+                'w-full text-left px-2.5 py-2.5 rounded-lg transition-all',
+                isActive ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/25 border border-transparent',
+              )}
+            >
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-3 h-3 rounded shrink-0" style={{ background: p.color }} />
+                <span className="text-xs font-medium flex-1">{p.name}</span>
+                <span className="text-[10px] text-muted-foreground">{p.done}/{p.tasks}</span>
+              </div>
+              <Progress value={pct} className="h-1" />
+            </button>
+          );
+        })}
+
+        {/* Labels */}
+        <div className="border-t border-border/20 pt-2 space-y-0.5">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 mb-1">Labels</p>
+          {['Core', 'UI', 'Backend', 'Spreadsheet', 'Calendar', 'AI'].map(l => (
+            <Button key={l} variant="ghost" size="sm" className="h-7 px-2.5 text-xs gap-2 mr-1">
+              <Tag className="w-3 h-3 text-muted-foreground" />{l}
+            </Button>
+          ))}
+        </div>
       </div>
     </ScrollArea>
   );
@@ -292,29 +532,62 @@ export function TasksAnalyticsPanel() {
   return (
     <ScrollArea className="h-full">
       <div className="p-3 space-y-3">
+        {/* Stats grid */}
         <div className="grid grid-cols-2 gap-2">
           {[
-            { label: 'Open', value: '8', color: 'text-primary' },
-            { label: 'Done', value: '4', color: 'text-[hsl(150,100%,60%)]' },
-            { label: 'Overdue', value: '1', color: 'text-destructive' },
-            { label: 'Avg Time', value: '2.3d', color: 'text-muted-foreground' },
+            { label: 'Open', value: '8', color: 'text-primary', trend: '+2' },
+            { label: 'Done', value: '4', color: 'text-[hsl(150,100%,60%)]', trend: '+1' },
+            { label: 'Overdue', value: '1', color: 'text-destructive', trend: '0' },
+            { label: 'Avg Time', value: '2.3d', color: 'text-muted-foreground', trend: '-0.5d' },
           ].map(s => (
-            <div key={s.label} className="bg-muted/20 rounded-lg p-2 text-center">
-              <p className={cn('text-lg font-bold', s.color)}>{s.value}</p>
-              <p className="text-[10px] text-muted-foreground">{s.label}</p>
+            <div key={s.label} className="bg-muted/15 rounded-xl p-2.5 border border-border/10">
+              <p className={cn('text-xl font-bold', s.color)}>{s.value}</p>
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] text-muted-foreground">{s.label}</p>
+                <span className={cn('text-[9px]', s.trend.startsWith('-') ? 'text-[hsl(150,100%,60%)]' : s.trend === '0' ? 'text-muted-foreground' : 'text-[hsl(45,100%,65%)]')}>{s.trend}</span>
+              </div>
             </div>
           ))}
         </div>
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase">Velocity</p>
-          <div className="h-20 bg-muted/10 rounded-lg border border-border/20 flex items-end justify-around px-2 pb-1">
-            {[40, 65, 50, 80, 70, 90, 55].map((h, i) => (
-              <div key={i} className="w-3 rounded-t bg-primary/40" style={{ height: `${h}%` }} />
+
+        {/* Weekly velocity */}
+        <div className="rounded-xl border border-border/20 bg-muted/5 p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase">Weekly Velocity</p>
+            <Badge variant="outline" className="text-[9px] h-4">This Week</Badge>
+          </div>
+          <div className="h-24 flex items-end justify-between gap-1 px-1">
+            {[
+              { day: 'M', val: 40 }, { day: 'T', val: 65 }, { day: 'W', val: 50 },
+              { day: 'T', val: 80 }, { day: 'F', val: 70 }, { day: 'S', val: 90 }, { day: 'S', val: 55 },
+            ].map((d, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                <div className="w-full rounded-t-sm bg-primary/30 hover:bg-primary/60 transition-colors" style={{ height: `${d.val}%` }} />
+                <span className="text-[8px] text-muted-foreground">{d.day}</span>
+              </div>
             ))}
           </div>
-          <div className="flex justify-between text-[9px] text-muted-foreground px-1">
-            <span>Mon</span><span>Sun</span>
-          </div>
+        </div>
+
+        {/* Team workload */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold text-muted-foreground uppercase px-1">Team Workload</p>
+          {[
+            { name: 'Alex', tasks: 4, color: 'bg-primary' },
+            { name: 'Jordan', tasks: 3, color: 'bg-[hsl(270,80%,60%)]' },
+            { name: 'Sam', tasks: 2, color: 'bg-[hsl(150,100%,60%)]' },
+          ].map(m => (
+            <div key={m.name} className="flex items-center gap-2 px-2">
+              <div className={cn('w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold text-background', m.color)}>
+                {m.name[0]}
+              </div>
+              <span className="text-xs flex-1">{m.name}</span>
+              <div className="w-16 h-1.5 bg-muted/30 rounded-full overflow-hidden">
+                <div className={cn('h-full rounded-full', m.color)} style={{ width: `${(m.tasks / 5) * 100}%` }} />
+              </div>
+              <span className="text-[10px] text-muted-foreground w-3 text-right">{m.tasks}</span>
+            </div>
+          ))}
         </div>
       </div>
     </ScrollArea>
@@ -322,78 +595,117 @@ export function TasksAnalyticsPanel() {
 }
 
 // ============================================================
-// FILES DRAWER PANELS
+// FILES DRAWER PANELS (Perfected)
 // ============================================================
 
-interface FileNode { name: string; type: 'file' | 'folder'; children?: FileNode[] }
+interface FileNode { name: string; type: 'file' | 'folder'; ext?: string; size?: string; modified?: string; starred?: boolean; children?: FileNode[] }
 
 const FILE_TREE: FileNode[] = [
   { name: 'src', type: 'folder', children: [
     { name: 'components', type: 'folder', children: [
-      { name: 'App.tsx', type: 'file' },
-      { name: 'Header.tsx', type: 'file' },
-      { name: 'Sidebar.tsx', type: 'file' },
+      { name: 'layout', type: 'folder', children: [
+        { name: 'PageLeftDrawer.tsx', type: 'file', ext: 'tsx', size: '15 KB', modified: '2m ago' },
+        { name: 'PageTopBar.tsx', type: 'file', ext: 'tsx', size: '8 KB', modified: '1h ago' },
+        { name: 'BottomDock.tsx', type: 'file', ext: 'tsx', size: '4 KB', modified: '3h ago' },
+      ]},
+      { name: 'AIChat', type: 'folder', children: [
+        { name: 'AdvancedPersistentChat.tsx', type: 'file', ext: 'tsx', size: '12 KB', modified: '1h ago' },
+      ]},
+      { name: 'Productivity', type: 'folder', children: [
+        { name: 'CalendarPage.tsx', type: 'file', ext: 'tsx', size: '18 KB', modified: '2h ago' },
+        { name: 'EmailPage.tsx', type: 'file', ext: 'tsx', size: '22 KB', modified: '3h ago' },
+        { name: 'TasksPage.tsx', type: 'file', ext: 'tsx', size: '20 KB', modified: '4h ago' },
+        { name: 'SpreadsheetPage.tsx', type: 'file', ext: 'tsx', size: '35 KB', modified: '6h ago' },
+      ]},
     ]},
     { name: 'hooks', type: 'folder', children: [
-      { name: 'useAuth.ts', type: 'file' },
-      { name: 'useTheme.ts', type: 'file' },
+      { name: 'useAIMOS.ts', type: 'file', ext: 'ts', size: '4 KB', modified: '12h ago' },
+      { name: 'useChatPersistence.ts', type: 'file', ext: 'ts', size: '3 KB', modified: '1d ago' },
     ]},
     { name: 'lib', type: 'folder', children: [
-      { name: 'utils.ts', type: 'file' },
-      { name: 'api.ts', type: 'file' },
+      { name: 'utils.ts', type: 'file', ext: 'ts', size: '2 KB', modified: '6h ago' },
+      { name: 'page-drawer-events.ts', type: 'file', ext: 'ts', size: '1 KB', modified: '1h ago' },
     ]},
-    { name: 'main.tsx', type: 'file' },
+    { name: 'index.css', type: 'file', ext: 'css', size: '8 KB', modified: '2h ago' },
+    { name: 'main.tsx', type: 'file', ext: 'tsx', size: '1 KB', modified: '1d ago' },
   ]},
   { name: 'public', type: 'folder', children: [
-    { name: 'favicon.ico', type: 'file' },
-    { name: 'robots.txt', type: 'file' },
+    { name: 'docs', type: 'folder', children: [
+      { name: 'AIMOS.txt', type: 'file', ext: 'txt', size: '24 KB', modified: '1w ago' },
+      { name: 'DrawingEngine.txt', type: 'file', ext: 'txt', size: '18 KB', modified: '1w ago' },
+    ]},
+    { name: 'favicon.ico', type: 'file', ext: 'ico', size: '1 KB', modified: '2w ago' },
   ]},
   { name: 'docs', type: 'folder', children: [
-    { name: 'ARCHITECTURE.md', type: 'file' },
-    { name: 'API.md', type: 'file' },
+    { name: 'ARCHITECTURE.md', type: 'file', ext: 'md', size: '16 KB', modified: '6h ago', starred: true },
+    { name: 'UI_CANON.md', type: 'file', ext: 'md', size: '12 KB', modified: '1d ago', starred: true },
   ]},
-  { name: 'package.json', type: 'file' },
-  { name: 'tsconfig.json', type: 'file' },
+  { name: 'package.json', type: 'file', ext: 'json', size: '2 KB', modified: '1h ago' },
+  { name: 'tailwind.config.ts', type: 'file', ext: 'ts', size: '1 KB', modified: '1d ago' },
 ];
 
-function FileTreeNode({ node, depth = 0 }: { node: FileNode; depth?: number }) {
-  const [expanded, setExpanded] = useState(depth < 1);
+const EXT_COLORS: Record<string, string> = {
+  tsx: 'text-[hsl(210,80%,60%)]', ts: 'text-[hsl(210,80%,60%)]',
+  css: 'text-[hsl(270,80%,60%)]', json: 'text-[hsl(45,100%,65%)]',
+  md: 'text-[hsl(150,100%,60%)]', txt: 'text-muted-foreground',
+  ico: 'text-muted-foreground',
+};
+
+function FileTreeNode({ node, depth = 0, activeFile, onSelect }: { node: FileNode; depth?: number; activeFile?: string; onSelect?: (name: string) => void }) {
+  const [expanded, setExpanded] = useState(depth < 2);
   const isFolder = node.type === 'folder';
+  const isActive = activeFile === node.name;
+  const extColor = node.ext ? EXT_COLORS[node.ext] || 'text-muted-foreground' : '';
+
   return (
     <div>
       <button
-        onClick={() => isFolder && setExpanded(!expanded)}
+        onClick={() => {
+          if (isFolder) setExpanded(!expanded);
+          else onSelect?.(node.name);
+        }}
         className={cn(
-          'w-full flex items-center gap-1 py-1 pr-2 text-xs hover:bg-muted/20 rounded-sm',
+          'w-full flex items-center gap-1.5 py-[3px] pr-2 text-xs rounded-md transition-colors',
+          isActive ? 'bg-primary/10 text-primary' : 'hover:bg-muted/20',
         )}
-        style={{ paddingLeft: `${8 + depth * 14}px` }}
+        style={{ paddingLeft: `${6 + depth * 14}px` }}
       >
         {isFolder ? (
-          expanded ? <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0" /> : <ChevronRight className="w-3 h-3 text-muted-foreground shrink-0" />
+          expanded ? <ChevronDown className="w-3 h-3 text-muted-foreground/60 shrink-0" /> : <ChevronRight className="w-3 h-3 text-muted-foreground/60 shrink-0" />
         ) : <span className="w-3 shrink-0" />}
-        {isFolder ? <Folder className="w-3.5 h-3.5 text-amber-400 shrink-0" /> : <File className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
-        <span className="truncate">{node.name}</span>
+        {isFolder ? (
+          <Folder className={cn('w-3.5 h-3.5 shrink-0', expanded ? 'text-primary' : 'text-amber-400')} />
+        ) : (
+          <File className={cn('w-3.5 h-3.5 shrink-0', extColor)} />
+        )}
+        <span className="truncate flex-1">{node.name}</span>
+        {node.starred && <Star className="w-2.5 h-2.5 text-amber-400 fill-amber-400 shrink-0" />}
       </button>
       {isFolder && expanded && node.children?.map((child, i) => (
-        <FileTreeNode key={i} node={child} depth={depth + 1} />
+        <FileTreeNode key={i} node={child} depth={depth + 1} activeFile={activeFile} onSelect={onSelect} />
       ))}
     </div>
   );
 }
 
 export function FilesBrowsePanel() {
+  const [activeFile, setActiveFile] = useState<string>('PageLeftDrawer.tsx');
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-1">
-        <div className="flex items-center gap-1 px-2 mb-2">
-          <Button variant="ghost" size="icon" className="w-6 h-6"><Plus className="w-3 h-3" /></Button>
-          <Button variant="ghost" size="icon" className="w-6 h-6"><Upload className="w-3 h-3" /></Button>
+      <div className="p-1.5 space-y-1">
+        <div className="flex items-center gap-1 px-1.5 mb-1">
+          <Button variant="ghost" size="icon" className="w-6 h-6" title="New File"><Plus className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="icon" className="w-6 h-6" title="New Folder"><FolderOpen className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="icon" className="w-6 h-6" title="Upload"><Upload className="w-3 h-3" /></Button>
           <div className="flex-1" />
-          <Button variant="ghost" size="icon" className="w-6 h-6"><Search className="w-3 h-3" /></Button>
+          <Button variant="ghost" size="icon" className="w-6 h-6" title="Search"><Search className="w-3 h-3" /></Button>
         </div>
         {FILE_TREE.map((node, i) => (
-          <FileTreeNode key={i} node={node} />
+          <FileTreeNode key={i} node={node} activeFile={activeFile} onSelect={setActiveFile} />
         ))}
+        <div className="px-2 py-2 mt-2 text-[10px] text-muted-foreground/50">
+          {FILE_TREE.length} items · workspace root
+        </div>
       </div>
     </ScrollArea>
   );
@@ -401,23 +713,25 @@ export function FilesBrowsePanel() {
 
 export function FilesRecentPanel() {
   const recent = [
-    { name: 'App.tsx', path: '/src/components/', time: '2m ago' },
-    { name: 'api.ts', path: '/src/lib/', time: '5m ago' },
-    { name: 'ARCHITECTURE.md', path: '/docs/', time: '1h ago' },
-    { name: 'index.css', path: '/src/', time: '2h ago' },
-    { name: 'package.json', path: '/', time: '3h ago' },
+    { name: 'PageLeftDrawer.tsx', path: 'src/components/layout/', time: '2m ago', ext: 'tsx' },
+    { name: 'drawer-panels/index.tsx', path: 'src/components/layout/', time: '5m ago', ext: 'tsx' },
+    { name: 'ARCHITECTURE.md', path: 'docs/', time: '1h ago', ext: 'md' },
+    { name: 'index.css', path: 'src/', time: '2h ago', ext: 'css' },
+    { name: 'package.json', path: './', time: '3h ago', ext: 'json' },
+    { name: 'CalendarPage.tsx', path: 'src/components/Productivity/', time: '4h ago', ext: 'tsx' },
+    { name: 'EmailPage.tsx', path: 'src/components/Productivity/', time: '6h ago', ext: 'tsx' },
   ];
   return (
     <ScrollArea className="h-full">
       <div className="p-2 space-y-0.5">
         {recent.map((f, i) => (
-          <Button key={i} variant="ghost" size="sm" className="w-full justify-start h-auto py-2 px-2 text-left">
-            <File className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0" />
+          <button key={i} className="w-full text-left flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted/25 transition-colors">
+            <File className={cn('w-3.5 h-3.5 shrink-0', EXT_COLORS[f.ext] || 'text-muted-foreground')} />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium truncate">{f.name}</p>
               <p className="text-[10px] text-muted-foreground truncate">{f.path} · {f.time}</p>
             </div>
-          </Button>
+          </button>
         ))}
       </div>
     </ScrollArea>
@@ -426,23 +740,21 @@ export function FilesRecentPanel() {
 
 export function FilesStarredPanel() {
   const starred = [
-    { name: 'App.tsx', path: '/src/components/' },
-    { name: 'api.ts', path: '/src/lib/' },
-    { name: 'ARCHITECTURE.md', path: '/docs/' },
+    { name: 'ARCHITECTURE.md', path: 'docs/' },
+    { name: 'UI_CANON.md', path: 'docs/' },
+    { name: 'api.ts', path: 'src/lib/' },
   ];
   return (
     <ScrollArea className="h-full">
       <div className="p-2 space-y-0.5">
-        {starred.length === 0 ? (
-          <div className="p-4 text-center text-xs text-muted-foreground">
-            <Star className="w-6 h-6 mx-auto mb-2 opacity-30" />
-            <p>No starred files</p>
-          </div>
-        ) : starred.map((f, i) => (
-          <Button key={i} variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
+        {starred.map((f, i) => (
+          <button key={i} className="w-full text-left flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted/25 transition-colors">
             <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400 shrink-0" />
-            <span className="truncate">{f.name}</span>
-          </Button>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium truncate">{f.name}</p>
+              <p className="text-[10px] text-muted-foreground truncate">{f.path}</p>
+            </div>
+          </button>
         ))}
       </div>
     </ScrollArea>
@@ -450,114 +762,276 @@ export function FilesStarredPanel() {
 }
 
 // ============================================================
-// IDE DRAWER PANELS
+// IDE DRAWER PANELS (Perfected)
 // ============================================================
 
 export function IDEFilesPanel() {
+  const [activeFile, setActiveFile] = useState<string>('PageLeftDrawer.tsx');
+  const [openFiles] = useState(['PageLeftDrawer.tsx', 'index.tsx', 'CalendarPage.tsx']);
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2">
-        <div className="flex items-center justify-between px-1 mb-2">
-          <span className="text-[10px] font-medium text-muted-foreground uppercase">Explorer</span>
-          <div className="flex gap-0.5">
-            <Button variant="ghost" size="icon" className="w-5 h-5"><Plus className="w-3 h-3" /></Button>
-            <Button variant="ghost" size="icon" className="w-5 h-5"><FolderOpen className="w-3 h-3" /></Button>
-          </div>
+      <div className="p-1.5">
+        {/* Open files tabs */}
+        <div className="mb-2">
+          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1.5 mb-1">Open Editors ({openFiles.length})</p>
+          {openFiles.map(f => (
+            <button
+              key={f}
+              onClick={() => setActiveFile(f)}
+              className={cn(
+                'w-full flex items-center gap-1.5 px-2 py-1 rounded-md text-xs transition-colors group',
+                activeFile === f ? 'bg-primary/10 text-primary' : 'hover:bg-muted/20',
+              )}
+            >
+              <File className={cn('w-3 h-3 shrink-0', activeFile === f ? 'text-primary' : 'text-[hsl(210,80%,60%)]')} />
+              <span className="truncate flex-1">{f}</span>
+              <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted/50 shrink-0">
+                <span className="text-[10px] text-muted-foreground">×</span>
+              </button>
+            </button>
+          ))}
         </div>
-        {FILE_TREE.map((node, i) => (
-          <FileTreeNode key={i} node={node} />
-        ))}
+
+        {/* File tree */}
+        <div className="border-t border-border/20 pt-1.5">
+          <div className="flex items-center justify-between px-1.5 mb-1">
+            <span className="text-[10px] font-medium text-muted-foreground uppercase">Explorer</span>
+            <div className="flex gap-0.5">
+              <Button variant="ghost" size="icon" className="w-5 h-5"><Plus className="w-3 h-3" /></Button>
+              <Button variant="ghost" size="icon" className="w-5 h-5"><FolderOpen className="w-3 h-3" /></Button>
+            </div>
+          </div>
+          {FILE_TREE.map((node, i) => (
+            <FileTreeNode key={i} node={node} activeFile={activeFile} onSelect={setActiveFile} />
+          ))}
+        </div>
       </div>
     </ScrollArea>
   );
 }
 
 export function IDEGitPanel() {
+  const [commitMsg, setCommitMsg] = useState('');
   const changes = [
-    { name: 'PageLeftDrawer.tsx', status: 'M', color: 'text-amber-400' },
-    { name: 'drawer-panels/index.tsx', status: 'A', color: 'text-[hsl(150,100%,60%)]' },
-    { name: 'old-sidebar.tsx', status: 'D', color: 'text-destructive' },
+    { name: 'PageLeftDrawer.tsx', status: 'M', color: 'text-[hsl(45,100%,65%)]', path: 'src/components/layout/' },
+    { name: 'index.tsx', status: 'A', color: 'text-[hsl(150,100%,60%)]', path: 'src/components/layout/drawer-panels/' },
+    { name: 'page-drawer-events.ts', status: 'M', color: 'text-[hsl(45,100%,65%)]', path: 'src/lib/' },
   ];
+  const staged = [changes[0]];
+  const unstaged = changes.slice(1);
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-3 space-y-3">
-        <div className="flex items-center gap-2">
+      <div className="p-2 space-y-3">
+        {/* Branch */}
+        <div className="flex items-center gap-2 px-1">
           <GitBranch className="w-4 h-4 text-primary" />
-          <span className="text-xs font-medium">main</span>
-          <Badge variant="outline" className="text-[10px] px-1 h-4 ml-auto">{changes.length}</Badge>
+          <span className="text-xs font-semibold">main</span>
+          <Badge variant="outline" className="text-[10px] px-1.5 h-4 ml-auto">{changes.length} changes</Badge>
         </div>
+
+        {/* Commit */}
+        <div className="space-y-1.5">
+          <Input
+            placeholder="Commit message..."
+            value={commitMsg}
+            onChange={(e) => setCommitMsg(e.target.value)}
+            className="text-xs h-8 bg-muted/20 border-border/30"
+          />
+          <div className="flex gap-1">
+            <Button size="sm" className="flex-1 h-7 text-xs" disabled={!commitMsg.trim()}>Commit</Button>
+            <Button size="sm" variant="outline" className="h-7 text-xs px-2">Push</Button>
+          </div>
+        </div>
+
+        {/* Staged */}
         <div className="space-y-0.5">
-          <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Changes</p>
-          {changes.map((c, i) => (
-            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-muted/20 text-xs">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase">Staged ({staged.length})</p>
+            <Button variant="ghost" size="icon" className="w-5 h-5" title="Unstage all"><ArrowDown className="w-3 h-3" /></Button>
+          </div>
+          {staged.map((c, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/20 text-xs group">
               <Badge variant="outline" className={cn('text-[9px] px-1 h-4 font-mono', c.color)}>{c.status}</Badge>
               <span className="truncate flex-1">{c.name}</span>
+              <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted/50">
+                <ArrowDown className="w-3 h-3 text-muted-foreground" />
+              </button>
             </div>
           ))}
         </div>
-        <Input placeholder="Commit message..." className="text-xs h-8 bg-muted/20 border-border/30" />
-        <Button size="sm" className="w-full h-7 text-xs">Commit</Button>
+
+        {/* Unstaged */}
+        <div className="space-y-0.5">
+          <div className="flex items-center justify-between px-1">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase">Changes ({unstaged.length})</p>
+            <Button variant="ghost" size="icon" className="w-5 h-5" title="Stage all"><ArrowUp className="w-3 h-3" /></Button>
+          </div>
+          {unstaged.map((c, i) => (
+            <div key={i} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/20 text-xs group">
+              <Badge variant="outline" className={cn('text-[9px] px-1 h-4 font-mono', c.color)}>{c.status}</Badge>
+              <span className="truncate flex-1">{c.name}</span>
+              <button className="opacity-0 group-hover:opacity-100 p-0.5 rounded hover:bg-muted/50">
+                <ArrowUp className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
     </ScrollArea>
   );
 }
 
 // ============================================================
-// ILLUSTRATOR DRAWER PANELS
+// ILLUSTRATOR DRAWER PANELS (Perfected)
 // ============================================================
 
 export function IllustratorLayersPanel() {
-  const [layers] = useState([
-    { id: '1', name: 'Shape Layer', visible: true, locked: false },
-    { id: '2', name: 'Text Layer', visible: true, locked: false },
-    { id: '3', name: 'Background', visible: true, locked: true },
+  const [activeLayer, setActiveLayer] = useState('1');
+  const [layers, setLayers] = useState([
+    { id: '1', name: 'Vector Shapes', visible: true, locked: false, color: 'hsl(var(--primary))' },
+    { id: '2', name: 'Typography', visible: true, locked: false, color: 'hsl(270, 80%, 60%)' },
+    { id: '3', name: 'Icons', visible: true, locked: false, color: 'hsl(150, 100%, 60%)' },
+    { id: '4', name: 'Guidelines', visible: false, locked: true, color: 'hsl(45, 100%, 65%)' },
+    { id: '5', name: 'Background', visible: true, locked: true, color: 'hsl(210, 80%, 55%)' },
   ]);
+
+  const toggleVisibility = (id: string) => setLayers(prev => prev.map(l => l.id === id ? { ...l, visible: !l.visible } : l));
+  const toggleLock = (id: string) => setLayers(prev => prev.map(l => l.id === id ? { ...l, locked: !l.locked } : l));
+
   return (
     <ScrollArea className="h-full">
       <div className="p-2 space-y-1">
-        <div className="flex items-center justify-between px-1 mb-1">
+        <div className="flex items-center justify-between px-1 mb-1.5">
           <span className="text-[10px] font-medium text-muted-foreground uppercase">Layers</span>
-          <Button variant="ghost" size="icon" className="w-5 h-5"><Plus className="w-3 h-3" /></Button>
+          <div className="flex gap-0.5">
+            <Button variant="ghost" size="icon" className="w-5 h-5" title="Add Layer"><Plus className="w-3 h-3" /></Button>
+            <Button variant="ghost" size="icon" className="w-5 h-5" title="Group"><Layers className="w-3 h-3" /></Button>
+            <Button variant="ghost" size="icon" className="w-5 h-5" title="Delete"><Trash2 className="w-3 h-3" /></Button>
+          </div>
         </div>
         {layers.map(l => (
-          <div key={l.id} className="flex items-center gap-1.5 px-2 py-1.5 rounded-md hover:bg-muted/20 group">
-            <GripVertical className="w-3 h-3 text-muted-foreground/30 group-hover:text-muted-foreground cursor-grab" />
-            <button className="shrink-0">{l.visible ? <Eye className="w-3.5 h-3.5 text-muted-foreground" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground/50" />}</button>
-            <button className="shrink-0">{l.locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground/50" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground" />}</button>
-            <span className="text-xs truncate flex-1">{l.name}</span>
+          <div
+            key={l.id}
+            onClick={() => setActiveLayer(l.id)}
+            className={cn(
+              'flex items-center gap-1.5 px-2 py-2 rounded-lg transition-all cursor-pointer group',
+              activeLayer === l.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/20 border border-transparent',
+            )}
+          >
+            <GripVertical className="w-3 h-3 text-muted-foreground/20 group-hover:text-muted-foreground cursor-grab shrink-0" />
+            <div className="w-2 h-full min-h-[16px] rounded-sm shrink-0" style={{ background: l.color }} />
+            <button onClick={(e) => { e.stopPropagation(); toggleVisibility(l.id); }} className="shrink-0">
+              {l.visible ? <Eye className="w-3.5 h-3.5 text-muted-foreground" /> : <EyeOff className="w-3.5 h-3.5 text-muted-foreground/30" />}
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); toggleLock(l.id); }} className="shrink-0">
+              {l.locked ? <Lock className="w-3.5 h-3.5 text-muted-foreground/40" /> : <Unlock className="w-3.5 h-3.5 text-muted-foreground/60" />}
+            </button>
+            <span className={cn('text-xs truncate flex-1', !l.visible && 'text-muted-foreground/40')}>{l.name}</span>
           </div>
         ))}
+
+        {/* Blend mode & opacity for active layer */}
+        <div className="border-t border-border/20 pt-2 mt-2 px-1 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Opacity</span>
+            <span className="text-[10px] text-muted-foreground">100%</span>
+          </div>
+          <Slider defaultValue={[100]} max={100} step={1} className="w-full" />
+        </div>
       </div>
     </ScrollArea>
   );
 }
 
 export function IllustratorAssetsPanel() {
-  const assets = [
-    { name: 'Color Swatches', count: 18 },
-    { name: 'Gradients', count: 6 },
-    { name: 'Patterns', count: 4 },
-    { name: 'Symbols', count: 8 },
-    { name: 'Brushes', count: 12 },
+  const [activeSection, setActiveSection] = useState('swatches');
+  const sections = [
+    { id: 'swatches', label: 'Swatches' },
+    { id: 'gradients', label: 'Gradients' },
+    { id: 'patterns', label: 'Patterns' },
+    { id: 'brushes', label: 'Brushes' },
+    { id: 'symbols', label: 'Symbols' },
   ];
+
+  const swatchColors = [
+    '#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6',
+    '#8b5cf6', '#ec4899', '#ffffff', '#000000', '#6b7280', '#1a1a2e',
+    '#f472b6', '#a78bfa', '#67e8f9', '#4ade80', '#fbbf24', '#fb923c',
+    '#dc2626', '#ea580c', '#ca8a04', '#16a34a', '#0891b2', '#2563eb',
+  ];
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-1">
-        {assets.map(a => (
-          <Button key={a.name} variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
-            <Palette className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="flex-1 text-left">{a.name}</span>
-            <Badge variant="outline" className="text-[10px] px-1 h-4">{a.count}</Badge>
-          </Button>
-        ))}
-        <div className="grid grid-cols-6 gap-1 p-2 mt-2">
-          {['#ef4444', '#f97316', '#eab308', '#22c55e', '#06b6d4', '#3b82f6',
-            '#8b5cf6', '#ec4899', '#ffffff', '#000000', '#6b7280', '#1a1a2e',
-            '#f472b6', '#a78bfa', '#67e8f9', '#4ade80', '#fbbf24', '#fb923c',
-          ].map(c => (
-            <button key={c} className="w-full aspect-square rounded border border-border/30 hover:scale-110 transition-transform" style={{ background: c }} />
+      <div className="p-2 space-y-2">
+        {/* Section tabs */}
+        <div className="flex flex-wrap gap-0.5">
+          {sections.map(s => (
+            <Button
+              key={s.id}
+              variant={activeSection === s.id ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => setActiveSection(s.id)}
+              className={cn('h-6 text-[10px] px-2', activeSection === s.id && 'bg-primary/15 text-primary')}
+            >
+              {s.label}
+            </Button>
           ))}
         </div>
+
+        {activeSection === 'swatches' && (
+          <div className="space-y-2">
+            <div className="grid grid-cols-6 gap-1.5 p-1">
+              {swatchColors.map(c => (
+                <button
+                  key={c}
+                  className="w-full aspect-square rounded-md border border-border/30 hover:scale-110 hover:ring-2 hover:ring-primary/50 transition-all shadow-sm"
+                  style={{ background: c }}
+                  title={c}
+                />
+              ))}
+            </div>
+            <Button variant="ghost" size="sm" className="w-full text-xs h-7 gap-1.5">
+              <Plus className="w-3 h-3" /> Add Color
+            </Button>
+          </div>
+        )}
+
+        {activeSection === 'gradients' && (
+          <div className="grid grid-cols-3 gap-1.5 p-1">
+            {[
+              'linear-gradient(135deg, #ef4444, #f97316)',
+              'linear-gradient(135deg, #3b82f6, #8b5cf6)',
+              'linear-gradient(135deg, #22c55e, #06b6d4)',
+              'linear-gradient(135deg, #ec4899, #8b5cf6)',
+              'radial-gradient(circle, #fbbf24, #ea580c)',
+              'linear-gradient(180deg, #1a1a2e, #3b82f6)',
+            ].map((g, i) => (
+              <button key={i} className="aspect-square rounded-lg border border-border/30 hover:ring-2 hover:ring-primary/50 transition-all" style={{ background: g }} />
+            ))}
+          </div>
+        )}
+
+        {activeSection === 'brushes' && (
+          <div className="space-y-1">
+            {['Round', 'Flat', 'Calligraphy', 'Scatter', 'Art', 'Pattern'].map(b => (
+              <Button key={b} variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
+                <Paintbrush className="w-3.5 h-3.5 text-muted-foreground" /> {b}
+              </Button>
+            ))}
+          </div>
+        )}
+
+        {(activeSection === 'patterns' || activeSection === 'symbols') && (
+          <div className="grid grid-cols-3 gap-1.5 p-1">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div key={i} className="aspect-square rounded-lg bg-muted/20 border border-border/20 flex items-center justify-center cursor-pointer hover:border-primary/50">
+                <Palette className="w-5 h-5 text-muted-foreground/20" />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </ScrollArea>
   );
@@ -1336,65 +1810,217 @@ export function BrowserBookmarksPanel() {
 }
 
 // ============================================================
-// CHAT DRAWER PANELS
+// CHAT DRAWER PANELS (Perfected)
 // ============================================================
 
 export function ChatHistoryPanel() {
+  const [activeChat, setActiveChat] = useState<string | null>('c1');
+  const [searchQuery, setSearchQuery] = useState('');
+
   const chats = [
-    { title: 'AIMOS Architecture Discussion', time: '2m ago', msgs: 12 },
-    { title: 'Code Review Request', time: '1h ago', msgs: 8 },
-    { title: 'Bug Investigation', time: '3h ago', msgs: 24 },
-    { title: 'Feature Planning', time: '1d ago', msgs: 15 },
-    { title: 'Research Synthesis', time: '2d ago', msgs: 30 },
+    { id: 'c1', title: 'AIMOS Architecture Discussion', time: '2m ago', msgs: 12, pinned: true, hasUnread: true },
+    { id: 'c2', title: 'Code Review — Drawer Refactor', time: '45m ago', msgs: 8, pinned: true, hasUnread: false },
+    { id: 'c3', title: 'Bug Investigation: Canvas Rendering', time: '3h ago', msgs: 24, pinned: false, hasUnread: false },
+    { id: 'c4', title: 'Sprint 6 Feature Planning', time: '1d ago', msgs: 15, pinned: false, hasUnread: false },
+    { id: 'c5', title: 'Research: Multi-Modal LLMs', time: '2d ago', msgs: 30, pinned: false, hasUnread: false },
+    { id: 'c6', title: 'Orchestration Pipeline Design', time: '3d ago', msgs: 18, pinned: false, hasUnread: false },
+    { id: 'c7', title: 'Performance Optimization Notes', time: '5d ago', msgs: 9, pinned: false, hasUnread: false },
   ];
+
+  const pinned = chats.filter(c => c.pinned);
+  const recent = chats.filter(c => !c.pinned);
+  const filtered = searchQuery
+    ? chats.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+    : null;
+
+  const renderChat = (c: typeof chats[0]) => (
+    <button
+      key={c.id}
+      onClick={() => { setActiveChat(c.id); emitPageDrawerAction({ page: 'chat', action: 'open-chat', value: c.id }); }}
+      className={cn(
+        'w-full text-left px-2.5 py-2 rounded-lg transition-all group',
+        activeChat === c.id ? 'bg-primary/10 border border-primary/20' : 'hover:bg-muted/30 border border-transparent',
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <MessageSquare className={cn('w-3.5 h-3.5 mt-0.5 shrink-0', activeChat === c.id ? 'text-primary' : 'text-muted-foreground')} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <p className={cn('text-xs truncate flex-1', c.hasUnread && 'font-semibold')}>{c.title}</p>
+            {c.hasUnread && <div className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />}
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-0.5">{c.msgs} messages · {c.time}</p>
+        </div>
+        <button className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-muted/50 shrink-0">
+          <MoreHorizontal className="w-3 h-3 text-muted-foreground" />
+        </button>
+      </div>
+    </button>
+  );
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-0.5">
-        <Button size="sm" className="w-full h-8 gap-1.5 text-xs mb-1">
-          <Plus className="w-3.5 h-3.5" /> New Chat
+      <div className="p-2 space-y-3">
+        <Button size="sm" className="w-full h-8 gap-1.5 text-xs">
+          <Plus className="w-3.5 h-3.5" /> New Conversation
         </Button>
-        {chats.map(c => (
-          <Button key={c.title} variant="ghost" size="sm" className="w-full justify-start h-auto py-2 px-2 text-left">
-            <MessageSquare className="w-3.5 h-3.5 text-muted-foreground mr-2 shrink-0 mt-0.5" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-medium truncate">{c.title}</p>
-              <p className="text-[10px] text-muted-foreground">{c.msgs} msgs · {c.time}</p>
+
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-8 h-7 text-xs bg-muted/20 border-border/30"
+          />
+        </div>
+
+        {filtered ? (
+          <div className="space-y-0.5">
+            <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">{filtered.length} results</p>
+            {filtered.map(renderChat)}
+          </div>
+        ) : (
+          <>
+            {pinned.length > 0 && (
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-medium text-muted-foreground uppercase px-1 flex items-center gap-1">
+                  <Star className="w-3 h-3" /> Pinned
+                </p>
+                {pinned.map(renderChat)}
+              </div>
+            )}
+            <div className="space-y-0.5">
+              <p className="text-[10px] font-medium text-muted-foreground uppercase px-1">Recent</p>
+              {recent.map(renderChat)}
             </div>
-          </Button>
-        ))}
+          </>
+        )}
       </div>
     </ScrollArea>
   );
 }
 
 export function ChatLibraryPanel() {
-  const docs = [
-    { name: 'AIMOS Documentation', type: 'doc' },
-    { name: 'UI Canon', type: 'doc' },
-    { name: 'Architecture Spec', type: 'doc' },
-    { name: 'API Reference', type: 'doc' },
+  const [activeSection, setActiveSection] = useState('docs');
+  const sections = [
+    { id: 'docs', label: 'Documents', icon: FileText },
+    { id: 'knowledge', label: 'Knowledge Base', icon: Database },
+    { id: 'snippets', label: 'Saved Snippets', icon: Code2 },
   ];
+
+  const docs = [
+    { name: 'AIMOS Documentation', size: '24 KB', type: 'txt', updated: '1d ago' },
+    { name: 'UI Canon Specification', size: '18 KB', type: 'md', updated: '2d ago' },
+    { name: 'Architecture Spec', size: '32 KB', type: 'md', updated: '3d ago' },
+    { name: 'API Reference', size: '45 KB', type: 'md', updated: '1w ago' },
+    { name: 'Drawing Engine Docs', size: '28 KB', type: 'txt', updated: '1w ago' },
+    { name: 'Principia Morphica', size: '15 KB', type: 'txt', updated: '2w ago' },
+  ];
+
+  const knowledge = [
+    { name: 'Reasoning Chains', entries: 23 },
+    { name: 'Memory Context', entries: 156 },
+    { name: 'Dream Insights', entries: 45 },
+  ];
+
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-0.5">
-        {docs.map(d => (
-          <Button key={d.name} variant="ghost" size="sm" className="w-full justify-start h-8 px-2 text-xs gap-2">
-            <BookOpen className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="truncate">{d.name}</span>
-          </Button>
-        ))}
+      <div className="p-2 space-y-3">
+        <div className="flex gap-0.5 bg-muted/20 rounded-lg p-0.5">
+          {sections.map(s => {
+            const Icon = s.icon;
+            return (
+              <Button
+                key={s.id}
+                variant={activeSection === s.id ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveSection(s.id)}
+                className={cn('flex-1 h-6 text-[10px] gap-1 px-1', activeSection === s.id && 'bg-primary/15 text-primary')}
+              >
+                <Icon className="w-3 h-3" />
+                {s.label}
+              </Button>
+            );
+          })}
+        </div>
+
+        {activeSection === 'docs' && (
+          <div className="space-y-0.5">
+            <Button size="sm" variant="ghost" className="w-full justify-start text-xs h-7 gap-1.5">
+              <Upload className="w-3.5 h-3.5" /> Upload Document
+            </Button>
+            {docs.map(d => (
+              <button
+                key={d.name}
+                className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-muted/30 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs truncate">{d.name}</p>
+                    <p className="text-[10px] text-muted-foreground">{d.size} · .{d.type} · {d.updated}</p>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {activeSection === 'knowledge' && (
+          <div className="space-y-1">
+            {knowledge.map(k => (
+              <div key={k.name} className="px-2.5 py-2 rounded-lg hover:bg-muted/30 cursor-pointer">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-medium">{k.name}</span>
+                  <Badge variant="outline" className="text-[10px] px-1.5 h-4">{k.entries}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeSection === 'snippets' && (
+          <div className="p-3 text-center">
+            <Code2 className="w-6 h-6 text-muted-foreground/20 mx-auto mb-1" />
+            <p className="text-[10px] text-muted-foreground">Save code snippets from chat</p>
+          </div>
+        )}
       </div>
     </ScrollArea>
   );
 }
 
 export function ChatFavoritesPanel() {
+  const starred = [
+    { text: 'The CMC memory system uses RS scoring with decay...', chat: 'AIMOS Architecture', time: '2h ago' },
+    { text: 'Canvas rendering optimization: batch draws per frame...', chat: 'Bug Investigation', time: '1d ago' },
+  ];
+
   return (
-    <div className="p-4 text-center">
-      <Star className="w-8 h-8 text-muted-foreground/20 mx-auto mb-2" />
-      <p className="text-xs text-muted-foreground">No starred messages yet</p>
-      <p className="text-[10px] text-muted-foreground/50 mt-1">Star messages to save them here</p>
-    </div>
+    <ScrollArea className="h-full">
+      <div className="p-2 space-y-2">
+        {starred.length === 0 ? (
+          <div className="p-6 text-center">
+            <Star className="w-8 h-8 text-muted-foreground/15 mx-auto mb-2" />
+            <p className="text-xs text-muted-foreground">No starred messages yet</p>
+            <p className="text-[10px] text-muted-foreground/50 mt-1">Star important messages to save them here</p>
+          </div>
+        ) : (
+          starred.map((s, i) => (
+            <div key={i} className="px-2.5 py-2 rounded-lg border border-border/20 hover:border-primary/30 cursor-pointer transition-colors">
+              <div className="flex items-start gap-2">
+                <Star className="w-3 h-3 text-amber-400 fill-amber-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs line-clamp-2">{s.text}</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">from {s.chat} · {s.time}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </ScrollArea>
   );
 }
 
