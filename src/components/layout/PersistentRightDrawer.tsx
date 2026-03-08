@@ -148,6 +148,8 @@ export function PersistentRightDrawer({
           <div className="flex-1 overflow-hidden">
             {activeTab === 'chat' ? (
               <AdvancedPersistentChat />
+            ) : activeTab === 'vault' ? (
+              <VaultPanel />
             ) : (
               <EnhancedRightDrawerPanel
                 activeDrawer={transparencyDrawerType as any}
