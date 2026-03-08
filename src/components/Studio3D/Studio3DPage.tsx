@@ -887,6 +887,16 @@ export function Studio3DPage() {
           </SelectContent>
         </Select>
 
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setShowTimeline(v => !v)}
+              className={cn('w-8 h-8', showTimeline && 'text-primary')}>
+              <Layers className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Timeline</TooltipContent>
+        </Tooltip>
+
         <Button variant="ghost" size="icon" onClick={() => setIsPlaying(v => !v)} className="w-8 h-8">
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
