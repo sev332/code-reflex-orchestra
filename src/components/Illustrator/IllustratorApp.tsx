@@ -1,5 +1,6 @@
 // Illustrator App — Dark Pro Studio Drawing Engine
 // Sprint 1: Pen handle dragging, Text tool, Color picker, SVG export, Undo wiring
+// Sprint 2: Gradient tool, Proper booleans, Scissors/Knife, Groups, Isolation, Alignment
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -12,9 +13,10 @@ import {
   MousePointer2, Pencil, PenTool, Paintbrush, Eraser, Square, Circle,
   Hexagon, Star, Minus, Type, Pipette, Hand, ZoomIn, PaintBucket,
   Undo, Redo, Plus, Eye, EyeOff, Lock, Unlock, Trash2, Copy,
-  Grid3x3, Magnet,
+  Grid3x3, Magnet, Scissors, Slice, Group, Ungroup,
   Download, Upload, Maximize2, RotateCw,
   AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical,
+  ArrowUp, ArrowDown, ChevronsUp, ChevronsDown, Palette,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDrawingEngine } from '@/lib/drawing-engine/useDrawingEngine';
@@ -23,6 +25,7 @@ import { ToolId, Vec2 } from '@/lib/drawing-engine/types';
 import type { RawInputSample } from '@/lib/drawing-engine/brush-core';
 import { ColorPicker } from './ColorPicker';
 import { BUILT_IN_FONTS } from '@/lib/drawing-engine/text-engine';
+import { createLinearGradient, createRadialGradient, GRADIENT_PRESETS } from '@/lib/drawing-engine/gradient-engine';
 
 // ============================================
 // TOOL DEFINITIONS
@@ -43,6 +46,7 @@ const TOOLS: { id: ToolId; icon: React.ComponentType<any>; label: string; shortc
   { id: 'text', icon: Type, label: 'Text', shortcut: 'T', group: 'other' },
   { id: 'eyedropper', icon: Pipette, label: 'Eyedropper', shortcut: 'I', group: 'other' },
   { id: 'fill-bucket', icon: PaintBucket, label: 'Fill', shortcut: 'G', group: 'other' },
+  { id: 'gradient', icon: Palette, label: 'Gradient', shortcut: 'M', group: 'other' },
   { id: 'hand', icon: Hand, label: 'Hand', shortcut: 'H', group: 'nav' },
   { id: 'zoom', icon: ZoomIn, label: 'Zoom', shortcut: 'Z', group: 'nav' },
 ];
@@ -83,7 +87,7 @@ export function IllustratorApp() {
     return () => observer.disconnect();
   }, []);
 
-  // Render loop — passes live preview, node overlay, and transform handles to renderer
+  // Render loop
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -99,18 +103,11 @@ export function IllustratorApp() {
       canvas.style.height = `${canvasSize.height}px`;
 
       renderScene(
-        ctx,
-        state.scene,
-        state.viewport,
-        state.selection.selectedIds,
-        state.selection.hoveredId,
-        canvasSize.width,
-        canvasSize.height,
-        state.gridEnabled,
-        state.gridSize,
-        preview,
-        engine.nodeOverlay,
-        engine.computedTransformHandles,
+        ctx, state.scene, state.viewport,
+        state.selection.selectedIds, state.selection.hoveredId,
+        canvasSize.width, canvasSize.height,
+        state.gridEnabled, state.gridSize,
+        preview, engine.nodeOverlay, engine.computedTransformHandles,
       );
 
       animRef.current = requestAnimationFrame(render);
@@ -127,10 +124,10 @@ export function IllustratorApp() {
       if (e.key === 'Delete' || e.key === 'Backspace') { engine.deleteSelected(); return; }
       if ((e.metaKey || e.ctrlKey) && e.key === 'z') { e.shiftKey ? engine.redo() : engine.undo(); e.preventDefault(); return; }
       if ((e.metaKey || e.ctrlKey) && e.key === 'y') { engine.redo(); e.preventDefault(); return; }
-      if (e.key === 'Escape' && engine.penAnchors.length > 0) {
-        // Finish pen path on Escape
-        engine.finishPenPath();
-        return;
+      if ((e.metaKey || e.ctrlKey) && e.key === 'g') { e.shiftKey ? engine.ungroupSelected() : engine.groupSelected(); e.preventDefault(); return; }
+      if (e.key === 'Escape') {
+        if (engine.penAnchors.length > 0) { engine.finishPenPath(); return; }
+        if (engine.isolation.active) { engine.exitIsolationMode(); return; }
       }
       const tool = TOOLS.find(t => t.shortcut.toLowerCase() === e.key.toLowerCase());
       if (tool) engine.setTool(tool.id);
@@ -140,7 +137,7 @@ export function IllustratorApp() {
   }, [engine]);
 
   // ============================================
-  // POINTER INTERACTION (not mouse — for pressure)
+  // POINTER INTERACTION
   // ============================================
 
   const screenToWorld = useCallback((sx: number, sy: number): Vec2 => ({
@@ -149,223 +146,106 @@ export function IllustratorApp() {
   }), [state.viewport]);
 
   const makeSample = (e: React.PointerEvent, world: Vec2): RawInputSample => ({
-    x: world.x,
-    y: world.y,
+    x: world.x, y: world.y,
     pressure: e.pressure || 0.5,
-    tiltX: (e as any).tiltX || 0,
-    tiltY: (e as any).tiltY || 0,
+    tiltX: (e as any).tiltX || 0, tiltY: (e as any).tiltY || 0,
     timestamp: e.timeStamp,
     pointerType: (e.pointerType as 'pen' | 'mouse' | 'touch') || 'mouse',
   });
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
+    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
     const world = screenToWorld(sx, sy);
     const tool = state.tool.activeToolId;
-
-    // Capture pointer for smooth tracking
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
 
-    // Pan
-    if (tool === 'hand' || e.button === 1) {
-      setIsPanning(true);
-      setPanStart({ x: e.clientX, y: e.clientY });
-      return;
-    }
+    if (tool === 'hand' || e.button === 1) { setIsPanning(true); setPanStart({ x: e.clientX, y: e.clientY }); return; }
 
-    // Direct Select — node editing
     if (tool === 'direct-select') {
-      // Try node drag first
-      if (engine.nodeOverlay.enabled && engine.beginNodeDrag(world)) {
-        setIsDrawing(true);
-        return;
-      }
-      // Try to enter node edit on an entity
+      if (engine.nodeOverlay.enabled && engine.beginNodeDrag(world)) { setIsDrawing(true); return; }
       const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
-      if (hitId) {
-        engine.select([hitId]);
-        engine.enterNodeEdit(hitId);
-      } else {
-        engine.exitNodeEdit();
-        engine.select([]);
-      }
+      if (hitId) { engine.select([hitId]); engine.enterNodeEdit(hitId); }
+      else { engine.exitNodeEdit(); engine.select([]); }
       return;
     }
 
-    // Select — with transform handles
     if (tool === 'select') {
-      // Try transform handle first
-      if (engine.beginTransform(world)) {
-        setIsDrawing(true);
-        return;
-      }
+      if (engine.beginTransform(world)) { setIsDrawing(true); return; }
       const hitId = engine.hitTestAtPoint({ x: sx, y: sy });
       if (hitId) {
+        // Double-click for isolation mode
+        if (e.detail === 2) {
+          const entity = state.scene.entities[hitId];
+          if (entity?.type === 'group') { engine.enterIsolationMode(hitId); return; }
+        }
         if (e.shiftKey) {
           const ids = state.selection.selectedIds.includes(hitId)
             ? state.selection.selectedIds.filter(id => id !== hitId)
             : [...state.selection.selectedIds, hitId];
           engine.select(ids);
-        } else {
-          engine.select([hitId]);
-        }
+        } else { engine.select([hitId]); }
         setDragStart(world);
-      } else {
-        engine.select([]);
-      }
-      // Exit node edit when switching to select
+      } else { engine.select([]); }
       engine.exitNodeEdit();
       return;
     }
 
-    // Pen tool — pointerDown starts anchor + handle drag
-    if (tool === 'pen') {
-      engine.beginPenHandleDrag({ x: world.x, y: world.y });
-      setIsDrawing(true);
-      return;
-    }
+    if (tool === 'pen') { engine.beginPenHandleDrag({ x: world.x, y: world.y }); setIsDrawing(true); return; }
+    if (tool === 'text') { engine.addTextEntity(world.x, world.y); return; }
+    if (tool === 'brush' || tool === 'pencil') { setIsDrawing(true); engine.beginBrushStroke(makeSample(e, world)); return; }
 
-    // Text tool — click to create text
-    if (tool === 'text') {
-      engine.addTextEntity(world.x, world.y);
-      return;
-    }
-
-    // Brush / Pencil — start BrushSession
-    if (tool === 'brush' || tool === 'pencil') {
-      setIsDrawing(true);
-      engine.beginBrushStroke(makeSample(e, world));
-      return;
-    }
-
-    // Shape tools
     if (tool.startsWith('shape-')) {
-      setIsDrawing(true);
-      setDrawStart(world);
-      if (tool === 'shape-line') {
-        engine.beginLinePreview(world, state.tool.strokeColor, state.tool.strokeWidth);
-      } else {
-        const shapeKind = tool.replace('shape-', '');
-        engine.beginShapePreview(world, shapeKind, state.tool.fillColor, state.tool.strokeColor, state.tool.strokeWidth);
-      }
+      setIsDrawing(true); setDrawStart(world);
+      if (tool === 'shape-line') engine.beginLinePreview(world, state.tool.strokeColor, state.tool.strokeWidth);
+      else engine.beginShapePreview(world, tool.replace('shape-', ''), state.tool.fillColor, state.tool.strokeColor, state.tool.strokeWidth);
     }
-  }, [state.tool, state.viewport, state.selection.selectedIds, engine, screenToWorld]);
+  }, [state.tool, state.viewport, state.selection.selectedIds, state.scene.entities, engine, screenToWorld]);
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     const rect = canvasRef.current!.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
+    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
     const world = screenToWorld(sx, sy);
     const tool = state.tool.activeToolId;
 
-    // Pan
     if (isPanning && panStart) {
-      const dx = (e.clientX - panStart.x) / state.viewport.zoom;
-      const dy = (e.clientY - panStart.y) / state.viewport.zoom;
-      engine.pan(dx, dy);
-      setPanStart({ x: e.clientX, y: e.clientY });
-      return;
+      engine.pan((e.clientX - panStart.x) / state.viewport.zoom, (e.clientY - panStart.y) / state.viewport.zoom);
+      setPanStart({ x: e.clientX, y: e.clientY }); return;
     }
-
-    // Node drag (direct-select)
-    if (isDrawing && tool === 'direct-select') {
-      engine.updateNodeDrag(world);
-      return;
-    }
-
-    // Transform drag (select)
-    if (isDrawing && tool === 'select' && engine.transformState.active) {
-      engine.updateTransform(world);
-      return;
-    }
-
-    // Drag selected
+    if (isDrawing && tool === 'direct-select') { engine.updateNodeDrag(world); return; }
+    if (isDrawing && tool === 'select' && engine.transformState.active) { engine.updateTransform(world); return; }
     if (dragStart && state.selection.selectedIds.length > 0) {
-      engine.moveSelected(world.x - dragStart.x, world.y - dragStart.y);
-      setDragStart(world);
-      return;
+      engine.moveSelected(world.x - dragStart.x, world.y - dragStart.y); setDragStart(world); return;
     }
-
-    // Brush / Pencil — update session
-    if (isDrawing && (tool === 'brush' || tool === 'pencil')) {
-      engine.updateBrushStroke(makeSample(e, world));
-      return;
-    }
-
-    // Shape preview
+    if (isDrawing && (tool === 'brush' || tool === 'pencil')) { engine.updateBrushStroke(makeSample(e, world)); return; }
     if (isDrawing && drawStart) {
-      if (tool === 'shape-line') {
-        engine.updateLinePreview(world);
-      } else {
-        engine.updateShapePreview(world);
-      }
-      return;
+      tool === 'shape-line' ? engine.updateLinePreview(world) : engine.updateShapePreview(world); return;
     }
-
-    // Pen handle drag
-    if (tool === 'pen' && isDrawing) {
-      engine.updatePenHandleDrag(world);
-      return;
-    }
-
-    // Pen cursor tracking (when not dragging)
-    if (tool === 'pen' && !isDrawing) {
-      engine.updatePenCursor(world);
-      return;
-    }
-
-    // Hover
-    if (tool === 'select') {
-      engine.setHovered(engine.hitTestAtPoint({ x: sx, y: sy }));
-    }
+    if (tool === 'pen' && isDrawing) { engine.updatePenHandleDrag(world); return; }
+    if (tool === 'pen' && !isDrawing) { engine.updatePenCursor(world); return; }
+    if (tool === 'select') engine.setHovered(engine.hitTestAtPoint({ x: sx, y: sy }));
   }, [isPanning, panStart, dragStart, isDrawing, drawStart, state, engine, screenToWorld]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
-
     if (isPanning) { setIsPanning(false); setPanStart(null); return; }
     if (dragStart) { setDragStart(null); return; }
 
     const tool = state.tool.activeToolId;
-
-    // End pen handle drag
-    if (tool === 'pen' && isDrawing) {
-      engine.endPenHandleDrag();
-      setIsDrawing(false);
-      return;
-    }
-
-    // End node drag
-    if (tool === 'direct-select' && isDrawing) {
-      engine.endNodeDrag();
-      setIsDrawing(false);
-      return;
-    }
-
-    // End transform
-    if (tool === 'select' && engine.transformState.active) {
-      engine.endTransform();
-      setIsDrawing(false);
-      return;
-    }
-
+    if (tool === 'pen' && isDrawing) { engine.endPenHandleDrag(); setIsDrawing(false); return; }
+    if (tool === 'direct-select' && isDrawing) { engine.endNodeDrag(); setIsDrawing(false); return; }
+    if (tool === 'select' && engine.transformState.active) { engine.endTransform(); setIsDrawing(false); return; }
     if (!isDrawing) return;
 
     const rect = canvasRef.current!.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
+    const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
     const world = screenToWorld(sx, sy);
     const { fillColor, strokeColor, strokeWidth } = state.tool;
 
-    // Brush / Pencil — finalize
     if (tool === 'brush' || tool === 'pencil') {
-      const size = tool === 'brush' ? engine.activeBrushPreset.baseSize : 2;
-      engine.endBrushStroke(makeSample(e, world), strokeColor, size);
+      engine.endBrushStroke(makeSample(e, world), strokeColor, tool === 'brush' ? engine.activeBrushPreset.baseSize : 2);
     }
 
-    // Shape finalization
     if (drawStart && tool === 'shape-rect') {
       const x = Math.min(drawStart.x, world.x), y = Math.min(drawStart.y, world.y);
       const w = Math.abs(world.x - drawStart.x), h = Math.abs(world.y - drawStart.y);
@@ -386,24 +266,17 @@ export function IllustratorApp() {
       engine.endShapePreview();
     }
 
-    setIsDrawing(false);
-    setDrawStart(null);
+    setIsDrawing(false); setDrawStart(null);
   }, [isDrawing, drawStart, isPanning, dragStart, state.tool, engine, screenToWorld]);
-
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     e.preventDefault();
-    if (e.ctrlKey || e.metaKey) {
-      engine.setZoom(state.viewport.zoom * (e.deltaY > 0 ? 0.9 : 1.1));
-    } else {
-      engine.pan(-e.deltaX / state.viewport.zoom, -e.deltaY / state.viewport.zoom);
-    }
+    if (e.ctrlKey || e.metaKey) engine.setZoom(state.viewport.zoom * (e.deltaY > 0 ? 0.9 : 1.1));
+    else engine.pan(-e.deltaX / state.viewport.zoom, -e.deltaY / state.viewport.zoom);
   }, [engine, state.viewport.zoom]);
 
   const zoomPercent = Math.round(state.viewport.zoom * 100);
-  const selectedEntity = state.selection.selectedIds.length === 1
-    ? state.scene.entities[state.selection.selectedIds[0]]
-    : null;
+  const selectedEntity = state.selection.selectedIds.length === 1 ? state.scene.entities[state.selection.selectedIds[0]] : null;
   const entityCount = Object.keys(state.scene.entities).length;
 
   return (
@@ -411,42 +284,37 @@ export function IllustratorApp() {
       {/* Top toolbar */}
       <div className="h-10 flex items-center justify-between px-2 border-b border-[hsl(220,15%,12%)] bg-[hsl(220,27%,6%)] shrink-0 gap-2">
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.undo} disabled={!engine.canUndo}>
-            <Undo className="w-3.5 h-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.redo} disabled={!engine.canRedo}>
-            <Redo className="w-3.5 h-3.5" />
-          </Button>
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.undo} disabled={!engine.canUndo}><Undo className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.redo} disabled={!engine.canRedo}><Redo className="w-3.5 h-3.5" /></Button>
           <div className="w-px h-5 bg-[hsl(220,15%,15%)] mx-1" />
-          <Button variant="ghost" size="icon" className={cn('w-7 h-7', state.gridEnabled && 'text-primary bg-primary/10')} onClick={engine.toggleGrid}>
-            <Grid3x3 className="w-3.5 h-3.5" />
-          </Button>
-          <Button variant="ghost" size="icon" className={cn('w-7 h-7', state.snapEnabled && 'text-primary bg-primary/10')} onClick={engine.toggleSnap}>
-            <Magnet className="w-3.5 h-3.5" />
-          </Button>
+          <Button variant="ghost" size="icon" className={cn('w-7 h-7', state.gridEnabled && 'text-primary bg-primary/10')} onClick={engine.toggleGrid}><Grid3x3 className="w-3.5 h-3.5" /></Button>
+          <Button variant="ghost" size="icon" className={cn('w-7 h-7', state.snapEnabled && 'text-primary bg-primary/10')} onClick={engine.toggleSnap}><Magnet className="w-3.5 h-3.5" /></Button>
+          <div className="w-px h-5 bg-[hsl(220,15%,15%)] mx-1" />
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.groupSelected} disabled={state.selection.selectedIds.length < 2}><Group className="w-3.5 h-3.5" /></Button>
+          </TooltipTrigger><TooltipContent className="text-xs">Group (Ctrl+G)</TooltipContent></Tooltip>
+          <Tooltip><TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="w-7 h-7" onClick={engine.ungroupSelected} disabled={!selectedEntity || selectedEntity.type !== 'group'}><Ungroup className="w-3.5 h-3.5" /></Button>
+          </TooltipTrigger><TooltipContent className="text-xs">Ungroup (Ctrl+Shift+G)</TooltipContent></Tooltip>
         </div>
 
         <div className="flex items-center gap-2 text-xs">
+          {engine.isolation.active && (
+            <Badge variant="outline" className="text-[10px] h-5 border-amber-500/50 text-amber-400 cursor-pointer" onClick={engine.exitIsolationMode}>
+              Isolation Mode — click to exit
+            </Badge>
+          )}
           <span className="text-muted-foreground">{zoomPercent}%</span>
           <div className="w-px h-5 bg-[hsl(220,15%,15%)]" />
           <span className="text-muted-foreground">{entityCount} objects</span>
           {state.selection.selectedIds.length > 0 && (
-            <>
-              <div className="w-px h-5 bg-[hsl(220,15%,15%)]" />
-              <Badge variant="outline" className="text-[10px] h-5 border-primary/30 text-primary">
-                {state.selection.selectedIds.length} selected
-              </Badge>
-            </>
+            <Badge variant="outline" className="text-[10px] h-5 border-primary/30 text-primary">{state.selection.selectedIds.length} selected</Badge>
           )}
         </div>
 
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" title="Import SVG">
-            <Upload className="w-3 h-3" /> Import
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadSVG()}>
-            <Download className="w-3 h-3" /> SVG
-          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1"><Upload className="w-3 h-3" /> Import</Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => engine.downloadSVG()}><Download className="w-3 h-3" /> SVG</Button>
         </div>
       </div>
 
@@ -464,83 +332,46 @@ export function IllustratorApp() {
                   {showDivider && <div className="w-6 h-px bg-[hsl(220,15%,15%)] my-1" />}
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className={cn(
-                          'w-8 h-8 rounded-md transition-all',
+                      <Button variant="ghost" size="icon"
+                        className={cn('w-8 h-8 rounded-md transition-all',
                           state.tool.activeToolId === tool.id
                             ? 'bg-primary/15 text-primary shadow-[0_0_8px_hsl(193,100%,50%,0.2)]'
                             : 'text-muted-foreground hover:text-foreground'
                         )}
                         onClick={() => engine.setTool(tool.id)}
-                      >
-                        <Icon className="w-4 h-4" />
-                      </Button>
+                      ><Icon className="w-4 h-4" /></Button>
                     </TooltipTrigger>
-                    <TooltipContent side="right" className="text-xs">
-                      {tool.label} <span className="text-muted-foreground ml-1">{tool.shortcut}</span>
-                    </TooltipContent>
+                    <TooltipContent side="right" className="text-xs">{tool.label} <span className="text-muted-foreground ml-1">{tool.shortcut}</span></TooltipContent>
                   </Tooltip>
                 </React.Fragment>
               );
             });
           })()}
-
-          {/* Color swatches at bottom */}
           <div className="mt-auto flex flex-col items-center gap-1.5 pt-2">
             <div className="relative w-7 h-7">
-              <div
-                className="absolute top-0 left-0 w-5 h-5 rounded-sm border border-[hsl(220,15%,25%)] cursor-pointer z-10"
-                style={{ backgroundColor: state.tool.fillColor }}
-                title="Fill color"
-              />
-              <div
-                className="absolute bottom-0 right-0 w-5 h-5 rounded-sm border border-[hsl(220,15%,25%)] cursor-pointer"
-                style={{ backgroundColor: state.tool.strokeColor }}
-                title="Stroke color"
-              />
+              <div className="absolute top-0 left-0 w-5 h-5 rounded-sm border border-[hsl(220,15%,25%)] cursor-pointer z-10" style={{ backgroundColor: state.tool.fillColor }} title="Fill color" />
+              <div className="absolute bottom-0 right-0 w-5 h-5 rounded-sm border border-[hsl(220,15%,25%)] cursor-pointer" style={{ backgroundColor: state.tool.strokeColor }} title="Stroke color" />
             </div>
           </div>
         </div>
 
         {/* Canvas */}
-        <div
-          ref={containerRef}
-          className="flex-1 relative overflow-hidden"
-          style={{ cursor: getCursorForTool(state.tool.activeToolId, isPanning), touchAction: 'none' }}
-        >
-          <canvas
-            ref={canvasRef}
-            className="absolute inset-0"
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
+        <div ref={containerRef} className="flex-1 relative overflow-hidden" style={{ cursor: getCursorForTool(state.tool.activeToolId, isPanning), touchAction: 'none' }}>
+          <canvas ref={canvasRef} className="absolute inset-0"
+            onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp}
             onPointerLeave={() => { setIsDrawing(false); setIsPanning(false); setDragStart(null); }}
-            onWheel={handleWheel}
-            onContextMenu={e => e.preventDefault()}
+            onWheel={handleWheel} onContextMenu={e => e.preventDefault()}
           />
-
-          {/* Floating zoom controls */}
           <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-[hsl(220,27%,6%)/90] backdrop-blur-sm rounded-lg border border-[hsl(220,15%,15%)] px-2 py-1">
-            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => engine.setZoom(state.viewport.zoom * 0.8)}>
-              <Minus className="w-3 h-3" />
-            </Button>
+            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => engine.setZoom(state.viewport.zoom * 0.8)}><Minus className="w-3 h-3" /></Button>
             <span className="text-[10px] w-10 text-center font-mono">{zoomPercent}%</span>
-            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => engine.setZoom(state.viewport.zoom * 1.25)}>
-              <Plus className="w-3 h-3" />
-            </Button>
+            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => engine.setZoom(state.viewport.zoom * 1.25)}><Plus className="w-3 h-3" /></Button>
             <div className="w-px h-4 bg-[hsl(220,15%,15%)]" />
-            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => { engine.setZoom(1); engine.pan(-state.viewport.panX, -state.viewport.panY); }}>
-              <Maximize2 className="w-3 h-3" />
-            </Button>
+            <Button variant="ghost" size="icon" className="w-6 h-6" onClick={() => { engine.setZoom(1); engine.pan(-state.viewport.panX, -state.viewport.panY); }}><Maximize2 className="w-3 h-3" /></Button>
           </div>
-
-          {/* Brush preset indicator */}
-          {(state.tool.activeToolId === 'brush') && (
+          {state.tool.activeToolId === 'brush' && (
             <div className="absolute top-3 left-3 bg-[hsl(220,27%,6%)/90] backdrop-blur-sm rounded-lg border border-[hsl(220,15%,15%)] px-3 py-1.5 text-[10px]">
-              <span className="text-muted-foreground">Brush:</span>{' '}
-              <span className="text-primary font-medium">{engine.activeBrushPreset.name}</span>
+              <span className="text-muted-foreground">Brush:</span> <span className="text-primary font-medium">{engine.activeBrushPreset.name}</span>
               <span className="text-muted-foreground ml-2">{engine.activeBrushPreset.baseSize}px</span>
             </div>
           )}
@@ -549,32 +380,14 @@ export function IllustratorApp() {
         {/* Right panel */}
         <div className="w-56 border-l border-[hsl(220,15%,12%)] bg-[hsl(220,27%,5%)] flex flex-col shrink-0">
           <div className="flex border-b border-[hsl(220,15%,12%)]">
-            <button
-              className={cn(
-                'flex-1 py-2 text-[11px] font-medium transition-colors',
-                activePanel === 'properties' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
-              )}
-              onClick={() => setActivePanel('properties')}
-            >
-              Properties
-            </button>
-            <button
-              className={cn(
-                'flex-1 py-2 text-[11px] font-medium transition-colors',
-                activePanel === 'layers' ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
-              )}
-              onClick={() => setActivePanel('layers')}
-            >
-              Layers
-            </button>
+            {(['properties', 'layers'] as const).map(tab => (
+              <button key={tab} className={cn('flex-1 py-2 text-[11px] font-medium transition-colors',
+                activePanel === tab ? 'text-primary border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'
+              )} onClick={() => setActivePanel(tab)}>{tab.charAt(0).toUpperCase() + tab.slice(1)}</button>
+            ))}
           </div>
-
           <ScrollArea className="flex-1">
-            {activePanel === 'properties' ? (
-              <PropertiesPanel engine={engine} selectedEntity={selectedEntity} />
-            ) : (
-              <LayersPanel engine={engine} />
-            )}
+            {activePanel === 'properties' ? <PropertiesPanel engine={engine} selectedEntity={selectedEntity} /> : <LayersPanel engine={engine} />}
           </ScrollArea>
         </div>
       </div>
@@ -608,15 +421,10 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           </div>
           <div className="flex flex-wrap gap-1">
             {PRESET_COLORS.map(color => (
-              <button
-                key={color}
-                className={cn(
-                  'w-5 h-5 rounded-sm border transition-all',
+              <button key={color}
+                className={cn('w-5 h-5 rounded-sm border transition-all',
                   state.tool.fillColor === color ? 'border-primary scale-110 shadow-[0_0_6px_hsl(193,100%,50%,0.3)]' : 'border-[hsl(220,15%,20%)] hover:border-[hsl(220,15%,30%)]'
-                )}
-                style={{ backgroundColor: color }}
-                onClick={() => engine.setFillColor(color)}
-              />
+                )} style={{ backgroundColor: color }} onClick={() => engine.setFillColor(color)} />
             ))}
           </div>
         </div>
@@ -634,43 +442,58 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           </div>
           <div className="flex flex-wrap gap-1">
             {PRESET_COLORS.map(color => (
-              <button
-                key={color}
-                className={cn(
-                  'w-5 h-5 rounded-sm border transition-all',
+              <button key={color}
+                className={cn('w-5 h-5 rounded-sm border transition-all',
                   state.tool.strokeColor === color ? 'border-primary scale-110 shadow-[0_0_6px_hsl(193,100%,50%,0.3)]' : 'border-[hsl(220,15%,20%)] hover:border-[hsl(220,15%,30%)]'
-                )}
-                style={{ backgroundColor: color }}
-                onClick={() => engine.setStrokeColor(color)}
-              />
+                )} style={{ backgroundColor: color }} onClick={() => engine.setStrokeColor(color)} />
             ))}
           </div>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-[10px] text-muted-foreground w-10">Width</span>
-            <Slider
-              value={[state.tool.strokeWidth]}
-              min={0} max={20} step={0.5}
-              onValueChange={([v]) => engine.setStrokeWidth(v)}
-              className="flex-1"
-            />
+            <Slider value={[state.tool.strokeWidth]} min={0} max={20} step={0.5} onValueChange={([v]) => engine.setStrokeWidth(v)} className="flex-1" />
             <span className="text-[10px] font-mono w-6 text-right">{state.tool.strokeWidth}</span>
           </div>
         </div>
       </div>
+
+      {/* Gradient presets */}
+      {state.tool.activeToolId === 'gradient' && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Gradient Presets</div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {GRADIENT_PRESETS.map(preset => (
+              <button key={preset.name}
+                className="h-8 rounded border border-[hsl(220,15%,20%)] hover:border-primary/50 transition-colors overflow-hidden"
+                style={{ background: `linear-gradient(135deg, ${preset.colors.join(', ')})` }}
+                title={preset.name}
+                onClick={() => {
+                  if (selectedEntity) {
+                    const gradient = createLinearGradient(preset.colors, 135);
+                    engine.applyGradient(selectedEntity.id, gradient);
+                  }
+                }}
+              />
+            ))}
+          </div>
+          <div className="flex gap-1 mt-2">
+            <Button variant="ghost" size="sm" className="h-7 text-[9px] flex-1" onClick={() => {
+              if (selectedEntity) engine.applyGradient(selectedEntity.id, createLinearGradient([state.tool.fillColor, state.tool.strokeColor]));
+            }}>Linear</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px] flex-1" onClick={() => {
+              if (selectedEntity) engine.applyGradient(selectedEntity.id, createRadialGradient([state.tool.fillColor, state.tool.strokeColor]));
+            }}>Radial</Button>
+          </div>
+        </div>
+      )}
 
       {/* Text properties */}
       {state.tool.activeToolId === 'text' && (
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Text</div>
           <div className="space-y-2">
-            <select
-              value={state.tool.fontFamily}
-              onChange={e => engine.setFontFamily(e.target.value)}
-              className="w-full h-7 text-[10px] bg-[hsl(220,15%,8%)] border border-[hsl(220,15%,15%)] rounded px-1 text-foreground"
-            >
-              {BUILT_IN_FONTS.map(f => (
-                <option key={f.family} value={f.family}>{f.family}</option>
-              ))}
+            <select value={state.tool.fontFamily} onChange={e => engine.setFontFamily(e.target.value)}
+              className="w-full h-7 text-[10px] bg-[hsl(220,15%,8%)] border border-[hsl(220,15%,15%)] rounded px-1 text-foreground">
+              {BUILT_IN_FONTS.map(f => <option key={f.family} value={f.family}>{f.family}</option>)}
             </select>
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-muted-foreground w-8">Size</span>
@@ -687,36 +510,15 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Brush Presets</div>
           <div className="space-y-1">
             {engine.brushPresets.map(preset => (
-              <button
-                key={preset.id}
-                className={cn(
-                  'w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] transition-colors',
-                  engine.activeBrushPreset.id === preset.id
-                    ? 'bg-primary/15 text-primary'
-                    : 'text-muted-foreground hover:bg-[hsl(220,15%,10%)] hover:text-foreground'
-                )}
-                onClick={() => engine.setActiveBrushPreset(preset)}
-              >
+              <button key={preset.id}
+                className={cn('w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[10px] transition-colors',
+                  engine.activeBrushPreset.id === preset.id ? 'bg-primary/15 text-primary' : 'text-muted-foreground hover:bg-[hsl(220,15%,10%)] hover:text-foreground'
+                )} onClick={() => engine.setActiveBrushPreset(preset)}>
                 <div className="w-4 h-4 rounded-full border border-[hsl(220,15%,20%)]" style={{ backgroundColor: preset.color }} />
                 <span className="flex-1 text-left">{preset.name}</span>
                 <span className="text-[8px] text-muted-foreground/60">{preset.baseSize}px</span>
               </button>
             ))}
-          </div>
-          <div className="mt-2 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground w-14">Size</span>
-              <Slider value={[engine.activeBrushPreset.baseSize]} min={1} max={100} step={1} className="flex-1" />
-              <span className="text-[10px] font-mono w-6 text-right">{engine.activeBrushPreset.baseSize}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground w-14">Opacity</span>
-              <Slider value={[engine.activeBrushPreset.opacity * 100]} min={0} max={100} step={1} className="flex-1" />
-              <span className="text-[10px] font-mono w-6 text-right">{Math.round(engine.activeBrushPreset.opacity * 100)}%</span>
-            </div>
-          </div>
-          <div className="mt-2 text-[9px] text-muted-foreground/50">
-            Stabilizer: {engine.activeBrushPreset.session.stabilizer.mode} • Min dist: {engine.activeBrushPreset.session.minDistance}px
           </div>
         </div>
       )}
@@ -726,29 +528,28 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Transform</div>
           <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground w-4">X</span>
-              <Input value={Math.round(selectedEntity.transform.translateX)} className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)]" readOnly />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground w-4">Y</span>
-              <Input value={Math.round(selectedEntity.transform.translateY)} className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)]" readOnly />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground w-4">W</span>
-              <Input value={Math.round(selectedEntity.shapeProps?.width ?? 0)} className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)]" readOnly />
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-muted-foreground w-4">H</span>
-              <Input value={Math.round(selectedEntity.shapeProps?.height ?? 0)} className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)]" readOnly />
-            </div>
+            {[['X', Math.round(selectedEntity.transform.translateX)], ['Y', Math.round(selectedEntity.transform.translateY)],
+              ['W', Math.round(selectedEntity.shapeProps?.width ?? 0)], ['H', Math.round(selectedEntity.shapeProps?.height ?? 0)]
+            ].map(([label, val]) => (
+              <div key={label as string} className="flex items-center gap-1">
+                <span className="text-muted-foreground w-4">{label}</span>
+                <Input value={val} className="h-6 text-[10px] bg-[hsl(220,15%,8%)] border-[hsl(220,15%,15%)]" readOnly />
+              </div>
+            ))}
           </div>
           <div className="flex gap-1 mt-3">
-            <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive" onClick={engine.deleteSelected}>
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <Button variant="ghost" size="icon" className="w-7 h-7 text-destructive" onClick={engine.deleteSelected}><Trash2 className="w-3.5 h-3.5" /></Button>
             <Button variant="ghost" size="icon" className="w-7 h-7"><Copy className="w-3.5 h-3.5" /></Button>
             <Button variant="ghost" size="icon" className="w-7 h-7"><RotateCw className="w-3.5 h-3.5" /></Button>
+          </div>
+
+          {/* Arrange */}
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">Arrange</div>
+          <div className="flex gap-0.5">
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('front')}><ChevronsUp className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Bring to Front</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('forward')}><ArrowUp className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Bring Forward</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('backward')}><ArrowDown className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Send Backward</TooltipContent></Tooltip>
+            <Tooltip><TooltipTrigger asChild><Button variant="ghost" size="icon" className="w-7 h-7" onClick={() => engine.arrangeEntity('back')}><ChevronsDown className="w-3.5 h-3.5" /></Button></TooltipTrigger><TooltipContent className="text-xs">Send to Back</TooltipContent></Tooltip>
           </div>
         </div>
       )}
@@ -758,10 +559,20 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Align</div>
           <div className="flex gap-0.5">
-            {[AlignLeft, AlignCenter, AlignRight, AlignStartVertical, AlignCenterVertical, AlignEndVertical].map((Icon, i) => (
-              <Button key={i} variant="ghost" size="icon" className="w-7 h-7"><Icon className="w-3.5 h-3.5" /></Button>
+            {([
+              [AlignLeft, 'left'], [AlignCenter, 'center-h'], [AlignRight, 'right'],
+              [AlignStartVertical, 'top'], [AlignCenterVertical, 'center-v'], [AlignEndVertical, 'bottom']
+            ] as [React.ComponentType<any>, string][]).map(([Icon, align], i) => (
+              <Button key={i} variant="ghost" size="icon" className="w-7 h-7"
+                onClick={() => engine.alignSelected(align as any)}><Icon className="w-3.5 h-3.5" /></Button>
             ))}
           </div>
+          {state.selection.selectedIds.length >= 3 && (
+            <div className="flex gap-1 mt-1">
+              <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1" onClick={() => engine.distributeSelected('horizontal')}>Distribute H</Button>
+              <Button variant="ghost" size="sm" className="h-6 text-[9px] flex-1" onClick={() => engine.distributeSelected('vertical')}>Distribute V</Button>
+            </div>
+          )}
         </div>
       )}
 
@@ -770,29 +581,20 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Path Ops</div>
           <div className="grid grid-cols-3 gap-1">
-            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathSimplify(2)}>
-              Simplify
-            </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathReverse()}>
-              Reverse
-            </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathOffset(5)}>
-              Offset
-            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathSimplify(2)}>Simplify</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathReverse()}>Reverse</Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathOffset(5)}>Offset</Button>
           </div>
           {state.selection.selectedIds.length >= 2 && (
             <>
-              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">Boolean</div>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">Pathfinder</div>
               <div className="grid grid-cols-3 gap-1">
-                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('union')}>
-                  Union
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('subtract')}>
-                  Subtract
-                </Button>
-                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('intersect')}>
-                  Intersect
-                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('union')}>Unite</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('subtract')}>Minus ▲</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('minus-back')}>Minus ▼</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('intersect')}>Intersect</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('exclude')}>Exclude</Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('divide')}>Divide</Button>
               </div>
             </>
           )}
@@ -803,10 +605,8 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
       {engine.nodeOverlay.enabled && (
         <div>
           <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Node Editing</div>
-          <p className="text-[9px] text-muted-foreground">Click anchors to move them. Drag handles to reshape curves. Press Delete to remove selected anchor.</p>
-          <Button variant="ghost" size="sm" className="h-7 text-[9px] mt-1 w-full" onClick={() => engine.exitNodeEdit()}>
-            Exit Node Edit
-          </Button>
+          <p className="text-[9px] text-muted-foreground">Click anchors to move them. Drag handles to reshape curves.</p>
+          <Button variant="ghost" size="sm" className="h-7 text-[9px] mt-1 w-full" onClick={() => engine.exitNodeEdit()}>Exit Node Edit</Button>
         </div>
       )}
     </div>
@@ -824,9 +624,7 @@ function LayersPanel({ engine }: { engine: ReturnType<typeof useDrawingEngine> }
     <div className="p-2 space-y-1">
       <div className="flex items-center justify-between px-1 mb-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Layers</span>
-        <Button variant="ghost" size="icon" className="w-6 h-6" onClick={engine.addLayer}>
-          <Plus className="w-3 h-3" />
-        </Button>
+        <Button variant="ghost" size="icon" className="w-6 h-6" onClick={engine.addLayer}><Plus className="w-3 h-3" /></Button>
       </div>
 
       {[...state.scene.layers].reverse().map(layer => {
@@ -835,37 +633,28 @@ function LayersPanel({ engine }: { engine: ReturnType<typeof useDrawingEngine> }
 
         return (
           <div key={layer.id} className="rounded-md overflow-hidden">
-            <div
-              className={cn(
-                'flex items-center gap-1.5 px-2 py-1.5 cursor-pointer transition-colors text-[11px]',
-                isActive ? 'bg-primary/10 text-primary' : 'hover:bg-[hsl(220,15%,10%)]'
-              )}
-              onClick={() => engine.setActiveLayer(layer.id)}
-            >
+            <div className={cn('flex items-center gap-1.5 px-2 py-1.5 cursor-pointer transition-colors text-[11px]',
+              isActive ? 'bg-primary/10 text-primary' : 'hover:bg-[hsl(220,15%,10%)]'
+            )} onClick={() => engine.setActiveLayer(layer.id)}>
               <Button variant="ghost" size="icon" className="w-5 h-5 shrink-0" onClick={e => { e.stopPropagation(); engine.toggleLayerVisibility(layer.id); }}>
                 {layer.visible ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3 text-muted-foreground/50" />}
               </Button>
               <span className="flex-1 truncate">{layer.name}</span>
-              <Badge variant="outline" className="text-[8px] h-4 px-1 border-[hsl(220,15%,20%)]">
-                {layerEntities.length}
-              </Badge>
+              <Badge variant="outline" className="text-[8px] h-4 px-1 border-[hsl(220,15%,20%)]">{layerEntities.length}</Badge>
               <Button variant="ghost" size="icon" className="w-5 h-5 shrink-0" onClick={e => { e.stopPropagation(); engine.toggleLayerLock(layer.id); }}>
                 {layer.locked ? <Lock className="w-3 h-3 text-muted-foreground/50" /> : <Unlock className="w-3 h-3" />}
               </Button>
             </div>
-
             {isActive && layerEntities.length > 0 && (
               <div className="pl-6 border-l border-[hsl(220,15%,12%)] ml-3">
                 {layerEntities.map(entity => (
-                  <div
-                    key={entity.id}
-                    className={cn(
-                      'flex items-center gap-1.5 px-2 py-1 text-[10px] cursor-pointer transition-colors',
+                  <div key={entity.id}
+                    className={cn('flex items-center gap-1.5 px-2 py-1 text-[10px] cursor-pointer transition-colors',
                       state.selection.selectedIds.includes(entity.id)
-                        ? 'bg-primary/5 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-[hsl(220,15%,8%)]'
+                        ? 'bg-primary/5 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-[hsl(220,15%,8%)]'
                     )}
                     onClick={() => engine.select([entity.id])}
+                    onDoubleClick={() => { if (entity.type === 'group') engine.enterIsolationMode(entity.id); }}
                   >
                     <div className="w-3 h-3 rounded-sm border border-[hsl(220,15%,20%)]" style={{ backgroundColor: entity.fill.color }} />
                     <span className="flex-1 truncate">{entity.name}</span>
@@ -894,6 +683,7 @@ function getCursorForTool(tool: ToolId, isPanning: boolean): string {
     case 'zoom': return 'zoom-in';
     case 'eyedropper': return 'crosshair';
     case 'text': return 'text';
+    case 'gradient': return 'crosshair';
     default: return 'crosshair';
   }
 }
