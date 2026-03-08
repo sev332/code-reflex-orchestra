@@ -14,7 +14,7 @@ import {
   Settings, AlignLeft, AlignCenter, AlignRight, Bold,
   Code2, ChevronDown, Presentation, MousePointer,
   Eye, EyeOff, Sparkles, GripVertical, ZoomIn, ZoomOut, X,
-  ArrowUp, ArrowDown, Layers, Lock, Unlock, Grid3x3, Minus,
+  ArrowUp, ArrowDown, ArrowLeft, Layers, Lock, Unlock, Grid3x3, Minus,
   RotateCcw, ExternalLink, Monitor, Timer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
