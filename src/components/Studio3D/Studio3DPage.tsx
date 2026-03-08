@@ -51,6 +51,7 @@ import { type PhysicsBodyConfig, type PhysicsWorldConfig, type PhysicsConstraint
 import { ViewportManagerPanel, type ViewportMode, type ViewportLayout, type CameraBookmark, type CinematicSettings, type ScreenshotConfig, defaultCinematic } from './ViewportManager';
 import { SceneManagerPanel, type SceneLayer, type Prefab, type FogConfig, type SkyConfig, defaultFog, defaultSky } from './SceneManager';
 import { BlueprintEditor } from './BlueprintEditor';
+import { AuroraEffect } from './AuroraEffect';
 
 // ─── Types ─────────────────────────────────────────
 
