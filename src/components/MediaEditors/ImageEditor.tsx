@@ -395,12 +395,46 @@ export function ImageEditor() {
                 <div className="space-y-3">
                   <div className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Active: {activeTool}</div>
                   
-                  {activeTool === 'lasso' && (
+              {activeTool === 'lasso' && (
                     <div className="space-y-3">
                       <div className="text-[10px] text-muted-foreground bg-muted/10 rounded-lg p-2 border border-border/20">
                         <p className="font-medium text-foreground/80 mb-1">Boundary Instrument</p>
-                        <p>Field-assisted lasso with edge attraction, tangent flow, and confidence tracking.</p>
+                        <p>Field-assisted lasso with edge attraction, organic backtrack, junction detection, and quality scoring.</p>
                       </div>
+
+                      {/* Quality report */}
+                      {lasso.qualityReport && lasso.phase === 'closed' && (
+                        <div className="bg-muted/10 rounded-lg p-2 border border-border/20 space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-medium text-foreground/80">Path Quality</span>
+                            <Badge variant="outline" className="text-[9px] h-4" style={{
+                              borderColor: lasso.qualityReport.overallScore >= 0.7 ? 'hsl(var(--primary))' :
+                                lasso.qualityReport.overallScore >= 0.4 ? 'hsl(40, 90%, 55%)' : 'hsl(0, 80%, 55%)'
+                            }}>
+                              {(lasso.qualityReport.overallScore * 100).toFixed(0)}%
+                            </Badge>
+                          </div>
+                          <div className="grid grid-cols-2 gap-x-2 gap-y-0.5 text-[9px] text-muted-foreground">
+                            <span>Confidence</span>
+                            <span className="text-right">{(lasso.qualityReport.avgConfidence * 100).toFixed(0)}%</span>
+                            <span>Smoothness</span>
+                            <span className="text-right">{(lasso.qualityReport.smoothness * 100).toFixed(0)}%</span>
+                            <span>Junctions</span>
+                            <span className="text-right">{lasso.qualityReport.junctionCount}</span>
+                            <span>Low-conf ratio</span>
+                            <span className="text-right">{(lasso.qualityReport.lowConfidenceRatio * 100).toFixed(0)}%</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Backtrack indicator */}
+                      {lasso.lastBacktrack && lasso.lastBacktrack.removedCount > 0 && lasso.phase === 'drawing' && (
+                        <div className="flex items-center gap-1.5 text-[10px] text-amber-400/80 bg-amber-400/5 rounded px-2 py-1 border border-amber-400/10">
+                          <Scissors className="w-3 h-3" />
+                          <span>Backtracked {lasso.lastBacktrack.removedCount} pts</span>
+                        </div>
+                      )}
+
                       <div>
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs">Mode</span>
@@ -441,16 +475,28 @@ export function ImageEditor() {
                           className="mt-1"
                         />
                       </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs">Show Field</span>
-                        <Button
-                          variant={lasso.lassoRef.current.config.showField ? "default" : "outline"}
-                          size="sm" className="h-6 text-[10px] px-2"
-                          onClick={() => lasso.setConfig({ showField: !lasso.lassoRef.current.config.showField })}
-                        >
-                          {lasso.lassoRef.current.config.showField ? 'On' : 'Off'}
-                        </Button>
-                      </div>
+
+                      {/* Phase 2+3 toggles */}
+                      <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider pt-1">Behavior</div>
+                      {[
+                        { key: 'enableOrganicUnzip' as const, label: 'Organic Backtrack' },
+                        { key: 'showJunctions' as const, label: 'Show Junctions' },
+                        { key: 'showConfidenceZones' as const, label: 'Confidence Zones' },
+                        { key: 'showQuality' as const, label: 'Quality Badge' },
+                        { key: 'showField' as const, label: 'Field Overlay' },
+                      ].map(toggle => (
+                        <div key={toggle.key} className="flex items-center justify-between">
+                          <span className="text-xs">{toggle.label}</span>
+                          <Button
+                            variant={lasso.lassoRef.current.config[toggle.key] ? "default" : "outline"}
+                            size="sm" className="h-6 text-[10px] px-2"
+                            onClick={() => lasso.setConfig({ [toggle.key]: !lasso.lassoRef.current.config[toggle.key] })}
+                          >
+                            {lasso.lassoRef.current.config[toggle.key] ? 'On' : 'Off'}
+                          </Button>
+                        </div>
+                      ))}
+
                       {lasso.phase === 'closed' && (
                         <Button size="sm" className="w-full text-xs gap-1" onClick={lasso.resetLasso}>
                           <X className="w-3 h-3" /> Clear Selection
