@@ -1494,9 +1494,10 @@ export function useDrawingEngine() {
     widthPresets: WIDTH_PRESETS,
     // Sprint 3: Duplicate
     duplicateSelected,
-    // Export
+    // Export/Import
     exportSVG,
     downloadSVG,
     downloadPNG,
+    importSVGFile,
   };
 }
