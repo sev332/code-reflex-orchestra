@@ -166,3 +166,36 @@
     background: hsl(var(--accent));
   }
 }
+
+/* Blueprint Canvas — Orchestration immersive styles */
+.blueprint-canvas .react-flow__node {
+  transition: filter 0.3s ease;
+}
+.blueprint-canvas .react-flow__node:hover {
+  filter: brightness(1.1);
+}
+.blueprint-canvas .react-flow__node.selected {
+  filter: brightness(1.15);
+}
+.blueprint-canvas .react-flow__edge path {
+  transition: stroke-opacity 0.3s ease, stroke-width 0.3s ease;
+}
+.blueprint-canvas .react-flow__controls {
+  background: hsl(var(--card) / 0.9) !important;
+  border: 1px solid hsl(var(--border) / 0.4) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px hsl(var(--background) / 0.5) !important;
+  backdrop-filter: blur(12px);
+}
+.blueprint-canvas .react-flow__controls button {
+  background: transparent !important;
+  border: none !important;
+  color: hsl(var(--foreground)) !important;
+  fill: hsl(var(--foreground)) !important;
+}
+.blueprint-canvas .react-flow__controls button:hover {
+  background: hsl(var(--muted)) !important;
+}
+.blueprint-canvas .react-flow__controls button svg {
+  fill: hsl(var(--foreground)) !important;
+}
