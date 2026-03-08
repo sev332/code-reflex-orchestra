@@ -1152,6 +1152,16 @@ export function Studio3DPage() {
           <TooltipContent side="bottom">Timeline</TooltipContent>
         </Tooltip>
 
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setShowBlueprint(v => !v)}
+              className={cn('w-8 h-8', showBlueprint && 'text-primary')}>
+              <Zap className="w-4 h-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Blueprint</TooltipContent>
+        </Tooltip>
+
         <Button variant="ghost" size="icon" onClick={() => setIsPlaying(v => !v)} className="w-8 h-8">
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
