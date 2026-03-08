@@ -534,6 +534,8 @@ export function renderScene(
   preview?: LivePreviewState,
   nodeOverlay?: NodeEditOverlay,
   transformHandles?: import('./node-editing').TransformHandle[],
+  entityEffects?: Record<string, EffectStack>,
+  smartGuides?: import('./smart-guides').SmartGuide[],
 ) {
   ctx.clearRect(0, 0, cw, ch);
   ctx.fillStyle = 'hsl(220,27%,4%)';
@@ -544,7 +546,7 @@ export function renderScene(
     if (!layer.visible) continue;
     for (const eid of layer.entities) {
       const e = scene.entities[eid];
-      if (e) renderEntity(ctx, e, vp, selectedIds.includes(eid), hoveredId === eid);
+      if (e) renderEntity(ctx, e, vp, selectedIds.includes(eid), hoveredId === eid, entityEffects);
     }
   }
   if (preview) renderLivePreview(ctx, vp, preview);
@@ -554,6 +556,11 @@ export function renderScene(
   }
   if (transformHandles && transformHandles.length > 0) {
     renderTransformHandles(ctx, transformHandles, vp);
+  }
+  // Render smart guides on top
+  if (smartGuides && smartGuides.length > 0) {
+    const { renderSmartGuides } = require('./smart-guides');
+    renderSmartGuides(ctx, smartGuides, vp);
   }
 }
 
