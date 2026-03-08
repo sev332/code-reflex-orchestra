@@ -13,6 +13,7 @@ import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
 import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
+import { BottomDock } from "@/components/layout/BottomDock";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 
 // Lazy load all heavy pages
