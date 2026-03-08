@@ -600,6 +600,7 @@ function LeftDrawerContent({ page, sideTab, subTab, onNavigate }: { page: PageId
   }
 
   return <BlueprintFallbackPanel page={page} sideTab={sideTab} />;
+}
 
 // ─── Sub-panels (same as before, abbreviated) ──────────
 
