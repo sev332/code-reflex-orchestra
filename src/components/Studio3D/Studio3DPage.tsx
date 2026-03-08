@@ -1,11 +1,18 @@
-// 3D Studio — hybrid CAD + scene editor built on React Three Fiber
+// 3D Studio — Unreal-class scene editor built on React Three Fiber
+// Phase 1: Post-Processing Pipeline + Advanced PBR Materials
 import React, { useState, useCallback, useRef, useMemo, Suspense } from 'react';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
   OrbitControls, TransformControls, Grid, GizmoHelper, GizmoViewport,
-  Environment, ContactShadows, PerspectiveCamera, Html, useHelper,
-  MeshReflectorMaterial, Sky, Stars,
+  Environment, ContactShadows, PerspectiveCamera, useHelper,
+  Sky, Stars,
 } from '@react-three/drei';
+import {
+  EffectComposer, Bloom, SSAO, DepthOfField, Vignette,
+  ChromaticAberration, ToneMapping, BrightnessContrast,
+  HueSaturation,
+} from '@react-three/postprocessing';
+import { BlendFunction, ToneMappingMode } from 'postprocessing';
 import * as THREE from 'three';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,15 +22,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Box, Circle, Cylinder, Triangle, Diamond, Move, RotateCcw, Maximize2,
   Eye, EyeOff, Lock, Unlock, Trash2, Copy, Plus, Minus, ChevronRight,
   ChevronDown, Layers, Sun, Moon, Palette, Wand2, Download, Upload,
   Settings, Play, Pause, SkipBack, Code2, Search, Grid3x3, Magnet,
   Maximize, Minimize, Lightbulb, Camera, Undo2, Redo2, MousePointer,
-  Square, Hexagon, Cone,
+  Square, Hexagon, Cone, Sparkles, SlidersHorizontal,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { RenderSettingsPanel, defaultPostProcessing, type PostProcessingSettings } from './RenderSettings';
+import { MaterialLibraryPanel, materialPresets, type PBRMaterialPreset } from './MaterialLibrary';
 
 // ─── Types ─────────────────────────────────────────
 
@@ -45,6 +57,20 @@ interface SceneObject {
   receiveShadow: boolean;
   children?: string[];
   parentId?: string;
+  // Advanced PBR
+  emissive: string;
+  emissiveIntensity: number;
+  clearcoat: number;
+  clearcoatRoughness: number;
+  transmission: number;
+  ior: number;
+  thickness: number;
+  sheen: number;
+  sheenRoughness: number;
+  sheenColor: string;
+  iridescence: number;
+  iridescenceIOR: number;
+  envMapIntensity: number;
   // Light-specific
   intensity?: number;
   lightColor?: string;
@@ -61,49 +87,42 @@ interface ShaderPreset {
 }
 
 type TransformMode = 'translate' | 'rotate' | 'scale';
-type ViewMode = 'perspective' | 'top' | 'front' | 'right';
 
 // ─── Shader Library ────────────────────────────────
 
 const shaderPresets: ShaderPreset[] = [
   {
-    id: 'hologram', name: 'Hologram', category: 'Sci-Fi',
-    thumbnail: '🔮',
+    id: 'hologram', name: 'Hologram', category: 'Sci-Fi', thumbnail: '🔮',
     vertexShader: `varying vec2 vUv; varying vec3 vNormal; void main() { vUv = uv; vNormal = normal; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `uniform float time; varying vec2 vUv; varying vec3 vNormal; void main() { float scanline = sin(vUv.y * 100.0 + time * 3.0) * 0.1 + 0.9; float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0,0,1))), 2.0); vec3 color = mix(vec3(0.0, 0.8, 1.0), vec3(0.0, 0.4, 1.0), fresnel); gl_FragColor = vec4(color * scanline, 0.5 + fresnel * 0.3); }`,
     uniforms: { time: { value: 0 } },
   },
   {
-    id: 'lava', name: 'Lava Flow', category: 'Nature',
-    thumbnail: '🌋',
+    id: 'lava', name: 'Lava Flow', category: 'Nature', thumbnail: '🌋',
     vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `uniform float time; varying vec2 vUv; void main() { vec2 uv = vUv * 4.0; float n = sin(uv.x * 3.0 + time) * cos(uv.y * 3.0 + time * 0.7) * 0.5 + 0.5; vec3 col = mix(vec3(1.0, 0.2, 0.0), vec3(1.0, 0.8, 0.0), n); gl_FragColor = vec4(col, 1.0); }`,
     uniforms: { time: { value: 0 } },
   },
   {
-    id: 'wave', name: 'Wave Distort', category: 'Abstract',
-    thumbnail: '🌊',
+    id: 'wave', name: 'Wave Distort', category: 'Abstract', thumbnail: '🌊',
     vertexShader: `uniform float time; varying vec2 vUv; void main() { vUv = uv; vec3 pos = position; pos.z += sin(pos.x * 3.0 + time) * 0.3 * cos(pos.y * 3.0 + time * 0.7); gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0); }`,
     fragmentShader: `varying vec2 vUv; void main() { vec3 col = mix(vec3(0.1, 0.3, 0.8), vec3(0.0, 0.7, 0.9), vUv.y); gl_FragColor = vec4(col, 1.0); }`,
     uniforms: { time: { value: 0 } },
   },
   {
-    id: 'disco', name: 'Disco Ball', category: 'Abstract',
-    thumbnail: '🪩',
+    id: 'disco', name: 'Disco Ball', category: 'Abstract', thumbnail: '🪩',
     vertexShader: `varying vec3 vNormal; varying vec3 vPosition; void main() { vNormal = normal; vPosition = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `uniform float time; varying vec3 vNormal; varying vec3 vPosition; void main() { float angle = atan(vPosition.x, vPosition.z); float h = vPosition.y; float pattern = step(0.5, fract(angle * 5.0 + time)) * step(0.5, fract(h * 8.0)); vec3 col = pattern > 0.5 ? vec3(1.0, 0.2, 0.8) : vec3(0.2, 0.8, 1.0); col *= 0.8 + 0.2 * sin(time * 3.0 + angle * 2.0); gl_FragColor = vec4(col, 1.0); }`,
     uniforms: { time: { value: 0 } },
   },
   {
-    id: 'grid-shader', name: 'Tron Grid', category: 'Sci-Fi',
-    thumbnail: '📐',
+    id: 'grid-shader', name: 'Tron Grid', category: 'Sci-Fi', thumbnail: '📐',
     vertexShader: `varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `uniform float time; varying vec2 vUv; void main() { vec2 grid = abs(fract(vUv * 10.0) - 0.5); float line = min(grid.x, grid.y); float g = smoothstep(0.0, 0.05, line); vec3 col = mix(vec3(0.0, 1.0, 0.8), vec3(0.0, 0.05, 0.1), g); col += 0.1 * sin(time + vUv.y * 20.0); gl_FragColor = vec4(col, 1.0); }`,
     uniforms: { time: { value: 0 } },
   },
   {
-    id: 'marble', name: 'Marble', category: 'Nature',
-    thumbnail: '🪨',
+    id: 'marble', name: 'Marble', category: 'Nature', thumbnail: '🪨',
     vertexShader: `varying vec2 vUv; varying vec3 vPosition; void main() { vUv = uv; vPosition = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
     fragmentShader: `varying vec3 vPosition; void main() { float n = sin(vPosition.x * 5.0 + sin(vPosition.y * 3.0 + vPosition.z * 4.0) * 2.0) * 0.5 + 0.5; vec3 col = mix(vec3(0.95, 0.93, 0.9), vec3(0.3, 0.3, 0.35), n * n); gl_FragColor = vec4(col, 1.0); }`,
     uniforms: {},
@@ -112,6 +131,24 @@ const shaderPresets: ShaderPreset[] = [
 
 const shaderCategories = ['All', 'Sci-Fi', 'Nature', 'Abstract'];
 
+// ─── Default PBR properties ───────────────────────
+
+const defaultPBR = {
+  emissive: '#000000',
+  emissiveIntensity: 0,
+  clearcoat: 0,
+  clearcoatRoughness: 0,
+  transmission: 0,
+  ior: 1.5,
+  thickness: 0,
+  sheen: 0,
+  sheenRoughness: 0,
+  sheenColor: '#000000',
+  iridescence: 0,
+  iridescenceIOR: 1.3,
+  envMapIntensity: 1.0,
+};
+
 // ─── Default Scene ─────────────────────────────────
 
 const createDefaultScene = (): SceneObject[] => [
@@ -119,36 +156,105 @@ const createDefaultScene = (): SceneObject[] => [
     id: 'cube-1', name: 'Cube', type: 'cube',
     position: [0, 0.5, 0], rotation: [0, 0, 0], scale: [1, 1, 1],
     visible: true, locked: false, color: '#4488ff', metalness: 0.3, roughness: 0.4,
-    opacity: 1, wireframe: false, castShadow: true, receiveShadow: true,
+    opacity: 1, wireframe: false, castShadow: true, receiveShadow: true, ...defaultPBR,
   },
   {
     id: 'sphere-1', name: 'Sphere', type: 'sphere',
     position: [2.5, 0.8, 0], rotation: [0, 0, 0], scale: [0.8, 0.8, 0.8],
     visible: true, locked: false, color: '#ff4488', metalness: 0.6, roughness: 0.2,
-    opacity: 1, wireframe: false, castShadow: true, receiveShadow: true,
+    opacity: 1, wireframe: false, castShadow: true, receiveShadow: true, ...defaultPBR,
   },
   {
     id: 'cylinder-1', name: 'Cylinder', type: 'cylinder',
     position: [-2.5, 0.75, 0], rotation: [0, 0, 0], scale: [0.6, 1.5, 0.6],
     visible: true, locked: false, color: '#44ff88', metalness: 0.1, roughness: 0.7,
-    opacity: 1, wireframe: false, castShadow: true, receiveShadow: true,
+    opacity: 1, wireframe: false, castShadow: true, receiveShadow: true, ...defaultPBR,
   },
   {
     id: 'plane-1', name: 'Ground Plane', type: 'plane',
     position: [0, 0, 0], rotation: [-Math.PI / 2, 0, 0], scale: [20, 20, 1],
     visible: true, locked: true, color: '#222233', metalness: 0.0, roughness: 0.8,
-    opacity: 1, wireframe: false, castShadow: false, receiveShadow: true,
+    opacity: 1, wireframe: false, castShadow: false, receiveShadow: true, ...defaultPBR,
   },
   {
     id: 'light-1', name: 'Key Light', type: 'light-directional',
     position: [5, 8, 5], rotation: [0, 0, 0], scale: [1, 1, 1],
     visible: true, locked: false, color: '#ffffff', metalness: 0, roughness: 0,
     opacity: 1, wireframe: false, castShadow: true, receiveShadow: false,
-    intensity: 1.5, lightColor: '#ffffff',
+    intensity: 1.5, lightColor: '#ffffff', ...defaultPBR,
   },
 ];
 
-// ─── Scene Object Component ────────────────────────
+// ─── Tone Mapping Map ──────────────────────────────
+
+const toneMappingModes: Record<string, ToneMappingMode> = {
+  aces: ToneMappingMode.ACES_FILMIC,
+  reinhard: ToneMappingMode.REINHARD2,
+  cineon: ToneMappingMode.OPTIMIZED_CINEON,
+  agx: ToneMappingMode.AGX,
+  linear: ToneMappingMode.LINEAR,
+};
+
+// ─── Post-Processing Stack Component ───────────────
+
+function PostProcessingStack({ settings }: { settings: PostProcessingSettings }) {
+  const chromaticOffset = useMemo(
+    () => new THREE.Vector2(settings.chromaticOffset, settings.chromaticOffset),
+    [settings.chromaticOffset]
+  );
+
+  return (
+    <EffectComposer multisampling={4}>
+      {settings.ssaoEnabled && (
+        <SSAO
+          intensity={settings.ssaoIntensity}
+          radius={settings.ssaoRadius}
+          bias={settings.ssaoBias}
+          luminanceInfluence={0.5}
+          samples={21}
+          rings={4}
+        />
+      )}
+      {settings.bloomEnabled && (
+        <Bloom
+          intensity={settings.bloomIntensity}
+          luminanceThreshold={settings.bloomThreshold}
+          luminanceSmoothing={settings.bloomRadius}
+          mipmapBlur
+        />
+      )}
+      {settings.dofEnabled && (
+        <DepthOfField
+          focusDistance={settings.dofFocusDistance / 30}
+          focalLength={settings.dofFocalLength}
+          bokehScale={settings.dofBokehScale}
+        />
+      )}
+      {settings.chromaticEnabled && (
+        <ChromaticAberration
+          offset={chromaticOffset}
+          blendFunction={BlendFunction.NORMAL}
+          radialModulation={false}
+          modulationOffset={0}
+        />
+      )}
+      <BrightnessContrast
+        brightness={settings.brightness - 1}
+        contrast={settings.contrast - 1}
+      />
+      <HueSaturation saturation={settings.saturation - 1} />
+      {settings.vignetteEnabled && (
+        <Vignette
+          offset={settings.vignetteOffset}
+          darkness={settings.vignetteIntensity}
+        />
+      )}
+      <ToneMapping mode={toneMappingModes[settings.toneMapping] ?? ToneMappingMode.ACES_FILMIC} />
+    </EffectComposer>
+  );
+}
+
+// ─── Scene Object Component (Advanced PBR) ─────────
 
 function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSelected: boolean; onClick: () => void }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -156,10 +262,10 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
   const geometry = useMemo(() => {
     switch (obj.type) {
       case 'cube': return <boxGeometry args={[1, 1, 1]} />;
-      case 'sphere': return <sphereGeometry args={[1, 32, 32]} />;
+      case 'sphere': return <sphereGeometry args={[1, 64, 64]} />;
       case 'cylinder': return <cylinderGeometry args={[0.5, 0.5, 1, 32]} />;
       case 'cone': return <coneGeometry args={[0.5, 1, 32]} />;
-      case 'torus': return <torusGeometry args={[0.7, 0.3, 16, 48]} />;
+      case 'torus': return <torusGeometry args={[0.7, 0.3, 32, 64]} />;
       case 'plane': return <planeGeometry args={[1, 1]} />;
       default: return <boxGeometry args={[1, 1, 1]} />;
     }
@@ -175,6 +281,14 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
           intensity={obj.intensity || 1}
           color={obj.lightColor || '#ffffff'}
           castShadow={obj.castShadow}
+          shadow-mapSize-width={2048}
+          shadow-mapSize-height={2048}
+          shadow-camera-near={0.1}
+          shadow-camera-far={50}
+          shadow-camera-left={-10}
+          shadow-camera-right={10}
+          shadow-camera-top={10}
+          shadow-camera-bottom={-10}
         />
       );
     }
@@ -185,6 +299,8 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
           intensity={obj.intensity || 1}
           color={obj.lightColor || '#ffffff'}
           castShadow={obj.castShadow}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
         />
       );
     }
@@ -197,6 +313,8 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
           castShadow={obj.castShadow}
           angle={0.5}
           penumbra={0.5}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
         />
       );
     }
@@ -214,13 +332,26 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
       onClick={(e) => { e.stopPropagation(); onClick(); }}
     >
       {geometry}
-      <meshStandardMaterial
+      <meshPhysicalMaterial
         color={obj.color}
         metalness={obj.metalness}
         roughness={obj.roughness}
-        transparent={obj.opacity < 1}
+        transparent={obj.opacity < 1 || obj.transmission > 0}
         opacity={obj.opacity}
         wireframe={obj.wireframe}
+        emissive={obj.emissive}
+        emissiveIntensity={obj.emissiveIntensity}
+        clearcoat={obj.clearcoat}
+        clearcoatRoughness={obj.clearcoatRoughness}
+        transmission={obj.transmission}
+        ior={obj.ior}
+        thickness={obj.thickness}
+        sheen={obj.sheen}
+        sheenRoughness={obj.sheenRoughness}
+        sheenColor={obj.sheenColor}
+        iridescence={obj.iridescence}
+        iridescenceIOR={obj.iridescenceIOR}
+        envMapIntensity={obj.envMapIntensity}
       />
       {isSelected && (
         <lineSegments>
@@ -232,6 +363,199 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
   );
 }
 
+// ─── Advanced Material Inspector ───────────────────
+
+function MaterialInspector({ obj, onUpdate }: { obj: SceneObject; onUpdate: (updates: Partial<SceneObject>) => void }) {
+  if (obj.type.startsWith('light-')) {
+    return (
+      <div className="space-y-3">
+        <div className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Light Properties</div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Color</span>
+            <input
+              type="color" value={obj.lightColor || '#ffffff'}
+              onChange={e => onUpdate({ lightColor: e.target.value })}
+              className="w-8 h-6 rounded border border-border/30 cursor-pointer"
+            />
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span className="text-[10px] text-muted-foreground">Intensity</span>
+              <span className="text-[10px] text-muted-foreground tabular-nums">{(obj.intensity ?? 1).toFixed(1)}</span>
+            </div>
+            <Slider value={[obj.intensity ?? 1]} onValueChange={([v]) => onUpdate({ intensity: v })} min={0} max={10} step={0.1} />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Cast Shadow</span>
+            <Switch checked={obj.castShadow} onCheckedChange={v => onUpdate({ castShadow: v })} className="scale-75" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ScrollArea className="h-[calc(100%-2rem)]">
+      <div className="space-y-3 pr-1">
+        <div className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">PBR Material</div>
+
+        {/* Base Properties */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Color</span>
+            <input type="color" value={obj.color} onChange={e => onUpdate({ color: e.target.value })} className="w-8 h-6 rounded border border-border/30 cursor-pointer" />
+          </div>
+          {[
+            { label: 'Metalness', key: 'metalness' as const, max: 1 },
+            { label: 'Roughness', key: 'roughness' as const, max: 1 },
+            { label: 'Opacity', key: 'opacity' as const, max: 1 },
+          ].map(({ label, key, max }) => (
+            <div key={key} className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[10px] text-muted-foreground">{label}</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{(obj[key] as number).toFixed(2)}</span>
+              </div>
+              <Slider value={[obj[key] as number]} onValueChange={([v]) => onUpdate({ [key]: v })} min={0} max={max} step={0.01} />
+            </div>
+          ))}
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Emissive */}
+        <div className="space-y-2">
+          <Label className="text-[10px] font-medium text-foreground/60">EMISSIVE</Label>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Emissive Color</span>
+            <input type="color" value={obj.emissive} onChange={e => onUpdate({ emissive: e.target.value })} className="w-8 h-6 rounded border border-border/30 cursor-pointer" />
+          </div>
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span className="text-[10px] text-muted-foreground">Intensity</span>
+              <span className="text-[10px] text-muted-foreground tabular-nums">{obj.emissiveIntensity.toFixed(1)}</span>
+            </div>
+            <Slider value={[obj.emissiveIntensity]} onValueChange={([v]) => onUpdate({ emissiveIntensity: v })} min={0} max={5} step={0.1} />
+          </div>
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Clearcoat */}
+        <div className="space-y-2">
+          <Label className="text-[10px] font-medium text-foreground/60">CLEARCOAT</Label>
+          {[
+            { label: 'Clearcoat', key: 'clearcoat' as const },
+            { label: 'Clearcoat Roughness', key: 'clearcoatRoughness' as const },
+          ].map(({ label, key }) => (
+            <div key={key} className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[10px] text-muted-foreground">{label}</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{(obj[key] as number).toFixed(2)}</span>
+              </div>
+              <Slider value={[obj[key] as number]} onValueChange={([v]) => onUpdate({ [key]: v })} min={0} max={1} step={0.01} />
+            </div>
+          ))}
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Transmission (Glass) */}
+        <div className="space-y-2">
+          <Label className="text-[10px] font-medium text-foreground/60">TRANSMISSION (GLASS)</Label>
+          {[
+            { label: 'Transmission', key: 'transmission' as const, max: 1 },
+            { label: 'IOR', key: 'ior' as const, min: 1.0, max: 2.5, step: 0.01 },
+            { label: 'Thickness', key: 'thickness' as const, max: 5, step: 0.1 },
+          ].map(({ label, key, min, max, step }) => (
+            <div key={key} className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[10px] text-muted-foreground">{label}</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{(obj[key] as number).toFixed(2)}</span>
+              </div>
+              <Slider value={[obj[key] as number]} onValueChange={([v]) => onUpdate({ [key]: v })} min={min ?? 0} max={max ?? 1} step={step ?? 0.01} />
+            </div>
+          ))}
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Sheen (Fabric) */}
+        <div className="space-y-2">
+          <Label className="text-[10px] font-medium text-foreground/60">SHEEN (FABRIC)</Label>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Sheen Color</span>
+            <input type="color" value={obj.sheenColor} onChange={e => onUpdate({ sheenColor: e.target.value })} className="w-8 h-6 rounded border border-border/30 cursor-pointer" />
+          </div>
+          {[
+            { label: 'Sheen', key: 'sheen' as const },
+            { label: 'Sheen Roughness', key: 'sheenRoughness' as const },
+          ].map(({ label, key }) => (
+            <div key={key} className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[10px] text-muted-foreground">{label}</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{(obj[key] as number).toFixed(2)}</span>
+              </div>
+              <Slider value={[obj[key] as number]} onValueChange={([v]) => onUpdate({ [key]: v })} min={0} max={1} step={0.01} />
+            </div>
+          ))}
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Iridescence */}
+        <div className="space-y-2">
+          <Label className="text-[10px] font-medium text-foreground/60">IRIDESCENCE</Label>
+          {[
+            { label: 'Iridescence', key: 'iridescence' as const, max: 1 },
+            { label: 'Iridescence IOR', key: 'iridescenceIOR' as const, min: 1.0, max: 2.5, step: 0.01 },
+          ].map(({ label, key, min, max, step }) => (
+            <div key={key} className="space-y-1">
+              <div className="flex justify-between">
+                <span className="text-[10px] text-muted-foreground">{label}</span>
+                <span className="text-[10px] text-muted-foreground tabular-nums">{(obj[key] as number).toFixed(2)}</span>
+              </div>
+              <Slider value={[obj[key] as number]} onValueChange={([v]) => onUpdate({ [key]: v })} min={min ?? 0} max={max ?? 1} step={step ?? 0.01} />
+            </div>
+          ))}
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Environment */}
+        <div className="space-y-2">
+          <Label className="text-[10px] font-medium text-foreground/60">ENVIRONMENT</Label>
+          <div className="space-y-1">
+            <div className="flex justify-between">
+              <span className="text-[10px] text-muted-foreground">Env Map Intensity</span>
+              <span className="text-[10px] text-muted-foreground tabular-nums">{obj.envMapIntensity.toFixed(1)}</span>
+            </div>
+            <Slider value={[obj.envMapIntensity]} onValueChange={([v]) => onUpdate({ envMapIntensity: v })} min={0} max={3} step={0.1} />
+          </div>
+        </div>
+
+        <Separator className="bg-border/20" />
+
+        {/* Toggles */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Wireframe</span>
+            <Switch checked={obj.wireframe} onCheckedChange={v => onUpdate({ wireframe: v })} className="scale-75" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Cast Shadow</span>
+            <Switch checked={obj.castShadow} onCheckedChange={v => onUpdate({ castShadow: v })} className="scale-75" />
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-[10px] text-muted-foreground">Receive Shadow</span>
+            <Switch checked={obj.receiveShadow} onCheckedChange={v => onUpdate({ receiveShadow: v })} className="scale-75" />
+          </div>
+        </div>
+      </div>
+    </ScrollArea>
+  );
+}
+
 // ─── Main 3D Studio Component ──────────────────────
 
 export function Studio3DPage() {
@@ -240,13 +564,13 @@ export function Studio3DPage() {
   const [transformMode, setTransformMode] = useState<TransformMode>('translate');
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(false);
-  const [showWireframes, setShowWireframes] = useState(false);
   const [environment, setEnvironment] = useState<string>('studio');
-  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders'>('inspector');
+  const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render'>('inspector');
   const [shaderCategory, setShaderCategory] = useState('All');
   const [shaderSearch, setShaderSearch] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [undoStack, setUndoStack] = useState<SceneObject[][]>([]);
+  const [postProcessing, setPostProcessing] = useState<PostProcessingSettings>(defaultPostProcessing);
 
   const selectedObj = objects.find(o => o.id === selectedId) || null;
 
@@ -283,6 +607,7 @@ export function Studio3DPage() {
       metalness: 0.3, roughness: 0.5, opacity: 1, wireframe: false,
       castShadow: !type.startsWith('light'), receiveShadow: !type.startsWith('light'),
       ...(type.startsWith('light') ? { intensity: 1, lightColor: '#ffffff' } : {}),
+      ...defaultPBR,
     };
     setObjects(prev => [...prev, newObj]);
     setSelectedId(id);
@@ -312,6 +637,31 @@ export function Studio3DPage() {
     setSelectedId(newObj.id);
   }, [selectedId, objects, pushUndo]);
 
+  const applyMaterialPreset = useCallback((preset: PBRMaterialPreset) => {
+    if (!selectedId) return;
+    pushUndo();
+    setObjects(prev => prev.map(o => o.id === selectedId ? {
+      ...o,
+      color: preset.color,
+      metalness: preset.metalness,
+      roughness: preset.roughness,
+      opacity: preset.opacity,
+      emissive: preset.emissive,
+      emissiveIntensity: preset.emissiveIntensity,
+      clearcoat: preset.clearcoat,
+      clearcoatRoughness: preset.clearcoatRoughness,
+      transmission: preset.transmission,
+      ior: preset.ior,
+      thickness: preset.thickness,
+      sheen: preset.sheen,
+      sheenRoughness: preset.sheenRoughness,
+      sheenColor: preset.sheenColor,
+      iridescence: preset.iridescence,
+      iridescenceIOR: preset.iridescenceIOR,
+      envMapIntensity: preset.envMapIntensity,
+    } : o));
+  }, [selectedId, pushUndo]);
+
   const filteredShaders = useMemo(() => {
     return shaderPresets.filter(s => {
       if (shaderCategory !== 'All' && s.category !== shaderCategory) return false;
@@ -319,9 +669,6 @@ export function Studio3DPage() {
       return true;
     });
   }, [shaderCategory, shaderSearch]);
-
-  const meshObjects = objects.filter(o => !o.type.startsWith('light-'));
-  const lightObjects = objects.filter(o => o.type.startsWith('light-'));
 
   return (
     <div className="h-full flex flex-col bg-background/30">
@@ -336,11 +683,8 @@ export function Studio3DPage() {
           ]).map(({ mode, icon: Icon, label }) => (
             <Tooltip key={mode} delayDuration={200}>
               <TooltipTrigger asChild>
-                <Button
-                  variant="ghost" size="icon"
-                  onClick={() => setTransformMode(mode)}
-                  className={cn('w-8 h-8', transformMode === mode && 'bg-primary/20 text-primary')}
-                >
+                <Button variant="ghost" size="icon" onClick={() => setTransformMode(mode)}
+                  className={cn('w-8 h-8', transformMode === mode && 'bg-primary/20 text-primary')}>
                   <Icon className="w-4 h-4" />
                 </Button>
               </TooltipTrigger>
@@ -349,11 +693,8 @@ export function Studio3DPage() {
           ))}
           <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost" size="icon"
-                onClick={() => setSelectedId(null)}
-                className={cn('w-8 h-8', !selectedId && 'bg-primary/20 text-primary')}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setSelectedId(null)}
+                className={cn('w-8 h-8', !selectedId && 'bg-primary/20 text-primary')}>
                 <MousePointer className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
@@ -364,12 +705,12 @@ export function Studio3DPage() {
         {/* Add primitives */}
         <div className="flex items-center gap-0.5 border-r border-border/30 pr-2 mr-1">
           {([
-            { type: 'cube' as const, icon: Box, label: 'Add Cube' },
-            { type: 'sphere' as const, icon: Circle, label: 'Add Sphere' },
-            { type: 'cylinder' as const, icon: Cylinder, label: 'Add Cylinder' },
-            { type: 'cone' as const, icon: Cone, label: 'Add Cone' },
-            { type: 'torus' as const, icon: Diamond, label: 'Add Torus' },
-            { type: 'plane' as const, icon: Square, label: 'Add Plane' },
+            { type: 'cube' as const, icon: Box, label: 'Cube' },
+            { type: 'sphere' as const, icon: Circle, label: 'Sphere' },
+            { type: 'cylinder' as const, icon: Cylinder, label: 'Cylinder' },
+            { type: 'cone' as const, icon: Cone, label: 'Cone' },
+            { type: 'torus' as const, icon: Diamond, label: 'Torus' },
+            { type: 'plane' as const, icon: Square, label: 'Plane' },
           ]).map(({ type, icon: Icon, label }) => (
             <Tooltip key={type} delayDuration={200}>
               <TooltipTrigger asChild>
@@ -398,7 +739,7 @@ export function Studio3DPage() {
                 <Sun className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="bottom">Directional Light</TooltipContent>
+            <TooltipContent side="bottom">Dir Light</TooltipContent>
           </Tooltip>
         </div>
 
@@ -406,11 +747,8 @@ export function Studio3DPage() {
         <div className="flex items-center gap-0.5 border-r border-border/30 pr-2 mr-1">
           <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost" size="icon"
-                onClick={() => setShowGrid(v => !v)}
-                className={cn('w-8 h-8', showGrid && 'text-primary')}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setShowGrid(v => !v)}
+                className={cn('w-8 h-8', showGrid && 'text-primary')}>
                 <Grid3x3 className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
@@ -418,11 +756,8 @@ export function Studio3DPage() {
           </Tooltip>
           <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
-              <Button
-                variant="ghost" size="icon"
-                onClick={() => setSnapEnabled(v => !v)}
-                className={cn('w-8 h-8', snapEnabled && 'text-primary')}
-              >
+              <Button variant="ghost" size="icon" onClick={() => setSnapEnabled(v => !v)}
+                className={cn('w-8 h-8', snapEnabled && 'text-primary')}>
                 <Magnet className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
@@ -430,7 +765,7 @@ export function Studio3DPage() {
           </Tooltip>
         </div>
 
-        {/* Undo/Redo */}
+        {/* Undo */}
         <div className="flex items-center gap-0.5 border-r border-border/30 pr-2 mr-1">
           <Button variant="ghost" size="icon" onClick={undo} className="w-8 h-8" disabled={undoStack.length === 0}>
             <Undo2 className="w-4 h-4" />
@@ -465,15 +800,12 @@ export function Studio3DPage() {
           </SelectContent>
         </Select>
 
-        {/* Play/Preview */}
         <Button variant="ghost" size="icon" onClick={() => setIsPlaying(v => !v)} className="w-8 h-8">
           {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
         </Button>
 
-        {/* Export */}
         <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-          <Download className="w-3.5 h-3.5" />
-          Export
+          <Download className="w-3.5 h-3.5" /> Export
         </Button>
       </div>
 
@@ -484,14 +816,14 @@ export function Studio3DPage() {
           <Canvas
             shadows
             dpr={[1, 2]}
-            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping }}
+            gl={{ antialias: true, toneMapping: THREE.NoToneMapping, outputColorSpace: THREE.SRGBColorSpace }}
             onPointerMissed={() => setSelectedId(null)}
           >
             <PerspectiveCamera makeDefault position={[5, 4, 8]} fov={50} />
             <OrbitControls makeDefault enableDamping dampingFactor={0.1} />
 
-            {/* Environment */}
-            <ambientLight intensity={0.3} />
+            {/* Ambient */}
+            <ambientLight intensity={postProcessing.ambientIntensity} />
             <Suspense fallback={null}>
               <Environment preset={environment as any} background={environment !== 'studio'} />
             </Suspense>
@@ -503,34 +835,24 @@ export function Studio3DPage() {
               </>
             )}
 
-            {/* Grid */}
             {showGrid && (
               <Grid
-                infiniteGrid
-                cellSize={1}
-                cellThickness={0.5}
-                sectionSize={5}
-                sectionThickness={1}
-                cellColor="#444466"
-                sectionColor="#6666aa"
-                fadeDistance={30}
+                infiniteGrid cellSize={1} cellThickness={0.5}
+                sectionSize={5} sectionThickness={1}
+                cellColor="#444466" sectionColor="#6666aa" fadeDistance={30}
               />
             )}
 
-            {/* Contact Shadows */}
             <ContactShadows position={[0, 0.01, 0]} opacity={0.4} scale={20} blur={2} />
 
-            {/* Scene Objects */}
             {objects.map(obj => (
               <SceneObjectMesh
-                key={obj.id}
-                obj={obj}
+                key={obj.id} obj={obj}
                 isSelected={selectedId === obj.id}
                 onClick={() => !obj.locked && setSelectedId(obj.id)}
               />
             ))}
 
-            {/* Transform Gizmo for selected */}
             {selectedObj && !selectedObj.locked && !selectedObj.type.startsWith('light-') && (
               <TransformControls
                 mode={transformMode}
@@ -543,13 +865,15 @@ export function Studio3DPage() {
               />
             )}
 
-            {/* Gizmo Helper */}
             <GizmoHelper alignment="bottom-right" margin={[80, 80]}>
               <GizmoViewport labelColor="white" axisHeadScale={1} />
             </GizmoHelper>
+
+            {/* Post-Processing Pipeline */}
+            <PostProcessingStack settings={postProcessing} />
           </Canvas>
 
-          {/* Viewport overlay info */}
+          {/* Viewport overlays */}
           <div className="absolute top-3 left-3 flex items-center gap-2">
             <Badge variant="outline" className="bg-background/60 backdrop-blur text-[10px] border-border/30">
               Objects: {objects.length}
@@ -559,9 +883,18 @@ export function Studio3DPage() {
                 {selectedObj.name}
               </Badge>
             )}
+            <Badge variant="outline" className="bg-background/60 backdrop-blur text-[10px] border-border/30">
+              <Sparkles className="w-3 h-3 mr-1" />
+              {[
+                postProcessing.bloomEnabled && 'Bloom',
+                postProcessing.ssaoEnabled && 'SSAO',
+                postProcessing.dofEnabled && 'DOF',
+                postProcessing.vignetteEnabled && 'Vign',
+                postProcessing.chromaticEnabled && 'CA',
+              ].filter(Boolean).join(' · ') || 'No FX'}
+            </Badge>
           </div>
 
-          {/* Viewport controls */}
           <div className="absolute bottom-3 left-3 flex items-center gap-1">
             <Badge variant="outline" className="bg-background/60 backdrop-blur text-[10px] border-border/30 cursor-pointer hover:bg-background/80">
               Perspective
@@ -569,6 +902,106 @@ export function Studio3DPage() {
           </div>
         </div>
 
+        {/* ─── Right Panel ─── */}
+        <div className="w-64 bg-background/80 backdrop-blur-xl border-l border-border/30 flex flex-col shrink-0">
+          {/* Panel tabs */}
+          <div className="flex items-center gap-0.5 p-1 border-b border-border/20">
+            {([
+              { id: 'inspector' as const, icon: SlidersHorizontal, label: 'Inspector' },
+              { id: 'materials' as const, icon: Palette, label: 'Materials' },
+              { id: 'shaders' as const, icon: Code2, label: 'Shaders' },
+              { id: 'render' as const, icon: Sparkles, label: 'Render' },
+            ]).map(({ id, icon: Icon, label }) => (
+              <Tooltip key={id} delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon"
+                    onClick={() => setRightPanel(id)}
+                    className={cn('w-8 h-8', rightPanel === id && 'bg-primary/20 text-primary')}>
+                    <Icon className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="left">{label}</TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+
+          {/* Panel content */}
+          <div className="flex-1 overflow-hidden">
+            {rightPanel === 'inspector' && (
+              <div className="p-3 h-full">
+                {selectedObj ? (
+                  <div className="space-y-3 h-full">
+                    {/* Object name & transform */}
+                    <div className="space-y-2">
+                      <Input value={selectedObj.name} onChange={e => updateObject(selectedObj.id, { name: e.target.value })}
+                        className="h-7 text-xs bg-muted/30 border-border/30 font-medium" />
+                      <div className="grid grid-cols-3 gap-1">
+                        {['X', 'Y', 'Z'].map((axis, i) => (
+                          <div key={axis} className="space-y-0.5">
+                            <span className="text-[9px] text-muted-foreground">{axis}</span>
+                            <Input value={selectedObj.position[i].toFixed(2)}
+                              onChange={e => {
+                                const newPos: [number, number, number] = [...selectedObj.position];
+                                newPos[i] = parseFloat(e.target.value) || 0;
+                                updateObject(selectedObj.id, { position: newPos });
+                              }}
+                              className="h-6 text-[10px] bg-muted/20 border-border/20 px-1 tabular-nums" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Separator className="bg-border/20" />
+
+                    <MaterialInspector obj={selectedObj} onUpdate={updates => updateObject(selectedObj.id, updates)} />
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground text-center pt-8">Select an object to inspect</div>
+                )}
+              </div>
+            )}
+
+            {rightPanel === 'materials' && (
+              <MaterialLibraryPanel onApplyMaterial={applyMaterialPreset} selectedObjectId={selectedId} />
+            )}
+
+            {rightPanel === 'shaders' && (
+              <ScrollArea className="h-full">
+                <div className="p-3 space-y-3">
+                  <div className="text-xs font-semibold text-foreground/70 uppercase tracking-wider">Shader Library</div>
+                  <div className="relative">
+                    <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                    <Input value={shaderSearch} onChange={e => setShaderSearch(e.target.value)}
+                      placeholder="Search shaders..." className="h-7 text-xs pl-7 bg-muted/30 border-border/30" />
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {shaderCategories.map(cat => (
+                      <Badge key={cat} variant={shaderCategory === cat ? 'default' : 'outline'}
+                        className={cn('text-[9px] px-1.5 py-0 cursor-pointer', shaderCategory === cat ? 'bg-primary text-primary-foreground' : 'border-border/40')}
+                        onClick={() => setShaderCategory(cat)}>
+                        {cat}
+                      </Badge>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {filteredShaders.map(shader => (
+                      <div key={shader.id}
+                        className="rounded-md border border-border/30 p-2 cursor-pointer hover:border-primary/50 hover:bg-muted/30 transition-all">
+                        <div className="text-2xl text-center mb-1">{shader.thumbnail}</div>
+                        <div className="text-[10px] font-medium text-foreground text-center">{shader.name}</div>
+                        <div className="text-[8px] text-muted-foreground text-center">{shader.category}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+
+            {rightPanel === 'render' && (
+              <RenderSettingsPanel settings={postProcessing} onChange={setPostProcessing} />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
