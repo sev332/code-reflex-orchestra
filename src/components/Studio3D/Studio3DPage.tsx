@@ -1044,7 +1044,9 @@ export function Studio3DPage() {
               { id: 'materials' as const, icon: Palette, label: 'Materials' },
               { id: 'shaders' as const, icon: Code2, label: 'Shaders' },
               { id: 'render' as const, icon: Sparkles, label: 'Render' },
-            ]).map(({ id, icon: Icon, label }) => (
+              { id: 'particles' as const, icon: Wand2, label: 'Particles' },
+              { id: 'procedural' as const, icon: Hexagon, label: 'Procedural' },
+            ] as const).map(({ id, icon: Icon, label }) => (
               <Tooltip key={id} delayDuration={200}>
                 <TooltipTrigger asChild>
                   <Button variant="ghost" size="icon"
