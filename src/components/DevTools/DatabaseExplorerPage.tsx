@@ -12,7 +12,7 @@ import {
   Database, Table2, Play, Search, ChevronRight, ChevronDown,
   Key, Hash, Calendar, Type, ToggleLeft, FileJson, Link2,
   ArrowUpDown, Wand2, RefreshCw, Copy, Download, Plus,
-  Eye, Code2, GitBranch, Columns, Filter, MoreVertical, Trash2,
+  Eye, Code2, GitBranch, Columns, Filter, MoreVertical, Trash2, X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
