@@ -700,6 +700,7 @@ export function Studio3DPage() {
   const [showGrid, setShowGrid] = useState(true);
   const [snapEnabled, setSnapEnabled] = useState(false);
   const [environment, setEnvironment] = useState<string>('studio');
+  const [lightingMode, setLightingMode] = useState<'night' | 'day'>('night');
   const [rightPanel, setRightPanel] = useState<'inspector' | 'materials' | 'shaders' | 'render' | 'particles' | 'procedural' | 'physics' | 'viewport' | 'scene'>('inspector');
   const [particleEmitters, setParticleEmitters] = useState<ParticleEmitterConfig[]>([]);
   const [selectedEmitterId, setSelectedEmitterId] = useState<string | null>(null);
