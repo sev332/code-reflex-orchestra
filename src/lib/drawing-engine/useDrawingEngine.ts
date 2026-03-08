@@ -1842,5 +1842,23 @@ export function useDrawingEngine() {
     addMeshRowAt,
     addMeshColAt,
     meshPresets: MESH_PRESETS,
+    // Sprint 6: Artboards
+    addArtboard,
+    removeArtboard,
+    selectArtboard,
+    duplicateArtboardById,
+    fitToArtboard,
+    fitToAllArtboards,
+    rearrangeAllArtboards,
+    artboardPresets: ARTBOARD_PRESETS,
+    // Sprint 6: Persistence
+    documentName,
+    setDocumentName,
+    lastSaved,
+    saveDocument,
+    downloadLucid,
+    uploadLucid,
+    // Sprint 6: Image placement
+    placeImage,
   };
 }
