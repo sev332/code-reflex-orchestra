@@ -15,6 +15,8 @@ import {
   FolderTree, Workflow, Table2, CalendarDays, Mail, KanbanSquare,
   Box, Terminal, Beaker, LayoutDashboard, StickyNote, FolderOpen,
   MessageCircle, Presentation, Users, Inbox, Send, Filter,
+  CheckCircle2, AlertTriangle, Download, ArrowUp, Sparkles,
+  RefreshCw, Eye, Award, Shield,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { emitPageDrawerAction } from '@/lib/page-drawer-events';
