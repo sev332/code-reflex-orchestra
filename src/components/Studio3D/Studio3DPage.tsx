@@ -165,6 +165,8 @@ function SceneObjectMesh({ obj, isSelected, onClick }: { obj: SceneObject; isSel
     }
   }, [obj.type]);
 
+  if (!obj.visible) return null;
+
   if (obj.type.startsWith('light-')) {
     if (obj.type === 'light-directional') {
       return (
