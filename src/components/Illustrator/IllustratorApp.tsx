@@ -698,6 +698,51 @@ function PropertiesPanel({ engine, selectedEntity }: { engine: ReturnType<typeof
           </div>
         </div>
       )}
+
+      {/* Path Operations */}
+      {state.selection.selectedIds.length > 0 && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Path Ops</div>
+          <div className="grid grid-cols-3 gap-1">
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathSimplify(2)}>
+              Simplify
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathReverse()}>
+              Reverse
+            </Button>
+            <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathOffset(5)}>
+              Offset
+            </Button>
+          </div>
+          {state.selection.selectedIds.length >= 2 && (
+            <>
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 mt-3">Boolean</div>
+              <div className="grid grid-cols-3 gap-1">
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('union')}>
+                  Union
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('subtract')}>
+                  Subtract
+                </Button>
+                <Button variant="ghost" size="sm" className="h-7 text-[9px]" onClick={() => engine.pathBoolean('intersect')}>
+                  Intersect
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Node editing info */}
+      {engine.nodeOverlay.enabled && (
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Node Editing</div>
+          <p className="text-[9px] text-muted-foreground">Click anchors to move them. Drag handles to reshape curves. Press Delete to remove selected anchor.</p>
+          <Button variant="ghost" size="sm" className="h-7 text-[9px] mt-1 w-full" onClick={() => engine.exitNodeEdit()}>
+            Exit Node Edit
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
