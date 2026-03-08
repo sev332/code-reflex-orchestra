@@ -1128,6 +1128,21 @@ export function Studio3DPage() {
 
         <div className="flex-1" />
 
+        {/* Day/Night Toggle */}
+        <Tooltip delayDuration={200}>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLightingMode(m => m === 'night' ? 'day' : 'night')}
+              className={cn('w-8 h-8', lightingMode === 'night' ? 'text-indigo-400' : 'text-amber-400')}
+            >
+              {lightingMode === 'night' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">{lightingMode === 'night' ? 'Night Mode' : 'Day Mode'}</TooltipContent>
+        </Tooltip>
+
         {/* Environment */}
         <Select value={environment} onValueChange={setEnvironment}>
           <SelectTrigger className="w-28 h-7 text-xs bg-muted/30 border-border/30">
