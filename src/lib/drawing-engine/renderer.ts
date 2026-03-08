@@ -1,81 +1,38 @@
-// Drawing Engine — Canvas2D Renderer
-import { DrawableEntity, ViewportState, Layer, Scene, Vec2 } from './types';
+// Drawing Engine — Canvas2D Renderer with LIVE PREVIEW
+import { DrawableEntity, ViewportState, Scene, Vec2 } from './types';
+import { expandStroke, defaultWidthProfile, defaultPressureCurve } from './stroke-core';
+import { distance as geoDist } from './geometry-core';
 
 // ============================================
-// GRID RENDERER (WebGL-style via Canvas2D)
+// GRID RENDERER
 // ============================================
 
 export function renderGrid(
-  ctx: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  canvasWidth: number,
-  canvasHeight: number,
-  gridSize: number
+  ctx: CanvasRenderingContext2D, viewport: ViewportState,
+  cw: number, ch: number, gridSize: number,
 ) {
   const { panX, panY, zoom } = viewport;
-  const scaledGrid = gridSize * zoom;
-
-  // Skip grid if too small
-  if (scaledGrid < 4) return;
-
-  const offsetX = (panX * zoom) % scaledGrid;
-  const offsetY = (panY * zoom) % scaledGrid;
-
+  const sg = gridSize * zoom;
+  if (sg < 4) return;
+  const ox = (panX * zoom) % sg;
+  const oy = (panY * zoom) % sg;
   ctx.save();
-
-  // Minor grid
-  ctx.strokeStyle = 'hsla(220, 20%, 18%, 0.5)';
+  ctx.strokeStyle = 'hsla(220,20%,18%,0.5)';
   ctx.lineWidth = 0.5;
   ctx.beginPath();
-  for (let x = offsetX; x < canvasWidth; x += scaledGrid) {
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, canvasHeight);
-  }
-  for (let y = offsetY; y < canvasHeight; y += scaledGrid) {
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvasWidth, y);
-  }
+  for (let x = ox; x < cw; x += sg) { ctx.moveTo(x, 0); ctx.lineTo(x, ch); }
+  for (let y = oy; y < ch; y += sg) { ctx.moveTo(0, y); ctx.lineTo(cw, y); }
   ctx.stroke();
-
-  // Major grid (every 5)
-  const majorGrid = scaledGrid * 5;
-  if (majorGrid >= 20) {
-    const majorOffsetX = (panX * zoom) % majorGrid;
-    const majorOffsetY = (panY * zoom) % majorGrid;
-    ctx.strokeStyle = 'hsla(220, 20%, 22%, 0.6)';
+  const mg = sg * 5;
+  if (mg >= 20) {
+    ctx.strokeStyle = 'hsla(220,20%,22%,0.6)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    for (let x = majorOffsetX; x < canvasWidth; x += majorGrid) {
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, canvasHeight);
-    }
-    for (let y = majorOffsetY; y < canvasHeight; y += majorGrid) {
-      ctx.moveTo(0, y);
-      ctx.lineTo(canvasWidth, y);
-    }
+    const mox = (panX * zoom) % mg, moy = (panY * zoom) % mg;
+    for (let x = mox; x < cw; x += mg) { ctx.moveTo(x, 0); ctx.lineTo(x, ch); }
+    for (let y = moy; y < ch; y += mg) { ctx.moveTo(0, y); ctx.lineTo(cw, y); }
     ctx.stroke();
   }
-
-  // Axes
-  const originX = panX * zoom;
-  const originY = panY * zoom;
-  if (originX >= 0 && originX <= canvasWidth) {
-    ctx.strokeStyle = 'hsla(0, 70%, 50%, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(originX, 0);
-    ctx.lineTo(originX, canvasHeight);
-    ctx.stroke();
-  }
-  if (originY >= 0 && originY <= canvasHeight) {
-    ctx.strokeStyle = 'hsla(120, 70%, 50%, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(0, originY);
-    ctx.lineTo(canvasWidth, originY);
-    ctx.stroke();
-  }
-
   ctx.restore();
 }
 
@@ -84,338 +41,329 @@ export function renderGrid(
 // ============================================
 
 export function renderArtboard(
-  ctx: CanvasRenderingContext2D,
-  viewport: ViewportState,
-  x: number, y: number, w: number, h: number,
-  bgColor: string, name: string,
+  ctx: CanvasRenderingContext2D, vp: ViewportState,
+  x: number, y: number, w: number, h: number, bg: string, name: string,
 ) {
-  const { panX, panY, zoom } = viewport;
-  const sx = (x + panX) * zoom;
-  const sy = (y + panY) * zoom;
-  const sw = w * zoom;
-  const sh = h * zoom;
-
+  const sx = (x + vp.panX) * vp.zoom, sy = (y + vp.panY) * vp.zoom;
+  const sw = w * vp.zoom, sh = h * vp.zoom;
   ctx.save();
-
-  // Shadow
   ctx.shadowColor = 'rgba(0,0,0,0.5)';
-  ctx.shadowBlur = 20 * zoom;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 4 * zoom;
-
-  // Artboard fill
-  ctx.fillStyle = bgColor;
+  ctx.shadowBlur = 20 * vp.zoom;
+  ctx.fillStyle = bg;
   ctx.fillRect(sx, sy, sw, sh);
   ctx.shadowColor = 'transparent';
-
-  // Border
-  ctx.strokeStyle = 'hsla(220, 15%, 25%, 0.6)';
+  ctx.strokeStyle = 'hsla(220,15%,25%,0.6)';
   ctx.lineWidth = 1;
   ctx.strokeRect(sx, sy, sw, sh);
-
-  // Name label
-  ctx.fillStyle = 'hsla(193, 30%, 65%, 0.7)';
-  ctx.font = `${11 * Math.min(zoom, 1.5)}px Inter, system-ui, sans-serif`;
-  ctx.fillText(name, sx, sy - 8 * zoom);
-
+  ctx.fillStyle = 'hsla(193,30%,65%,0.7)';
+  ctx.font = `${11 * Math.min(vp.zoom, 1.5)}px Inter, system-ui`;
+  ctx.fillText(name, sx, sy - 8 * vp.zoom);
   ctx.restore();
 }
 
 // ============================================
-// ENTITY RENDERER
+// ENTITY RENDERER — shapes & brush strokes
 // ============================================
 
 export function renderEntity(
-  ctx: CanvasRenderingContext2D,
-  entity: DrawableEntity,
-  viewport: ViewportState,
-  isSelected: boolean,
-  isHovered: boolean,
+  ctx: CanvasRenderingContext2D, entity: DrawableEntity,
+  vp: ViewportState, isSelected: boolean, isHovered: boolean,
 ) {
   if (!entity.visible) return;
-
-  const { panX, panY, zoom } = viewport;
   const t = entity.transform;
-
   ctx.save();
   ctx.globalAlpha = entity.blend.opacity;
+  const wx = (t.translateX + vp.panX) * vp.zoom;
+  const wy = (t.translateY + vp.panY) * vp.zoom;
 
-  // Apply viewport + entity transform
-  const worldX = (t.translateX + panX) * zoom;
-  const worldY = (t.translateY + panY) * zoom;
+  if (entity.type === 'shape') renderShape(ctx, entity, wx, wy, vp.zoom);
+  else if (entity.type === 'brush-stroke') renderBrushStroke(ctx, entity, vp);
 
-  switch (entity.type) {
-    case 'shape':
-      renderShape(ctx, entity, worldX, worldY, zoom);
-      break;
-    case 'brush-stroke':
-      renderBrushStroke(ctx, entity, viewport);
-      break;
-  }
-
-  // Selection / hover indicators
-  if (isSelected || isHovered) {
-    renderSelectionOverlay(ctx, entity, worldX, worldY, zoom, isSelected);
-  }
-
+  if (isSelected || isHovered) renderSelectionOverlay(ctx, entity, wx, wy, vp.zoom, isSelected);
   ctx.restore();
 }
 
-function renderShape(
-  ctx: CanvasRenderingContext2D,
-  entity: DrawableEntity,
-  worldX: number, worldY: number, zoom: number,
-) {
-  const props = entity.shapeProps ?? { width: 100, height: 100 };
-  const w = (props.width ?? 100) * zoom;
-  const h = (props.height ?? 100) * zoom;
-
+function renderShape(ctx: CanvasRenderingContext2D, e: DrawableEntity, wx: number, wy: number, z: number) {
+  const p = e.shapeProps ?? { width: 100, height: 100 };
+  const w = (p.width ?? 100) * z, h = (p.height ?? 100) * z;
   ctx.save();
-  ctx.translate(worldX + w / 2, worldY + h / 2);
-  ctx.rotate((entity.transform.rotation * Math.PI) / 180);
+  ctx.translate(wx + w / 2, wy + h / 2);
+  ctx.rotate((e.transform.rotation * Math.PI) / 180);
   ctx.translate(-w / 2, -h / 2);
 
-  switch (entity.shapeKind) {
+  const drawFill = () => { if (e.fill.type !== 'none') { ctx.fillStyle = e.fill.color; ctx.globalAlpha *= e.fill.opacity; ctx.fill(); ctx.globalAlpha = e.blend.opacity; } };
+  const drawStroke = () => { if (e.stroke.width > 0) { ctx.strokeStyle = e.stroke.color; ctx.lineWidth = e.stroke.width * z; ctx.lineCap = e.stroke.cap; ctx.lineJoin = e.stroke.join; ctx.globalAlpha *= e.stroke.opacity; ctx.stroke(); } };
+
+  switch (e.shapeKind) {
     case 'rectangle': {
-      const cr = (entity.shapeProps?.cornerRadius ?? 0) * zoom;
-      if (entity.fill.type !== 'none') {
-        ctx.fillStyle = entity.fill.color;
-        ctx.globalAlpha *= entity.fill.opacity;
-        if (cr > 0) {
-          roundRect(ctx, 0, 0, w, h, cr);
-          ctx.fill();
-        } else {
-          ctx.fillRect(0, 0, w, h);
-        }
-        ctx.globalAlpha = entity.blend.opacity;
-      }
-      if (entity.stroke.width > 0) {
-        ctx.strokeStyle = entity.stroke.color;
-        ctx.lineWidth = entity.stroke.width * zoom;
-        ctx.lineCap = entity.stroke.cap;
-        ctx.lineJoin = entity.stroke.join;
-        ctx.globalAlpha *= entity.stroke.opacity;
-        if (cr > 0) {
-          roundRect(ctx, 0, 0, w, h, cr);
-          ctx.stroke();
-        } else {
-          ctx.strokeRect(0, 0, w, h);
-        }
+      const cr = (p.cornerRadius ?? 0) * z;
+      ctx.beginPath();
+      if (cr > 0) roundRect(ctx, 0, 0, w, h, cr); else ctx.rect(0, 0, w, h);
+      drawFill(); drawStroke(); break;
+    }
+    case 'ellipse':
+      ctx.beginPath(); ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+      drawFill(); drawStroke(); break;
+    case 'polygon': {
+      const sides = p.sides ?? 6; const r = Math.min(w, h) / 2;
+      ctx.beginPath();
+      for (let i = 0; i < sides; i++) { const a = (Math.PI * 2 * i) / sides - Math.PI / 2; const px = w / 2 + r * Math.cos(a); const py = h / 2 + r * Math.sin(a); i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+      ctx.closePath(); drawFill(); drawStroke(); break;
+    }
+    case 'star': {
+      const pts = p.starPoints ?? 5; const outerR = Math.min(w, h) / 2; const innerR = outerR * (p.innerRadius ?? 0.4);
+      ctx.beginPath();
+      for (let i = 0; i < pts * 2; i++) { const a = (Math.PI * i) / pts - Math.PI / 2; const r = i % 2 === 0 ? outerR : innerR; const px = w / 2 + r * Math.cos(a); const py = h / 2 + r * Math.sin(a); i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); }
+      ctx.closePath(); drawFill(); drawStroke(); break;
+    }
+    case 'line': {
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo((p.x2 - p.x1) * z, (p.y2 - p.y1) * z);
+      drawStroke(); break;
+    }
+  }
+  ctx.restore();
+}
+
+function renderBrushStroke(ctx: CanvasRenderingContext2D, e: DrawableEntity, vp: ViewportState) {
+  const pts = e.brushPoints;
+  if (!pts || pts.length < 2) return;
+  const { panX, panY, zoom } = vp;
+  const baseW = e.stroke.width;
+
+  // Use stroke expansion for variable-width rendering
+  const skeletonPoints = pts.map(p => ({ x: (p.x + panX) * zoom, y: (p.y + panY) * zoom }));
+  const pressures = pts.map(p => p.pressure);
+  const expansion = expandStroke({
+    skeletonPoints, pressures,
+    widthProfile: { ...defaultWidthProfile, mode: 'pressure', baseWidth: baseW * zoom, startTaper: 0.05, endTaper: 0.1, taperCurve: 'ease-out', minWidth: 0.3 },
+    pressureCurve: defaultPressureCurve,
+    capStyle: 'round', joinStyle: 'round',
+  });
+
+  if (expansion.boundary.length > 2) {
+    ctx.save();
+    ctx.fillStyle = e.stroke.color;
+    ctx.globalAlpha *= e.stroke.opacity;
+    ctx.beginPath();
+    ctx.moveTo(expansion.boundary[0].x, expansion.boundary[0].y);
+    for (let i = 1; i < expansion.boundary.length; i++) {
+      ctx.lineTo(expansion.boundary[i].x, expansion.boundary[i].y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+// ============================================
+// LIVE PREVIEW RENDERER — Renders in-progress drawing
+// ============================================
+
+export function renderLivePreview(
+  ctx: CanvasRenderingContext2D,
+  vp: ViewportState,
+  preview: LivePreviewState,
+) {
+  if (!preview.active) return;
+  ctx.save();
+
+  switch (preview.type) {
+    case 'shape': {
+      if (!preview.startWorld || !preview.currentWorld) break;
+      const s = preview.startWorld, c = preview.currentWorld;
+      const x = Math.min(s.x, c.x), y = Math.min(s.y, c.y);
+      const w = Math.abs(c.x - s.x), h = Math.abs(c.y - s.y);
+      const sx = (x + vp.panX) * vp.zoom, sy = (y + vp.panY) * vp.zoom;
+      const sw = w * vp.zoom, sh = h * vp.zoom;
+
+      ctx.fillStyle = preview.fillColor ?? '#4a9eff';
+      ctx.globalAlpha = 0.5;
+
+      if (preview.shapeKind === 'ellipse') {
+        ctx.beginPath(); ctx.ellipse(sx + sw / 2, sy + sh / 2, sw / 2, sh / 2, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = preview.strokeColor ?? '#ffffff';
+        ctx.lineWidth = (preview.strokeWidth ?? 2) * vp.zoom;
+        ctx.globalAlpha = 0.8; ctx.stroke();
+      } else {
+        ctx.fillRect(sx, sy, sw, sh);
+        ctx.strokeStyle = preview.strokeColor ?? '#ffffff';
+        ctx.lineWidth = (preview.strokeWidth ?? 2) * vp.zoom;
+        ctx.globalAlpha = 0.8; ctx.strokeRect(sx, sy, sw, sh);
       }
       break;
     }
-    case 'ellipse': {
-      ctx.beginPath();
-      ctx.ellipse(w / 2, h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
-      if (entity.fill.type !== 'none') {
-        ctx.fillStyle = entity.fill.color;
-        ctx.globalAlpha *= entity.fill.opacity;
-        ctx.fill();
-        ctx.globalAlpha = entity.blend.opacity;
-      }
-      if (entity.stroke.width > 0) {
-        ctx.strokeStyle = entity.stroke.color;
-        ctx.lineWidth = entity.stroke.width * zoom;
-        ctx.globalAlpha *= entity.stroke.opacity;
-        ctx.stroke();
+    case 'brush': {
+      if (!preview.brushPoints || preview.brushPoints.length < 2) break;
+      const pts = preview.brushPoints;
+      const skeletonPoints = pts.map(p => ({ x: (p.x + vp.panX) * vp.zoom, y: (p.y + vp.panY) * vp.zoom }));
+      const pressures = pts.map(p => p.pressure);
+      const baseW = (preview.strokeWidth ?? 4) * vp.zoom;
+
+      const expansion = expandStroke({
+        skeletonPoints, pressures,
+        widthProfile: { ...defaultWidthProfile, mode: 'pressure', baseWidth: baseW, startTaper: 0.05, endTaper: 0.1, taperCurve: 'ease-out', minWidth: 0.3 },
+        pressureCurve: defaultPressureCurve,
+        capStyle: 'round', joinStyle: 'round',
+      });
+
+      if (expansion.boundary.length > 2) {
+        ctx.fillStyle = preview.strokeColor ?? '#ffffff';
+        ctx.globalAlpha = 0.85;
+        ctx.beginPath();
+        ctx.moveTo(expansion.boundary[0].x, expansion.boundary[0].y);
+        for (let i = 1; i < expansion.boundary.length; i++) ctx.lineTo(expansion.boundary[i].x, expansion.boundary[i].y);
+        ctx.closePath(); ctx.fill();
       }
       break;
     }
     case 'line': {
-      const p = entity.shapeProps!;
+      if (!preview.startWorld || !preview.currentWorld) break;
+      const s = preview.startWorld, c = preview.currentWorld;
+      ctx.strokeStyle = preview.strokeColor ?? '#ffffff';
+      ctx.lineWidth = (preview.strokeWidth ?? 2) * vp.zoom;
+      ctx.lineCap = 'round';
+      ctx.globalAlpha = 0.8;
       ctx.beginPath();
-      ctx.moveTo(0, 0);
-      ctx.lineTo((p.x2 - p.x1) * zoom, (p.y2 - p.y1) * zoom);
-      ctx.strokeStyle = entity.stroke.color;
-      ctx.lineWidth = entity.stroke.width * zoom;
-      ctx.lineCap = entity.stroke.cap;
-      ctx.globalAlpha *= entity.stroke.opacity;
+      ctx.moveTo((s.x + vp.panX) * vp.zoom, (s.y + vp.panY) * vp.zoom);
+      ctx.lineTo((c.x + vp.panX) * vp.zoom, (c.y + vp.panY) * vp.zoom);
       ctx.stroke();
       break;
     }
-    case 'polygon': {
-      const sides = entity.shapeProps?.sides ?? 6;
-      const r = Math.min(w, h) / 2;
-      ctx.beginPath();
-      for (let i = 0; i < sides; i++) {
-        const angle = (Math.PI * 2 * i) / sides - Math.PI / 2;
-        const px = w / 2 + r * Math.cos(angle);
-        const py = h / 2 + r * Math.sin(angle);
-        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-      }
-      ctx.closePath();
-      if (entity.fill.type !== 'none') {
-        ctx.fillStyle = entity.fill.color;
-        ctx.fill();
-      }
-      if (entity.stroke.width > 0) {
-        ctx.strokeStyle = entity.stroke.color;
-        ctx.lineWidth = entity.stroke.width * zoom;
+    case 'pen': {
+      if (!preview.penAnchors || preview.penAnchors.length === 0) break;
+      ctx.strokeStyle = 'hsl(193,100%,50%)';
+      ctx.lineWidth = 1.5;
+      ctx.globalAlpha = 0.9;
+      // Draw constructed path
+      const anchors = preview.penAnchors;
+      if (anchors.length > 1) {
+        ctx.beginPath();
+        const a0 = anchors[0];
+        ctx.moveTo((a0.x + vp.panX) * vp.zoom, (a0.y + vp.panY) * vp.zoom);
+        for (let i = 1; i < anchors.length; i++) {
+          const prev = anchors[i - 1];
+          const curr = anchors[i];
+          if (prev.handleOut && curr.handleIn) {
+            ctx.bezierCurveTo(
+              (prev.handleOut.x + vp.panX) * vp.zoom, (prev.handleOut.y + vp.panY) * vp.zoom,
+              (curr.handleIn.x + vp.panX) * vp.zoom, (curr.handleIn.y + vp.panY) * vp.zoom,
+              (curr.x + vp.panX) * vp.zoom, (curr.y + vp.panY) * vp.zoom,
+            );
+          } else {
+            ctx.lineTo((curr.x + vp.panX) * vp.zoom, (curr.y + vp.panY) * vp.zoom);
+          }
+        }
         ctx.stroke();
       }
-      break;
-    }
-    case 'star': {
-      const points = entity.shapeProps?.starPoints ?? 5;
-      const outerR = Math.min(w, h) / 2;
-      const innerR = outerR * (entity.shapeProps?.innerRadius ?? 0.4);
-      ctx.beginPath();
-      for (let i = 0; i < points * 2; i++) {
-        const angle = (Math.PI * i) / points - Math.PI / 2;
-        const r = i % 2 === 0 ? outerR : innerR;
-        const px = w / 2 + r * Math.cos(angle);
-        const py = h / 2 + r * Math.sin(angle);
-        i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+      // Draw anchor points
+      for (const a of anchors) {
+        const ax = (a.x + vp.panX) * vp.zoom, ay = (a.y + vp.panY) * vp.zoom;
+        ctx.fillStyle = 'hsl(193,100%,50%)';
+        ctx.fillRect(ax - 3, ay - 3, 6, 6);
+        // Draw handles
+        if (a.handleIn) {
+          const hx = (a.handleIn.x + vp.panX) * vp.zoom, hy = (a.handleIn.y + vp.panY) * vp.zoom;
+          ctx.strokeStyle = 'hsla(193,100%,50%,0.5)'; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
+          ctx.fillStyle = 'hsl(193,100%,70%)'; ctx.beginPath(); ctx.arc(hx, hy, 3, 0, Math.PI * 2); ctx.fill();
+        }
+        if (a.handleOut) {
+          const hx = (a.handleOut.x + vp.panX) * vp.zoom, hy = (a.handleOut.y + vp.panY) * vp.zoom;
+          ctx.strokeStyle = 'hsla(193,100%,50%,0.5)'; ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(hx, hy); ctx.stroke();
+          ctx.fillStyle = 'hsl(193,100%,70%)'; ctx.beginPath(); ctx.arc(hx, hy, 3, 0, Math.PI * 2); ctx.fill();
+        }
       }
-      ctx.closePath();
-      if (entity.fill.type !== 'none') {
-        ctx.fillStyle = entity.fill.color;
-        ctx.fill();
-      }
-      if (entity.stroke.width > 0) {
-        ctx.strokeStyle = entity.stroke.color;
-        ctx.lineWidth = entity.stroke.width * zoom;
+      // Preview line to cursor
+      if (preview.currentWorld && anchors.length > 0) {
+        const last = anchors[anchors.length - 1];
+        ctx.strokeStyle = 'hsla(193,100%,50%,0.3)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo((last.x + vp.panX) * vp.zoom, (last.y + vp.panY) * vp.zoom);
+        ctx.lineTo((preview.currentWorld.x + vp.panX) * vp.zoom, (preview.currentWorld.y + vp.panY) * vp.zoom);
         ctx.stroke();
+        ctx.setLineDash([]);
       }
       break;
     }
   }
-
   ctx.restore();
 }
 
-function renderBrushStroke(
-  ctx: CanvasRenderingContext2D,
-  entity: DrawableEntity,
-  viewport: ViewportState,
-) {
-  const points = entity.brushPoints;
-  if (!points || points.length < 2) return;
-
-  const { panX, panY, zoom } = viewport;
-  const baseWidth = entity.stroke.width;
-
-  ctx.save();
-  ctx.strokeStyle = entity.stroke.color;
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
-  ctx.globalAlpha *= entity.stroke.opacity;
-
-  // Render with variable width based on pressure
-  for (let i = 1; i < points.length; i++) {
-    const p0 = points[i - 1];
-    const p1 = points[i];
-    const pressure = (p0.pressure + p1.pressure) / 2;
-    ctx.lineWidth = baseWidth * pressure * zoom;
-    ctx.beginPath();
-    ctx.moveTo((p0.x + panX) * zoom, (p0.y + panY) * zoom);
-    ctx.lineTo((p1.x + panX) * zoom, (p1.y + panY) * zoom);
-    ctx.stroke();
-  }
-
-  ctx.restore();
+export interface PenAnchorPreview {
+  x: number; y: number;
+  handleIn?: { x: number; y: number } | null;
+  handleOut?: { x: number; y: number } | null;
 }
 
-function renderSelectionOverlay(
-  ctx: CanvasRenderingContext2D,
-  entity: DrawableEntity,
-  worldX: number, worldY: number, zoom: number,
-  isSelected: boolean,
-) {
-  const props = entity.shapeProps ?? { width: 100, height: 100 };
-  const w = (props.width ?? 100) * zoom;
-  const h = (props.height ?? 100) * zoom;
-  const pad = 4;
+export interface LivePreviewState {
+  active: boolean;
+  type: 'shape' | 'brush' | 'line' | 'pen';
+  shapeKind?: string;
+  startWorld?: Vec2;
+  currentWorld?: Vec2;
+  fillColor?: string;
+  strokeColor?: string;
+  strokeWidth?: number;
+  brushPoints?: { x: number; y: number; pressure: number }[];
+  penAnchors?: PenAnchorPreview[];
+}
 
+export const emptyPreview: LivePreviewState = { active: false, type: 'shape' };
+
+// ============================================
+// SELECTION OVERLAY
+// ============================================
+
+function renderSelectionOverlay(ctx: CanvasRenderingContext2D, e: DrawableEntity, wx: number, wy: number, z: number, sel: boolean) {
+  const p = e.shapeProps ?? { width: 100, height: 100 };
+  const w = (p.width ?? 100) * z, h = (p.height ?? 100) * z;
   ctx.save();
-  ctx.strokeStyle = isSelected ? 'hsl(193, 100%, 50%)' : 'hsla(193, 100%, 50%, 0.4)';
-  ctx.lineWidth = isSelected ? 2 : 1;
-  ctx.setLineDash(isSelected ? [] : [4, 4]);
-  ctx.strokeRect(worldX - pad, worldY - pad, w + pad * 2, h + pad * 2);
-
-  // Corner handles
-  if (isSelected) {
-    const handleSize = 8;
-    const hs = handleSize / 2;
-    ctx.fillStyle = 'hsl(193, 100%, 50%)';
-    ctx.strokeStyle = 'hsl(220, 27%, 4%)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([]);
-    const corners = [
-      [worldX - pad, worldY - pad],
-      [worldX + w + pad, worldY - pad],
-      [worldX - pad, worldY + h + pad],
-      [worldX + w + pad, worldY + h + pad],
-      [worldX + w / 2, worldY - pad],
-      [worldX + w / 2, worldY + h + pad],
-      [worldX - pad, worldY + h / 2],
-      [worldX + w + pad, worldY + h / 2],
-    ];
-    for (const [cx, cy] of corners) {
-      ctx.fillRect(cx - hs, cy - hs, handleSize, handleSize);
-      ctx.strokeRect(cx - hs, cy - hs, handleSize, handleSize);
+  ctx.strokeStyle = sel ? 'hsl(193,100%,50%)' : 'hsla(193,100%,50%,0.4)';
+  ctx.lineWidth = sel ? 2 : 1;
+  ctx.setLineDash(sel ? [] : [4, 4]);
+  ctx.strokeRect(wx - 4, wy - 4, w + 8, h + 8);
+  if (sel) {
+    ctx.fillStyle = 'hsl(193,100%,50%)';
+    ctx.strokeStyle = 'hsl(220,27%,4%)';
+    ctx.lineWidth = 1.5; ctx.setLineDash([]);
+    for (const [cx, cy] of [[wx - 4, wy - 4], [wx + w + 4, wy - 4], [wx - 4, wy + h + 4], [wx + w + 4, wy + h + 4], [wx + w / 2, wy - 4], [wx + w / 2, wy + h + 4], [wx - 4, wy + h / 2], [wx + w + 4, wy + h / 2]]) {
+      ctx.fillRect(cx - 4, cy - 4, 8, 8);
+      ctx.strokeRect(cx - 4, cy - 4, 8, 8);
     }
   }
   ctx.restore();
 }
 
 // ============================================
-// FULL SCENE RENDER
+// FULL SCENE RENDER (with live preview layer)
 // ============================================
 
 export function renderScene(
-  ctx: CanvasRenderingContext2D,
-  scene: Scene,
-  viewport: ViewportState,
-  selectedIds: string[],
-  hoveredId: string | null,
-  canvasWidth: number,
-  canvasHeight: number,
-  gridEnabled: boolean,
-  gridSize: number,
+  ctx: CanvasRenderingContext2D, scene: Scene, vp: ViewportState,
+  selectedIds: string[], hoveredId: string | null,
+  cw: number, ch: number, gridEnabled: boolean, gridSize: number,
+  preview?: LivePreviewState,
 ) {
-  // Clear
-  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-
-  // Background
-  ctx.fillStyle = 'hsl(220, 27%, 4%)';
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-  // Grid
-  if (gridEnabled) {
-    renderGrid(ctx, viewport, canvasWidth, canvasHeight, gridSize);
-  }
-
-  // Artboards
-  for (const artboard of scene.artboards) {
-    renderArtboard(ctx, viewport, artboard.x, artboard.y, artboard.width, artboard.height, artboard.backgroundColor, artboard.name);
-  }
-
-  // Entities by layer order
+  ctx.clearRect(0, 0, cw, ch);
+  ctx.fillStyle = 'hsl(220,27%,4%)';
+  ctx.fillRect(0, 0, cw, ch);
+  if (gridEnabled) renderGrid(ctx, vp, cw, ch, gridSize);
+  for (const ab of scene.artboards) renderArtboard(ctx, vp, ab.x, ab.y, ab.width, ab.height, ab.backgroundColor, ab.name);
   for (const layer of scene.layers) {
     if (!layer.visible) continue;
-    for (const entityId of layer.entities) {
-      const entity = scene.entities[entityId];
-      if (!entity) continue;
-      renderEntity(ctx, entity, viewport, selectedIds.includes(entityId), hoveredId === entityId);
+    for (const eid of layer.entities) {
+      const e = scene.entities[eid];
+      if (e) renderEntity(ctx, e, vp, selectedIds.includes(eid), hoveredId === eid);
     }
   }
+  // Live preview layer — renders on top
+  if (preview) renderLivePreview(ctx, vp, preview);
 }
 
-// ============================================
-// HELPERS
-// ============================================
-
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r); ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h); ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r); ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y); ctx.closePath();
 }
