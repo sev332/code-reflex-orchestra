@@ -471,6 +471,43 @@ function LeftDrawerContent({ page, sideTab, subTab, onNavigate }: { page: PageId
       if (sideTab === 'files') return <FilesPanel />;
       if (sideTab === 'git') return <GitSubPanel />;
       break;
+    case 'calendar':
+      if (sideTab === 'calendars') return <CalendarListPanel />;
+      if (sideTab === 'events') return <UpcomingEventsPanel />;
+      if (sideTab === 'people') return <PeoplePanel />;
+      break;
+    case 'email':
+      if (sideTab === 'inbox') return <EmailFoldersPanel />;
+      if (sideTab === 'compose') return <ComposePanel />;
+      if (sideTab === 'sent') return <EmailSentPanel />;
+      if (sideTab === 'labels') return <EmailLabelsPanel />;
+      break;
+    case 'apistudio':
+      if (sideTab === 'collections') return <APICollectionsPanel />;
+      if (sideTab === 'history') return <APIHistoryPanel />;
+      if (sideTab === 'environments') return <APIEnvironmentsPanel />;
+      break;
+    case 'database':
+      if (sideTab === 'tables') return <DBTablesPanel />;
+      if (sideTab === 'queries') return <DBQueriesPanel />;
+      if (sideTab === 'schema') return <DBSchemaPanel />;
+      break;
+    case 'notes':
+      if (sideTab === 'notes') return <NotesListPanel />;
+      if (sideTab === 'graph') return <NotesGraphPanel />;
+      if (sideTab === 'tags') return <NotesTagsPanel />;
+      break;
+    case 'files':
+      if (sideTab === 'browse') return <FilesBrowsePanel />;
+      if (sideTab === 'recent') return <FilesRecentPanel />;
+      if (sideTab === 'starred') return <FilesStarredPanel />;
+      if (sideTab === 'cloud') return <FilesCloudPanel />;
+      break;
+    case 'comms':
+      if (sideTab === 'channels') return <CommsChannelsPanel />;
+      if (sideTab === 'dms') return <CommsDMsPanel />;
+      if (sideTab === 'threads') return <CommsThreadsPanel />;
+      break;
   }
 
   return <PlaceholderSubPanel page={page} subTab={sideTab} />;
