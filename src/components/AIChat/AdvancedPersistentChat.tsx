@@ -21,12 +21,19 @@ import {
   FileText,
   Code2,
   Workflow,
-  X
+  X,
+  Zap,
+  ArrowRight,
+  Command,
+  Play,
 } from 'lucide-react';
 import { useAIMOSStreaming } from '@/hooks/useAIMOSStreaming';
 import { useDreamInsights } from '@/hooks/useDreamInsights';
 import { useChatPersistence, ChatMessage } from '@/hooks/useChatPersistence';
 import { WorkspacePanel, WorkspacePanelType } from '@/components/layout/WorkspacePanel';
+import { useAIIntegration } from '@/contexts/AIIntegrationContext';
+import { osCommandParser, workflowEngine, getContextualSuggestions } from '@/lib/ai-integration';
+import type { OSCommandResult } from '@/lib/ai-integration';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -40,8 +47,13 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const [expandedOrchestration, setExpandedOrchestration] = useState<string | null>(null);
   const [showDreamInsights, setShowDreamInsights] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspacePanelType>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [pendingWorkflow, setPendingWorkflow] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // AI Integration context
+  const { activePage, setActivePage, systemPrompt } = useAIIntegration();
   
   // Use persistent chat hook for message storage
   const { 
@@ -71,6 +83,11 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     currentMode 
   } = useAIMOSStreaming();
 
+  // Update suggestions when active page changes
+  useEffect(() => {
+    setSuggestions(getContextualSuggestions(activePage));
+  }, [activePage]);
+
   // Auto-scroll
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -80,6 +97,77 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Handle OS command execution
+  const handleOSCommand = async (commandInput: string): Promise<boolean> => {
+    const command = osCommandParser.parse(commandInput);
+    if (!command) return false;
+
+    // Execute the command
+    const result = await osCommandParser.execute(command);
+    
+    // Create a system message for the command result
+    const commandMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: result.message,
+      timestamp: new Date().toISOString(),
+      metadata: {
+        type: 'os_command',
+        commandType: result.type,
+        success: result.success,
+        data: result.data,
+        suggestions: result.suggestions,
+      }
+    };
+    await addMessage(commandMessage);
+
+    // Handle navigation
+    if (result.action === 'navigate' && result.targetApp) {
+      setActivePage(result.targetApp);
+      toast.success(`Navigated to ${result.targetApp}`);
+    }
+
+    // Handle workflow confirmation
+    if (result.action === 'confirm' && command.suggestedWorkflow) {
+      setPendingWorkflow(command.suggestedWorkflow);
+    }
+
+    return true;
+  };
+
+  // Execute confirmed workflow
+  const executeWorkflow = async () => {
+    if (!pendingWorkflow) return;
+    
+    const workflowMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: `🔄 Running workflow: **${pendingWorkflow.name}**...`,
+      timestamp: new Date().toISOString(),
+      metadata: { type: 'workflow_start' }
+    };
+    await addMessage(workflowMessage);
+    
+    try {
+      const workflow = workflowEngine.createFromTemplate(pendingWorkflow);
+      const execution = await workflowEngine.execute(workflow);
+      
+      const resultMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: execution.status === 'completed'
+          ? `✅ Workflow **${pendingWorkflow.name}** completed successfully!`
+          : `❌ Workflow failed: ${execution.error}`,
+        timestamp: new Date().toISOString(),
+        metadata: { type: 'workflow_result', execution }
+      };
+      await addMessage(resultMessage);
+    } catch (err) {
+      toast.error('Workflow execution failed');
+    }
+    
+    setPendingWorkflow(null);
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isProcessing || isStreaming) return;
@@ -92,20 +180,26 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     };
 
     await addMessage(userMessage);
+    const userInput = input.trim();
     setInput('');
     setIsProcessing(true);
 
     try {
+      // First, check if this is an OS command
+      const wasCommand = await handleOSCommand(userInput);
+      if (wasCommand) {
+        setIsProcessing(false);
+        return;
+      }
+
       // Get relevant Dream Mode insights for this query
       const relevantInsights = getRelevantInsights(userMessage.content, 3);
       const insightContext = relevantInsights.length > 0 
         ? formatForChatContext(userMessage.content)
         : '';
       
-      // Enhanced message with dream insights
-      const enhancedQuery = insightContext 
-        ? `${userMessage.content}\n${insightContext}`
-        : userMessage.content;
+      // Enhanced message with dream insights and system prompt
+      const enhancedQuery = `${userInput}${insightContext ? '\n' + insightContext : ''}`;
 
       const response = await startStreaming(
         enhancedQuery,
@@ -386,6 +480,41 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               </Badge>
             </div>
 
+            {/* Workflow Confirmation */}
+            {pendingWorkflow && (
+              <div className="mb-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                  <Zap className="w-4 h-4 text-primary" />
+                  Run workflow: {pendingWorkflow.name}?
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{pendingWorkflow.description}</p>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={executeWorkflow} className="text-xs">
+                    <Play className="w-3 h-3 mr-1" /> Run
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setPendingWorkflow(null)} className="text-xs">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Suggestions */}
+            {suggestions.length > 0 && !input && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {suggestions.slice(0, 4).map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setInput(s)}
+                    className="px-2 py-1 text-[10px] rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors border border-border/30 flex items-center gap-1"
+                  >
+                    <Command className="w-2.5 h-2.5" />
+                    {s.length > 30 ? s.slice(0, 30) + '...' : s}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
             <div className="flex gap-2">
               <Input
@@ -394,9 +523,9 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                 onKeyPress={handleKeyPress}
                 placeholder={activeWorkspace 
                   ? `Ask AI to help with your ${activeWorkspace}...` 
-                  : "Ask anything..."}
+                  : `Try "go to tasks" or "create a note"...`}
                 disabled={isProcessing || isStreaming}
-                className="flex-1 bg-background/50 border-border/50 focus:border-cyan-500/50"
+                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50"
               />
               <Button 
                 onClick={handleSend} 
@@ -412,13 +541,15 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             </div>
             
             <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
-              <span>Streaming Mode</span>
+              <span className="flex items-center gap-1">
+                <Command className="w-3 h-3" /> OS Commands
+              </span>
               <span>•</span>
               <span>{messages.length} messages</span>
               {activeWorkspace && (
                 <>
                   <span>•</span>
-                  <span className="text-cyan-400">{activeWorkspace} mode active</span>
+                  <span className="text-primary">{activeWorkspace} mode</span>
                 </>
               )}
             </div>
