@@ -201,6 +201,7 @@ const Index = () => {
           )}
         </div>
       </TooltipProvider>
+      </AIIntegrationProvider>
     </WisdomNETProvider>
   );
 };
