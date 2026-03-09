@@ -17,14 +17,16 @@ import {
   Palette,
   KeyRound,
   Zap,
+  Workflow,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AdvancedPersistentChat } from '@/components/AIChat/AdvancedPersistentChat';
 import { EnhancedRightDrawerPanel } from './EnhancedRightDrawerPanel';
 import { VaultPanel } from './VaultPanel';
 import { AIContextPanel } from './AIContextPanel';
+import { WorkflowsPanel } from './WorkflowsPanel';
 
-export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network' | 'vault';
+export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network' | 'vault' | 'workflows';
 
 interface IconDef {
   id: RightTab;
@@ -36,6 +38,7 @@ interface IconDef {
 
 const rightIcons: IconDef[] = [
   { id: 'chat', icon: MessageSquare, label: 'AI Chat', activeColor: 'text-cyan-400' },
+  { id: 'workflows', icon: Workflow, label: 'Workflows', activeColor: 'text-amber-400' },
   { id: 'thinking', icon: Brain, label: 'Live Thinking', activeColor: 'text-amber-500', badge: 'streaming' },
   { id: 'discord', icon: MessageCircle, label: 'Agent Discord', activeColor: 'text-purple-500', badge: 'messages' },
   { id: 'agents', icon: Users, label: 'Active Agents', activeColor: 'text-cyan-500', badge: 'agents' },
@@ -154,6 +157,8 @@ export function PersistentRightDrawer({
               <VaultPanel />
             ) : activeTab === 'context' ? (
               <AIContextPanel />
+            ) : activeTab === 'workflows' ? (
+              <WorkflowsPanel />
             ) : (
               <EnhancedRightDrawerPanel
                 activeDrawer={transparencyDrawerType as any}
