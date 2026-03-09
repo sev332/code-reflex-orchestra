@@ -78,7 +78,7 @@ export function IllustratorApp() {
   const { state, preview } = engine;
 
   // ─── AI Integration ──────────────────────────
-  const entityCount = Object.keys(state.scene.entities).length;
+  const aiEntityCount = Object.keys(state.scene.entities).length;
   useAIAppIntegration({
     appId: 'illustrator',
     getContext: () => ({
