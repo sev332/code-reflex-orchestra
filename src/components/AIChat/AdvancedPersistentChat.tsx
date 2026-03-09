@@ -21,12 +21,19 @@ import {
   FileText,
   Code2,
   Workflow,
-  X
+  X,
+  Zap,
+  ArrowRight,
+  Command,
+  Play,
 } from 'lucide-react';
 import { useAIMOSStreaming } from '@/hooks/useAIMOSStreaming';
 import { useDreamInsights } from '@/hooks/useDreamInsights';
 import { useChatPersistence, ChatMessage } from '@/hooks/useChatPersistence';
 import { WorkspacePanel, WorkspacePanelType } from '@/components/layout/WorkspacePanel';
+import { useAIIntegration } from '@/contexts/AIIntegrationContext';
+import { osCommandParser, workflowEngine, getContextualSuggestions } from '@/lib/ai-integration';
+import type { OSCommandResult } from '@/lib/ai-integration';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
