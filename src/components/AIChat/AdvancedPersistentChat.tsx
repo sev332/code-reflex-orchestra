@@ -47,8 +47,13 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
   const [expandedOrchestration, setExpandedOrchestration] = useState<string | null>(null);
   const [showDreamInsights, setShowDreamInsights] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState<WorkspacePanelType>(null);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [pendingWorkflow, setPendingWorkflow] = useState<any>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // AI Integration context
+  const { activePage, setActivePage, systemPrompt } = useAIIntegration();
   
   // Use persistent chat hook for message storage
   const { 
@@ -78,6 +83,11 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     currentMode 
   } = useAIMOSStreaming();
 
+  // Update suggestions when active page changes
+  useEffect(() => {
+    setSuggestions(getContextualSuggestions(activePage));
+  }, [activePage]);
+
   // Auto-scroll
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -87,6 +97,77 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     scrollToBottom();
   }, [messages, scrollToBottom]);
 
+  // Handle OS command execution
+  const handleOSCommand = async (commandInput: string): Promise<boolean> => {
+    const command = osCommandParser.parse(commandInput);
+    if (!command) return false;
+
+    // Execute the command
+    const result = await osCommandParser.execute(command);
+    
+    // Create a system message for the command result
+    const commandMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: result.message,
+      timestamp: new Date().toISOString(),
+      metadata: {
+        type: 'os_command',
+        commandType: result.type,
+        success: result.success,
+        data: result.data,
+        suggestions: result.suggestions,
+      }
+    };
+    await addMessage(commandMessage);
+
+    // Handle navigation
+    if (result.action === 'navigate' && result.targetApp) {
+      setActivePage(result.targetApp);
+      toast.success(`Navigated to ${result.targetApp}`);
+    }
+
+    // Handle workflow confirmation
+    if (result.action === 'confirm' && command.suggestedWorkflow) {
+      setPendingWorkflow(command.suggestedWorkflow);
+    }
+
+    return true;
+  };
+
+  // Execute confirmed workflow
+  const executeWorkflow = async () => {
+    if (!pendingWorkflow) return;
+    
+    const workflowMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: 'assistant',
+      content: `🔄 Running workflow: **${pendingWorkflow.name}**...`,
+      timestamp: new Date().toISOString(),
+      metadata: { type: 'workflow_start' }
+    };
+    await addMessage(workflowMessage);
+    
+    try {
+      const workflow = workflowEngine.createFromTemplate(pendingWorkflow);
+      const execution = await workflowEngine.execute(workflow);
+      
+      const resultMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        role: 'assistant',
+        content: execution.status === 'completed'
+          ? `✅ Workflow **${pendingWorkflow.name}** completed successfully!`
+          : `❌ Workflow failed: ${execution.error}`,
+        timestamp: new Date().toISOString(),
+        metadata: { type: 'workflow_result', execution }
+      };
+      await addMessage(resultMessage);
+    } catch (err) {
+      toast.error('Workflow execution failed');
+    }
+    
+    setPendingWorkflow(null);
+  };
 
   const handleSend = async () => {
     if (!input.trim() || isProcessing || isStreaming) return;
@@ -99,20 +180,26 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
     };
 
     await addMessage(userMessage);
+    const userInput = input.trim();
     setInput('');
     setIsProcessing(true);
 
     try {
+      // First, check if this is an OS command
+      const wasCommand = await handleOSCommand(userInput);
+      if (wasCommand) {
+        setIsProcessing(false);
+        return;
+      }
+
       // Get relevant Dream Mode insights for this query
       const relevantInsights = getRelevantInsights(userMessage.content, 3);
       const insightContext = relevantInsights.length > 0 
         ? formatForChatContext(userMessage.content)
         : '';
       
-      // Enhanced message with dream insights
-      const enhancedQuery = insightContext 
-        ? `${userMessage.content}\n${insightContext}`
-        : userMessage.content;
+      // Enhanced message with dream insights and system prompt
+      const enhancedQuery = `${userInput}${insightContext ? '\n' + insightContext : ''}`;
 
       const response = await startStreaming(
         enhancedQuery,
