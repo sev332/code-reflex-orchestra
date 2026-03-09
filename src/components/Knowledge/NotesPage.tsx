@@ -404,6 +404,8 @@ export function NotesPage() {
 
   const activeNote = notes.find(n => n.id === activeNoteId);
 
+  useAIAppIntegration({ appId: 'notes', getContext: () => ({ appId: 'notes', appName: 'Notes', summary: `${notes.length} notes. Active: "${activeNote?.title || 'none'}".`, activeView: isEditing ? 'edit' : 'read', itemCount: notes.length, selectedItems: activeNoteId ? [activeNoteId] : [] }) });
+
   const folders = useMemo(() => Array.from(new Set(notes.map(n => n.folder))), [notes]);
 
   const filteredNotes = useMemo(() => {

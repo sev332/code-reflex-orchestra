@@ -549,6 +549,8 @@ export function TerminalPage() {
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
 
+  useAIAppIntegration({ appId: 'terminal', getContext: () => ({ appId: 'terminal', appName: 'Terminal', summary: `${sessions.length} sessions. Active: ${activeSession?.name}.`, activeView: activeSession?.name, itemCount: sessions.length }) });
+
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [activeSession?.lines.length]);

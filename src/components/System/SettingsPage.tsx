@@ -65,6 +65,8 @@ export function SettingsPage() {
   const [streamingEnabled, setStreamingEnabled] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
 
+  useAIAppIntegration({ appId: 'settings', getContext: () => ({ appId: 'settings', appName: 'Settings', summary: `Section: ${activeSection}. Theme: ${theme}.`, activeView: activeSection, metadata: { theme, accentColor } }) });
+
   const accentColors = [
     { id: 'cyan', label: 'Cyan', hsl: 'hsl(193, 100%, 50%)' },
     { id: 'purple', label: 'Purple', hsl: 'hsl(270, 80%, 60%)' },

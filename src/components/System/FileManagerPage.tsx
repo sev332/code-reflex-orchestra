@@ -247,6 +247,8 @@ export function FileManagerPage() {
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<SidebarSection>('favorites');
 
+  useAIAppIntegration({ appId: 'files', getContext: () => ({ appId: 'files', appName: 'File Manager', summary: `Path: ${currentPath}. ${selectedFiles.size} selected. View: ${viewMode}.`, activeView: viewMode, itemCount: selectedFiles.size }) });
+
   const toggleExpand = useCallback((id: string) => {
     setExpandedFolders(prev => {
       const next = new Set(prev);
