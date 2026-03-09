@@ -413,13 +413,20 @@ export function StarfieldNebulaBackground({
     const container = threeContainerRef.current;
     if (!container) return;
 
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ 
+        antialias: true, 
+        alpha: true,
+        powerPreference: 'low-power'
+      });
+    } catch (e) {
+      console.warn('WebGL not available for nebula effect, skipping:', e);
+      return;
+    }
+
     const scene = new THREE.Scene();
     const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    const renderer = new THREE.WebGLRenderer({ 
-      antialias: true, 
-      alpha: true,
-      powerPreference: 'low-power'
-    });
 
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
