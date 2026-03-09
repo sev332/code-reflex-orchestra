@@ -152,6 +152,8 @@ export function PersistentRightDrawer({
               <AdvancedPersistentChat />
             ) : activeTab === 'vault' ? (
               <VaultPanel />
+            ) : activeTab === 'context' ? (
+              <AIContextPanel />
             ) : (
               <EnhancedRightDrawerPanel
                 activeDrawer={transparencyDrawerType as any}
