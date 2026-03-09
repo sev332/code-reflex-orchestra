@@ -1,5 +1,6 @@
 // Professional Image Editor — Canvas-based with real layer system, selection, brush, crop
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';

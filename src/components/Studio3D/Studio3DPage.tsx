@@ -1,6 +1,7 @@
 // 3D Studio — Unreal-class scene editor built on React Three Fiber
 // Phases 1-8: Full Unreal-class engine
 import React, { useState, useCallback, useRef, useMemo, Suspense, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Canvas, useThree, useFrame } from '@react-three/fiber';
 import {
   OrbitControls, TransformControls, Grid, GizmoHelper, GizmoViewport,

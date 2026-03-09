@@ -76,6 +76,18 @@ const PRESET_COLORS = [
 export function IllustratorApp() {
   const engine = useDrawingEngine();
   const { state, preview } = engine;
+
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'illustrator',
+    getContext: () => ({
+      appId: 'illustrator', appName: 'Illustrator',
+      summary: `${state.objects.length} objects on canvas. Tool: ${state.activeTool}. ${state.selectedIds.length} selected.`,
+      activeView: state.activeTool, itemCount: state.objects.length,
+      selectedItems: state.selectedIds,
+      metadata: { tool: state.activeTool, zoom: state.zoom, layerCount: state.objects.length },
+    }),
+  });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });

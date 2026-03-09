@@ -1,5 +1,6 @@
 // Presentations — Keynote/PowerPoint-grade slide editor with 1920x1080 canvas, presenter mode, grid view
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
