@@ -1,5 +1,6 @@
 // Settings Page — Theme, shortcuts, preferences, system info
 import React, { useState } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -63,6 +64,8 @@ export function SettingsPage() {
   const [maxTokens, setMaxTokens] = useState(4096);
   const [streamingEnabled, setStreamingEnabled] = useState(true);
   const [autoSave, setAutoSave] = useState(true);
+
+  useAIAppIntegration({ appId: 'settings', getContext: () => ({ appId: 'settings', appName: 'Settings', summary: `Section: ${activeSection}. Theme: ${theme}.`, activeView: activeSection, metadata: { theme, accentColor } }) });
 
   const accentColors = [
     { id: 'cyan', label: 'Cyan', hsl: 'hsl(193, 100%, 50%)' },

@@ -1,5 +1,6 @@
 // DAW-Grade Audio Editor — multi-track, canvas waveforms, mixer, FX chain, spectrogram
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -75,6 +76,18 @@ export function AudioEditor() {
         return (Math.sin(t * 8) * 0.2 + 0.3) * 0.4 + 0.05;
       })},
   ]);
+
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'audio',
+    getContext: () => ({
+      appId: 'audio', appName: 'Audio Editor',
+      summary: `${tracks.length} tracks. ${isPlaying ? 'Playing' : 'Stopped'} at ${Math.floor(currentTime)}s/${duration}s. BPM: ${bpm}.`,
+      activeView: rightPanel || 'timeline', itemCount: tracks.length,
+      selectedItems: selectedTrackId ? [selectedTrackId] : [],
+      metadata: { isPlaying, currentTime, duration, bpm, masterVolume, trackCount: tracks.length },
+    }),
+  });
 
   const TRACK_LABEL_WIDTH = 130;
 

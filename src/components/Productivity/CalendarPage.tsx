@@ -1,5 +1,6 @@
 // Pro-grade calendar: drag-to-create, current time indicator, agenda view, mini calendar, recurring events
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -92,6 +93,24 @@ export function CalendarPage() {
   const [editingEvent, setEditingEvent] = useState<Partial<CalEvent> | null>(null);
   const [showMiniCal, setShowMiniCal] = useState(true);
   const today = new Date(2026, 2, 8);
+
+  // ─── AI Integration ──────────────────────────
+  const { notifyChange } = useAIAppIntegration({
+    appId: 'calendar',
+    getContext: () => ({
+      appId: 'calendar', appName: 'Calendar',
+      summary: `${view} view. ${events.length} events.`,
+      activeView: view, itemCount: events.length,
+      metadata: { view, currentDate: currentDate.toISOString() },
+    }),
+    onAction: async (action) => {
+      if (action.capabilityId === 'cal.list') {
+        return { success: true, data: events.map(e => `${e.title} — ${e.start.toLocaleString()}`).join('\n') };
+      }
+      return { success: false, error: `Unknown: ${action.capabilityId}` };
+    },
+  });
+  useEffect(() => { notifyChange(); }, [events.length, view, currentDate]);
 
   const navigate = (dir: number) => {
     const d = new Date(currentDate);

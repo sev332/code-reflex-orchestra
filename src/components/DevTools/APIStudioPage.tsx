@@ -1,5 +1,6 @@
 // API Studio — Postman/Insomnia-grade REST client with collections, env variables, code gen, history, response viewer
 import React, { useState, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -203,6 +204,8 @@ export function APIStudioPage() {
   const [responseBodyView, setResponseBodyView] = useState<'pretty' | 'raw'>('pretty');
 
   const activeEnv = environments.find(e => e.id === activeEnvId);
+
+  useAIAppIntegration({ appId: 'apistudio', getContext: () => ({ appId: 'apistudio', appName: 'API Studio', summary: `${collections.length} collections. Active request: ${activeRequest?.name}. Env: ${activeEnv?.name}.`, activeView: sidebarView, itemCount: collections.reduce((s, c) => s + c.requests.length, 0), metadata: { activeRequest: activeRequest?.name, method: activeRequest?.method } }) });
 
   // Variable interpolation
   const interpolateVars = useCallback((text: string): string => {

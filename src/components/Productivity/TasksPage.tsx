@@ -1,5 +1,6 @@
 // Pro-grade task manager: Kanban, list, Gantt, detail panel, bulk ops, keyboard shortcuts, activity feed
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -160,6 +161,31 @@ export function TasksPage() {
       else setSelectedTask(null);
     }
   }, [tasks]);
+
+  // ─── AI Integration ──────────────────────────
+  const { notifyChange } = useAIAppIntegration({
+    appId: 'tasks',
+    getContext: () => {
+      const byStatus = { backlog: 0, todo: 0, in_progress: 0, review: 0, done: 0 };
+      tasks.forEach(t => byStatus[t.status]++);
+      const overdue = tasks.filter(t => t.dueDate && t.status !== 'done' && t.dueDate < new Date()).length;
+      return {
+        appId: 'tasks', appName: 'Tasks',
+        summary: `${tasks.length} tasks (${byStatus.in_progress} in progress, ${byStatus.todo} to do, ${overdue} overdue). View: ${viewMode}.`,
+        activeView: viewMode, itemCount: tasks.length,
+        selectedItems: selectedTask ? [selectedTask.id] : [],
+        metadata: { byStatus, overdue, viewMode, sortKey, groupKey },
+      };
+    },
+    onAction: async (action) => {
+      switch (action.capabilityId) {
+        case 'tasks.list': return { success: true, data: tasks.map(t => `${t.id}: ${t.title} [${t.status}]`).join('\n') };
+        case 'tasks.analyze': return { success: true, data: { total: tasks.length } };
+        default: return { success: false, error: `Unknown: ${action.capabilityId}` };
+      }
+    },
+  });
+  useEffect(() => { notifyChange(); }, [tasks.length, viewMode, selectedTask?.id]);
 
   const updateTask = useCallback((id: string, updates: Partial<Task>) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));

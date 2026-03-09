@@ -1,5 +1,6 @@
 // Dashboard Builder — Grafana/Datadog-grade dashboard with drag-drop widgets, real-time data, chart customization
 import React, { useState, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -321,6 +322,8 @@ export function DashboardBuilderPage() {
   const [isEditing, setIsEditing] = useState(true);
 
   const selectedWidgetData = widgets.find(w => w.id === selectedWidget);
+
+  useAIAppIntegration({ appId: 'dashboard', getContext: () => ({ appId: 'dashboard', appName: 'Dashboard Builder', summary: `"${config.name}" — ${widgets.length} widgets.`, activeView: isEditing ? 'edit' : 'view', itemCount: widgets.length }) });
 
   const addWidget = useCallback((type: Widget['type']) => {
     const maxRow = Math.max(...widgets.map(w => w.row + w.rowSpan), 0);

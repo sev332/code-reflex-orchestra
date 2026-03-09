@@ -1,5 +1,6 @@
 // Email client — Conversation threading, AI drafts, snooze, scheduled send, smart filters
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -178,7 +179,48 @@ export function EmailPage() {
   const [activeLabel, setActiveLabel] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'thread'>('list');
 
-  // Group emails by thread
+  // ─── AI Integration ──────────────────────────
+  const { notifyChange } = useAIAppIntegration({
+    appId: 'email',
+    getContext: () => {
+      const unread = emails.filter(e => !e.isRead && e.folder === 'inbox').length;
+      const starred = emails.filter(e => e.isStarred).length;
+      return {
+        appId: 'email',
+        appName: 'Email',
+        summary: `${activeFolder} folder. ${unread} unread, ${starred} starred, ${emails.length} total emails.`,
+        activeView: activeFolder,
+        itemCount: emails.length,
+        selectedItems: selectedEmail ? [selectedEmail.id] : [],
+        metadata: { activeFolder, unread, starred, isComposing, searchQuery },
+      };
+    },
+    onAction: async (action) => {
+      switch (action.capabilityId) {
+        case 'email.draft': {
+          setComposeData({ to: action.params.to || '', cc: '', subject: action.params.subject || '', body: action.params.body || '' });
+          setIsComposing(true);
+          return { success: true, message: 'Compose window opened' };
+        }
+        case 'email.search': {
+          const query = action.params.query || '';
+          setSearchQuery(query);
+          return { success: true, message: `Searching for: "${query}"` };
+        }
+        case 'email.summarize': {
+          if (selectedEmail) {
+            return { success: true, data: { subject: selectedEmail.subject, from: selectedEmail.from.name, preview: selectedEmail.preview }, message: `Email from ${selectedEmail.from.name}: ${selectedEmail.subject}` };
+          }
+          return { success: false, error: 'No email selected' };
+        }
+        default:
+          return { success: false, error: `Unknown capability: ${action.capabilityId}` };
+      }
+    },
+  });
+
+  useEffect(() => { notifyChange(); }, [activeFolder, emails.length, selectedEmail?.id, isComposing]);
+
   const threadMap = useMemo(() => {
     const map = new Map<string, Email[]>();
     emails.forEach(e => {

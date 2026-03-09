@@ -6,6 +6,7 @@
 // Sprint 5: Appearance panel, Patterns, Symbols, Mesh gradient
 // Sprint 6: Artboards, Persistence, Image placement, WebGL acceleration
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -75,6 +76,19 @@ const PRESET_COLORS = [
 export function IllustratorApp() {
   const engine = useDrawingEngine();
   const { state, preview } = engine;
+
+  // ─── AI Integration ──────────────────────────
+  const aiEntityCount = Object.keys(state.scene.entities).length;
+  useAIAppIntegration({
+    appId: 'illustrator',
+    getContext: () => ({
+      appId: 'illustrator', appName: 'Illustrator',
+      summary: `${aiEntityCount} objects on canvas. Tool: ${state.tool.activeToolId}. ${state.selection.selectedIds.length} selected.`,
+      activeView: state.tool.activeToolId, itemCount: aiEntityCount,
+      selectedItems: state.selection.selectedIds,
+      metadata: { tool: state.tool.activeToolId, zoom: state.viewport.zoom, entityCount },
+    }),
+  });
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 });

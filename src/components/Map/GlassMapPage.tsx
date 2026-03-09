@@ -1,5 +1,6 @@
 // Glass Map — Pro geospatial tool with layers, drawing, measurement, POI, heatmap, routing
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -136,6 +137,8 @@ export function GlassMapPage() {
     drawings: drawings.length,
     routes: routePoints.length,
   }), [markers, layers, drawings, routePoints]);
+
+  useAIAppIntegration({ appId: 'map', getContext: () => ({ appId: 'map', appName: 'Map', summary: `${stats.markers} markers, ${stats.layers} layers. Style: ${activeStyle}. Zoom: ${zoom.toFixed(1)}x.`, activeView: activeStyle, itemCount: stats.markers, metadata: { center, zoom, activeStyle, stats } }) });
 
   // ─── Coordinate conversion ───
   const lngLatToScreen = useCallback((lng: number, lat: number, w: number, h: number): [number, number] => {

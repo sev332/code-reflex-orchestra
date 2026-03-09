@@ -1,6 +1,7 @@
 // Notes/Wiki — Block-based editor with slash commands, inline formatting,
 // bidirectional linking, knowledge graph, and AI assistance
 import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -402,6 +403,8 @@ export function NotesPage() {
   const [showGraph, setShowGraph] = useState(false);
 
   const activeNote = notes.find(n => n.id === activeNoteId);
+
+  useAIAppIntegration({ appId: 'notes', getContext: () => ({ appId: 'notes', appName: 'Notes', summary: `${notes.length} notes. Active: "${activeNote?.title || 'none'}".`, activeView: isEditing ? 'edit' : 'read', itemCount: notes.length, selectedItems: activeNoteId ? [activeNoteId] : [] }) });
 
   const folders = useMemo(() => Array.from(new Set(notes.map(n => n.folder))), [notes]);
 

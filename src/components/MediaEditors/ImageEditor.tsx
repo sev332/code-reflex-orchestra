@@ -1,5 +1,6 @@
 // Professional Image Editor — Canvas-based with real layer system, selection, brush, crop
 import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
@@ -74,6 +75,17 @@ export function ImageEditor() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [, forceRender] = useState(0);
+
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'image',
+    getContext: () => ({
+      appId: 'image', appName: 'Image Editor',
+      summary: `${hasImage ? 'Image loaded' : 'No image'}. Tool: ${activeTool}. ${layers.length} layers.`,
+      activeView: activeTool, itemCount: layers.length,
+      metadata: { hasImage, activeTool, zoom, layerCount: layers.length },
+    }),
+  });
 
   // Sync layers state from manager
   const syncLayers = useCallback(() => {

@@ -1,5 +1,6 @@
 // File Manager — Finder-grade file browser with tree, drag-drop, preview, tabs
 import React, { useState, useCallback, useMemo, useRef, DragEvent } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -245,6 +246,8 @@ export function FileManagerPage() {
   const [renaming, setRenaming] = useState<string | null>(null);
   const [dragOverFolder, setDragOverFolder] = useState<string | null>(null);
   const [sidebarTab, setSidebarTab] = useState<SidebarSection>('favorites');
+
+  useAIAppIntegration({ appId: 'files', getContext: () => ({ appId: 'files', appName: 'File Manager', summary: `Path: ${currentPath}. ${selectedFiles.size} selected. View: ${viewMode}.`, activeView: viewMode, itemCount: selectedFiles.size }) });
 
   const toggleExpand = useCallback((id: string) => {
     setExpandedFolders(prev => {

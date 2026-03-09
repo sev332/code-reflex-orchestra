@@ -1,5 +1,6 @@
 // Browser — Chrome-grade web research browser with tabs, bookmarks, history, reading mode, dev tools
 import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -143,6 +144,8 @@ export function BrowserPage() {
   const urlRef = useRef<HTMLInputElement>(null);
 
   const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+
+  useAIAppIntegration({ appId: 'browser', getContext: () => ({ appId: 'browser', appName: 'Browser', summary: `${tabs.length} tabs. Active: "${activeTab?.title}". URL: ${activeTab?.url || 'New Tab'}.`, activeView: activeTab?.url, itemCount: tabs.length, metadata: { url: activeTab?.url, title: activeTab?.title } }) });
   const pageData = activeTab.url ? getPageData(activeTab.url) : null;
 
   const navigate = useCallback((url: string) => {

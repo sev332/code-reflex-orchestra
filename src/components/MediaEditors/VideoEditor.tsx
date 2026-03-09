@@ -1,5 +1,6 @@
 // NLE-Grade Video Editor — canvas timeline, keyframes, preview, inspector
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
@@ -48,6 +49,18 @@ export function VideoEditor() {
     { id: 'c6', name: 'Title Card', type: 'text', startTime: 0, duration: 5, track: 3, color: 'hsl(30, 100%, 65%)' },
     { id: 'c7', name: 'Color Grade', type: 'effect', startTime: 0, duration: 80, track: 4, color: 'hsl(300, 100%, 75%)' },
   ]);
+
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'video',
+    getContext: () => ({
+      appId: 'video', appName: 'Video Editor',
+      summary: `${clips.length} clips on ${tracks.length} tracks. ${isPlaying ? 'Playing' : 'Stopped'} at ${Math.floor(currentTime)}s/${duration}s.`,
+      activeView: bottomPanel, itemCount: clips.length,
+      selectedItems: selectedClipId ? [selectedClipId] : [],
+      metadata: { isPlaying, currentTime, duration, previewSize, clipCount: clips.length },
+    }),
+  });
 
   const TRACK_LABEL_WIDTH = 90;
 

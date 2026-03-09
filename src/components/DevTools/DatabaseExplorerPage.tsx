@@ -1,5 +1,6 @@
 // Database Explorer — Visual ERD, SQL query editor, table inspector, data browser
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -368,6 +369,8 @@ export function DatabaseExplorerPage() {
   const [showQueryHistory, setShowQueryHistory] = useState(false);
 
   const filteredTables = mockTables.filter(t => t.name.toLowerCase().includes(tableSearch.toLowerCase()));
+
+  useAIAppIntegration({ appId: 'database', getContext: () => ({ appId: 'database', appName: 'Database Explorer', summary: `Table: ${selectedTable.name}. View: ${activeView}. ${mockTables.length} tables.`, activeView, itemCount: mockTables.length, metadata: { selectedTable: selectedTable.name, activeView } }) });
 
   const mockData = useMemo(() => {
     let data = generateMockRows(selectedTable, Math.min(selectedTable.rowCount, 25));

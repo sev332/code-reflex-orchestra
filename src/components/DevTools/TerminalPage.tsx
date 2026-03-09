@@ -1,5 +1,6 @@
 // Terminal — Full emulator with pipe simulation, autocomplete, themes, process viewer
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -547,6 +548,8 @@ export function TerminalPage() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const activeSession = sessions.find(s => s.id === activeSessionId) || sessions[0];
+
+  useAIAppIntegration({ appId: 'terminal', getContext: () => ({ appId: 'terminal', appName: 'Terminal', summary: `${sessions.length} sessions. Active: ${activeSession?.name}.`, activeView: activeSession?.name, itemCount: sessions.length }) });
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

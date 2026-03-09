@@ -1,5 +1,6 @@
 // Comms Hub — Slack/Discord-grade messaging with channels, threads, DMs, reactions, typing indicators
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -283,6 +284,8 @@ export function CommsHubPage() {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const activeChannel = channels.find(c => c.id === activeChannelId) || channels[0];
+
+  useAIAppIntegration({ appId: 'comms', getContext: () => ({ appId: 'comms', appName: 'Comms Hub', summary: `Channel: #${activeChannel?.name}. ${channels.length} channels.`, activeView: activeChannel?.name, itemCount: channels.length, metadata: { activeChannel: activeChannel?.name } }) });
 
   useEffect(() => {
     if (scrollRef.current) {

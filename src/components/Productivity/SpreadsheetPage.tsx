@@ -1,5 +1,6 @@
 // Pro-grade spreadsheet: extended formulas, conditional formatting, working toolbar, freeze panes, drag-select
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -298,6 +299,25 @@ export function SpreadsheetPage() {
   const [showTextPicker, setShowTextPicker] = useState(false);
 
   const cells = sheets[activeSheet]?.data || {};
+
+  // ─── AI Integration ──────────────────────────
+  const { notifyChange: notifySheetChange } = useAIAppIntegration({
+    appId: 'spreadsheet',
+    getContext: () => ({
+      appId: 'spreadsheet', appName: 'Spreadsheet',
+      summary: `Sheet "${sheets[activeSheet]?.name}" — ${Object.keys(cells).length} cells.`,
+      activeView: sheets[activeSheet]?.name, itemCount: Object.keys(cells).length,
+      selectedItems: selectedCell ? [cellKey(selectedCell.col, selectedCell.row)] : [],
+      metadata: { sheetCount: sheets.length, activeSheet },
+    }),
+    onAction: async (action) => {
+      if (action.capabilityId === 'sheet.analyze') {
+        return { success: true, data: Object.entries(cells).slice(0, 20).map(([k, v]) => `${k}: ${(v as any).value}`) };
+      }
+      return { success: false, error: `Unknown: ${action.capabilityId}` };
+    },
+  });
+  useEffect(() => { notifySheetChange(); }, [Object.keys(cells).length, activeSheet]);
 
   const pushUndo = useCallback((desc: string) => {
     setUndoStack(prev => [...prev.slice(-30), { data: { ...cells }, desc }]);
