@@ -78,14 +78,15 @@ export function IllustratorApp() {
   const { state, preview } = engine;
 
   // ─── AI Integration ──────────────────────────
+  const entityCount = Object.keys(state.scene.entities).length;
   useAIAppIntegration({
     appId: 'illustrator',
     getContext: () => ({
       appId: 'illustrator', appName: 'Illustrator',
-      summary: `${state.scene.objects.length} objects on canvas. Tool: ${state.tool.active}. ${state.selection.ids.length} selected.`,
-      activeView: state.tool.active, itemCount: state.scene.objects.length,
-      selectedItems: state.selection.ids,
-      metadata: { tool: state.tool.active, zoom: state.viewport.zoom, objectCount: state.scene.objects.length },
+      summary: `${entityCount} objects on canvas. Tool: ${state.tool.activeToolId}. ${state.selection.selectedIds.length} selected.`,
+      activeView: state.tool.activeToolId, itemCount: entityCount,
+      selectedItems: state.selection.selectedIds,
+      metadata: { tool: state.tool.activeToolId, zoom: state.viewport.zoom, entityCount },
     }),
   });
   const canvasRef = useRef<HTMLCanvasElement>(null);
