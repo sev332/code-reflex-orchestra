@@ -1,5 +1,6 @@
 // Pro-grade spreadsheet: extended formulas, conditional formatting, working toolbar, freeze panes, drag-select
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
