@@ -56,6 +56,18 @@ export function ImageEditor() {
 
   // State
   const [hasImage, setHasImage] = useState(false);
+
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'image',
+    getContext: () => ({
+      appId: 'image', appName: 'Image Editor',
+      summary: `${hasImage ? 'Image loaded' : 'No image'}. Tool: ${activeTool}. ${layers.length} layers.`,
+      activeView: activeTool, itemCount: layers.length,
+      metadata: { hasImage, activeTool, zoom, layerCount: layers.length },
+    }),
+  });
+
   const [activeTool, setActiveTool] = useState<ToolId>('select');
   const [activePanel, setActivePanel] = useState<PanelId>('tools');
   const [zoom, setZoom] = useState(100);
