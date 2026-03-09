@@ -56,18 +56,6 @@ export function ImageEditor() {
 
   // State
   const [hasImage, setHasImage] = useState(false);
-
-  // ─── AI Integration ──────────────────────────
-  useAIAppIntegration({
-    appId: 'image',
-    getContext: () => ({
-      appId: 'image', appName: 'Image Editor',
-      summary: `${hasImage ? 'Image loaded' : 'No image'}. Tool: ${activeTool}. ${layers.length} layers.`,
-      activeView: activeTool, itemCount: layers.length,
-      metadata: { hasImage, activeTool, zoom, layerCount: layers.length },
-    }),
-  });
-
   const [activeTool, setActiveTool] = useState<ToolId>('select');
   const [activePanel, setActivePanel] = useState<PanelId>('tools');
   const [zoom, setZoom] = useState(100);
@@ -87,6 +75,17 @@ export function ImageEditor() {
   const [isDrawing, setIsDrawing] = useState(false);
   const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
   const [, forceRender] = useState(0);
+
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'image',
+    getContext: () => ({
+      appId: 'image', appName: 'Image Editor',
+      summary: `${hasImage ? 'Image loaded' : 'No image'}. Tool: ${activeTool}. ${layers.length} layers.`,
+      activeView: activeTool, itemCount: layers.length,
+      metadata: { hasImage, activeTool, zoom, layerCount: layers.length },
+    }),
+  });
 
   // Sync layers state from manager
   const syncLayers = useCallback(() => {
