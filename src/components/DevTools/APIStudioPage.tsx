@@ -205,6 +205,8 @@ export function APIStudioPage() {
 
   const activeEnv = environments.find(e => e.id === activeEnvId);
 
+  useAIAppIntegration({ appId: 'apistudio', getContext: () => ({ appId: 'apistudio', appName: 'API Studio', summary: `${collections.length} collections. Active request: ${activeRequest?.name}. Env: ${activeEnv?.name}.`, activeView: sidebarView, itemCount: collections.reduce((s, c) => s + c.requests.length, 0), metadata: { activeRequest: activeRequest?.name, method: activeRequest?.method } }) });
+
   // Variable interpolation
   const interpolateVars = useCallback((text: string): string => {
     if (!activeEnv) return text;

@@ -370,6 +370,8 @@ export function DatabaseExplorerPage() {
 
   const filteredTables = mockTables.filter(t => t.name.toLowerCase().includes(tableSearch.toLowerCase()));
 
+  useAIAppIntegration({ appId: 'database', getContext: () => ({ appId: 'database', appName: 'Database Explorer', summary: `Table: ${selectedTable.name}. View: ${activeView}. ${mockTables.length} tables.`, activeView, itemCount: mockTables.length, metadata: { selectedTable: selectedTable.name, activeView } }) });
+
   const mockData = useMemo(() => {
     let data = generateMockRows(selectedTable, Math.min(selectedTable.rowCount, 25));
 

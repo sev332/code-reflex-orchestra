@@ -285,6 +285,8 @@ export function CommsHubPage() {
 
   const activeChannel = channels.find(c => c.id === activeChannelId) || channels[0];
 
+  useAIAppIntegration({ appId: 'comms', getContext: () => ({ appId: 'comms', appName: 'Comms Hub', summary: `Channel: #${activeChannel?.name}. ${channels.length} channels.`, activeView: activeChannel?.name, itemCount: channels.length, metadata: { activeChannel: activeChannel?.name } }) });
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

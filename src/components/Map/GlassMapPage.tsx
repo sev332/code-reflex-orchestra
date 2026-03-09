@@ -138,6 +138,8 @@ export function GlassMapPage() {
     routes: routePoints.length,
   }), [markers, layers, drawings, routePoints]);
 
+  useAIAppIntegration({ appId: 'map', getContext: () => ({ appId: 'map', appName: 'Map', summary: `${stats.markers} markers, ${stats.layers} layers. Style: ${activeStyle}. Zoom: ${zoom.toFixed(1)}x.`, activeView: activeStyle, itemCount: stats.markers, metadata: { center, zoom, activeStyle, stats } }) });
+
   // ─── Coordinate conversion ───
   const lngLatToScreen = useCallback((lng: number, lat: number, w: number, h: number): [number, number] => {
     const x = ((lng - center[0]) * zoom * w / 360) + w / 2;
