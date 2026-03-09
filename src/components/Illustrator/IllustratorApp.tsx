@@ -83,8 +83,8 @@ export function IllustratorApp() {
     appId: 'illustrator',
     getContext: () => ({
       appId: 'illustrator', appName: 'Illustrator',
-      summary: `${entityCount} objects on canvas. Tool: ${state.tool.activeToolId}. ${state.selection.selectedIds.length} selected.`,
-      activeView: state.tool.activeToolId, itemCount: entityCount,
+      summary: `${aiEntityCount} objects on canvas. Tool: ${state.tool.activeToolId}. ${state.selection.selectedIds.length} selected.`,
+      activeView: state.tool.activeToolId, itemCount: aiEntityCount,
       selectedItems: state.selection.selectedIds,
       metadata: { tool: state.tool.activeToolId, zoom: state.viewport.zoom, entityCount },
     }),
