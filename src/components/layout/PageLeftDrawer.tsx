@@ -338,8 +338,8 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
       {/* Drawer panel */}
       {isOpen && activeIcon && (
         <div
-          className="fixed top-12 bottom-0 z-30 flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/30"
-          style={{ left: 48, width: drawerWidth }}
+          className="fixed top-11 z-30 flex flex-col border-r border-border/30"
+          style={{ left: 48, width: drawerWidth, bottom: 36, background: 'hsl(var(--background) / var(--ui-transparency, 0.5))', backdropFilter: 'blur(24px) saturate(180%)' }}
         >
           {/* Header */}
           <div className="px-3 py-2 border-b border-border/20 shrink-0">
