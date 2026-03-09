@@ -114,6 +114,7 @@ const Index = () => {
 
   return (
     <WisdomNETProvider>
+      <AIIntegrationProvider activePage={activePage} onPageChange={setActivePage}>
       <TooltipProvider>
         <div className="min-h-screen relative overflow-hidden">
           <Helmet>
