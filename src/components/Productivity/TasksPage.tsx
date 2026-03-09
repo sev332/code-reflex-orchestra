@@ -1,5 +1,6 @@
 // Pro-grade task manager: Kanban, list, Gantt, detail panel, bulk ops, keyboard shortcuts, activity feed
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
