@@ -1,5 +1,6 @@
 // Settings Page — Theme, shortcuts, preferences, system info
 import React, { useState } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

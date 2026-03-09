@@ -1,5 +1,6 @@
 // Browser — Chrome-grade web research browser with tabs, bookmarks, history, reading mode, dev tools
 import React, { useState, useCallback, useMemo, useRef } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

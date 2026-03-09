@@ -1,5 +1,6 @@
 // Glass Map — Pro geospatial tool with layers, drawing, measurement, POI, heatmap, routing
 import React, { useRef, useEffect, useState, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

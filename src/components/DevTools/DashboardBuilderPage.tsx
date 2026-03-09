@@ -1,5 +1,6 @@
 // Dashboard Builder — Grafana/Datadog-grade dashboard with drag-drop widgets, real-time data, chart customization
 import React, { useState, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

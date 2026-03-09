@@ -1,5 +1,6 @@
 // Terminal — Full emulator with pipe simulation, autocomplete, themes, process viewer
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

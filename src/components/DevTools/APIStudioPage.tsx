@@ -1,5 +1,6 @@
 // API Studio — Postman/Insomnia-grade REST client with collections, env variables, code gen, history, response viewer
 import React, { useState, useCallback, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';

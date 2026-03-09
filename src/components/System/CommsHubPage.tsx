@@ -1,5 +1,6 @@
 // Comms Hub — Slack/Discord-grade messaging with channels, threads, DMs, reactions, typing indicators
 import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';

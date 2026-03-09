@@ -1,5 +1,6 @@
 // File Manager — Finder-grade file browser with tree, drag-drop, preview, tabs
 import React, { useState, useCallback, useMemo, useRef, DragEvent } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
