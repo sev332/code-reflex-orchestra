@@ -12,6 +12,13 @@ export interface ChatMessage {
     model?: string;
     orchestration?: any;
     dreamInsights?: string[];
+    // OS Command types
+    type?: 'os_command' | 'workflow_start' | 'workflow_result' | 'standard';
+    commandType?: string;
+    success?: boolean;
+    data?: any;
+    suggestions?: string[];
+    execution?: any;
   };
 }
 
