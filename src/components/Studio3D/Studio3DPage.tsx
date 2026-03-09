@@ -739,7 +739,17 @@ export function Studio3DPage() {
 
   const selectedObj = objects.find(o => o.id === selectedId) || null;
 
-  // Animation playback loop
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'studio3d',
+    getContext: () => ({
+      appId: 'studio3d', appName: '3D Studio',
+      summary: `${objects.length} objects in scene. Selected: ${selectedObj?.name || 'none'}. Mode: ${transformMode}. ${isPlaying ? 'Playing' : 'Editing'}.`,
+      activeView: rightPanel, itemCount: objects.length,
+      selectedItems: selectedId ? [selectedId] : [],
+      metadata: { transformMode, environment, lightingMode, objectCount: objects.length, isPlaying },
+    }),
+  });
   useEffect(() => {
     if (!animPlaying) {
       lastFrameTimeRef.current = 0;

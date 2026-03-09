@@ -77,6 +77,18 @@ export function AudioEditor() {
       })},
   ]);
 
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'audio',
+    getContext: () => ({
+      appId: 'audio', appName: 'Audio Editor',
+      summary: `${tracks.length} tracks. ${isPlaying ? 'Playing' : 'Stopped'} at ${Math.floor(currentTime)}s/${duration}s. BPM: ${bpm}.`,
+      activeView: rightPanel || 'timeline', itemCount: tracks.length,
+      selectedItems: selectedTrackId ? [selectedTrackId] : [],
+      metadata: { isPlaying, currentTime, duration, bpm, masterVolume, trackCount: tracks.length },
+    }),
+  });
+
   const TRACK_LABEL_WIDTH = 130;
 
   const addTrack = () => {

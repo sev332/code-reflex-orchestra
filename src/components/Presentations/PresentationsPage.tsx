@@ -224,6 +224,18 @@ export function PresentationsPage() {
   const currentSlide = slides[currentSlideIndex] || null;
   const selectedElement = currentSlide?.elements.find(e => e.id === selectedElementId) || null;
 
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'presentations',
+    getContext: () => ({
+      appId: 'presentations', appName: 'Presentations',
+      summary: `${slides.length} slides. Viewing slide ${currentSlideIndex + 1}. ${isPresenting ? 'Presenting' : 'Editing'}.`,
+      activeView: isPresenting ? 'presenter' : 'editor', itemCount: slides.length,
+      selectedItems: selectedElementId ? [selectedElementId] : [],
+      metadata: { slideCount: slides.length, currentSlide: currentSlideIndex + 1, isPresenting },
+    }),
+  });
+
   // Auto-fit zoom to canvas container
   useEffect(() => {
     if (!canvasRef.current) return;

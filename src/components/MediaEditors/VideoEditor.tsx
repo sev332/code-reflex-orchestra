@@ -50,6 +50,18 @@ export function VideoEditor() {
     { id: 'c7', name: 'Color Grade', type: 'effect', startTime: 0, duration: 80, track: 4, color: 'hsl(300, 100%, 75%)' },
   ]);
 
+  // ─── AI Integration ──────────────────────────
+  useAIAppIntegration({
+    appId: 'video',
+    getContext: () => ({
+      appId: 'video', appName: 'Video Editor',
+      summary: `${clips.length} clips on ${tracks.length} tracks. ${isPlaying ? 'Playing' : 'Stopped'} at ${Math.floor(currentTime)}s/${duration}s.`,
+      activeView: bottomPanel, itemCount: clips.length,
+      selectedItems: selectedClipId ? [selectedClipId] : [],
+      metadata: { isPlaying, currentTime, duration, previewSize, clipCount: clips.length },
+    }),
+  });
+
   const TRACK_LABEL_WIDTH = 90;
 
   const formatTC = (s: number) => {
