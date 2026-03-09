@@ -13,7 +13,7 @@ import { FullDiscordView } from "@/components/AgentDiscord/FullDiscordView";
 import { StarfieldNebulaBackground } from "@/components/ui/StarfieldNebulaBackground";
 import { NeuralParticles } from "@/components/ui/NeuralParticles";
 import { BackgroundSettingsPanel } from "@/components/ui/BackgroundSettingsPanel";
-import { BottomDock } from "@/components/layout/BottomDock";
+import { OSBottomBar } from "@/components/layout/OSBottomBar";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
@@ -55,6 +55,7 @@ const Index = () => {
   const [showLauncher, setShowLauncher] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [uiTransparency, setUITransparency] = useState(50);
 
   const {
     isStreaming, orchestrationPlan, thinkingSteps,
@@ -72,6 +73,11 @@ const Index = () => {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  // Set CSS variable for UI transparency
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ui-transparency', String(uiTransparency / 100));
+  }, [uiTransparency]);
 
   const handleOpenFullscreen = useCallback((type: string) => {
     if (type === 'discord') setShowFullDiscord(true);
@@ -166,6 +172,8 @@ const Index = () => {
           <PersistentRightDrawer
             isOpen={rightDrawerOpen}
             onToggle={() => setRightDrawerOpen(v => !v)}
+            activePage={activePage}
+            onPageChange={setActivePage}
             isStreaming={isStreaming}
             orchestrationPlan={orchestrationPlan}
             thinkingSteps={thinkingSteps}
@@ -178,16 +186,25 @@ const Index = () => {
           />
 
           <main
-            className="transition-all duration-300 pt-12 relative z-10 h-[calc(100vh-3rem-2rem)]"
-            style={{ marginLeft: leftWidth, marginRight: rightWidth }}
+            className="transition-all duration-300 pt-11 relative z-10 overflow-y-auto overflow-x-hidden"
+            style={{ 
+              marginLeft: leftWidth, 
+              marginRight: rightWidth,
+              height: 'calc(100vh - 2.75rem - 2.25rem)',
+            }}
           >
             {renderMainContent()}
           </main>
 
-          <BottomDock
+          <OSBottomBar
             activePage={activePage}
             leftWidth={leftWidth}
             rightWidth={rightWidth}
+            isStreaming={isStreaming}
+            agents={streamingAgents}
+            discordMessages={discordMessages}
+            uiTransparency={uiTransparency}
+            onTransparencyChange={setUITransparency}
           />
 
           {showFullDiscord && (

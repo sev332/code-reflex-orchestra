@@ -310,7 +310,7 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
   return (
     <>
       {/* Side icon rail */}
-      <div className="fixed left-0 top-12 bottom-0 w-12 bg-background/80 backdrop-blur-xl border-r border-border/50 z-40 flex flex-col items-center py-3 gap-1">
+      <div className="fixed left-0 top-11 w-12 border-r border-border/50 z-40 flex flex-col items-center py-3 gap-1" style={{ bottom: 36, background: 'hsl(var(--background) / var(--ui-transparency, 0.5))', backdropFilter: 'blur(24px) saturate(180%)' }}>
         {config.sideIcons.map((item) => {
           const Icon = item.icon;
           const isActive = activeIcon === item.id && isOpen;
@@ -338,8 +338,8 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
       {/* Drawer panel */}
       {isOpen && activeIcon && (
         <div
-          className="fixed top-12 bottom-0 z-30 flex flex-col bg-background/95 backdrop-blur-xl border-r border-border/30"
-          style={{ left: 48, width: drawerWidth }}
+          className="fixed top-11 z-30 flex flex-col border-r border-border/30"
+          style={{ left: 48, width: drawerWidth, bottom: 36, background: 'hsl(var(--background) / var(--ui-transparency, 0.5))', backdropFilter: 'blur(24px) saturate(180%)' }}
         >
           {/* Header */}
           <div className="px-3 py-2 border-b border-border/20 shrink-0">
