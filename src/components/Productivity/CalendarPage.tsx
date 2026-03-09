@@ -1,5 +1,6 @@
 // Pro-grade calendar: drag-to-create, current time indicator, agenda view, mini calendar, recurring events
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
