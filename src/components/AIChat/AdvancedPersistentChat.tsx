@@ -480,6 +480,41 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
               </Badge>
             </div>
 
+            {/* Workflow Confirmation */}
+            {pendingWorkflow && (
+              <div className="mb-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+                <div className="flex items-center gap-2 text-sm font-medium mb-1">
+                  <Zap className="w-4 h-4 text-primary" />
+                  Run workflow: {pendingWorkflow.name}?
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{pendingWorkflow.description}</p>
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={executeWorkflow} className="text-xs">
+                    <Play className="w-3 h-3 mr-1" /> Run
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => setPendingWorkflow(null)} className="text-xs">
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Quick Suggestions */}
+            {suggestions.length > 0 && !input && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {suggestions.slice(0, 4).map((s, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setInput(s)}
+                    className="px-2 py-1 text-[10px] rounded-full bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors border border-border/30 flex items-center gap-1"
+                  >
+                    <Command className="w-2.5 h-2.5" />
+                    {s.length > 30 ? s.slice(0, 30) + '...' : s}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
             <div className="flex gap-2">
               <Input
@@ -488,9 +523,9 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
                 onKeyPress={handleKeyPress}
                 placeholder={activeWorkspace 
                   ? `Ask AI to help with your ${activeWorkspace}...` 
-                  : "Ask anything..."}
+                  : `Try "go to tasks" or "create a note"...`}
                 disabled={isProcessing || isStreaming}
-                className="flex-1 bg-background/50 border-border/50 focus:border-cyan-500/50"
+                className="flex-1 bg-background/50 border-border/50 focus:border-primary/50"
               />
               <Button 
                 onClick={handleSend} 
@@ -506,13 +541,15 @@ export const AdvancedPersistentChat: React.FC<AdvancedPersistentChatProps> = ({ 
             </div>
             
             <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
-              <span>Streaming Mode</span>
+              <span className="flex items-center gap-1">
+                <Command className="w-3 h-3" /> OS Commands
+              </span>
               <span>•</span>
               <span>{messages.length} messages</span>
               {activeWorkspace && (
                 <>
                   <span>•</span>
-                  <span className="text-cyan-400">{activeWorkspace} mode active</span>
+                  <span className="text-primary">{activeWorkspace} mode</span>
                 </>
               )}
             </div>
