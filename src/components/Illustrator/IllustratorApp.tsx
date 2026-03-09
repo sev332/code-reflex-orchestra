@@ -6,6 +6,7 @@
 // Sprint 5: Appearance panel, Patterns, Symbols, Mesh gradient
 // Sprint 6: Artboards, Persistence, Image placement, WebGL acceleration
 import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { useAIAppIntegration } from '@/hooks/useAIAppIntegration';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
