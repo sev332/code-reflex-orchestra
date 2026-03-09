@@ -97,14 +97,14 @@ const COMMAND_PATTERNS: CommandPattern[] = [
         'email': { app: 'email', capability: 'email.compose' },
         'note': { app: 'notes', capability: 'notes.create' },
         'document': { app: 'notes', capability: 'notes.create' },
-        'file': { app: 'file-manager', capability: 'files.create' },
-        'folder': { app: 'file-manager', capability: 'files.create_folder' },
+        'file': { app: 'files', capability: 'files.create' },
+        'folder': { app: 'files', capability: 'files.create_folder' },
         'slide': { app: 'presentations', capability: 'pres.add_slide' },
         'presentation': { app: 'presentations', capability: 'pres.create' },
         'spreadsheet': { app: 'spreadsheet', capability: 'ss.create' },
         'shape': { app: 'illustrator', capability: 'ill.shape' },
-        'layer': { app: 'image-editor', capability: 'img.layer' },
-        'project': { app: 'code-builder', capability: 'ide.create' },
+        'layer': { app: 'image', capability: 'img.layer' },
+        'project': { app: 'ide', capability: 'ide.create' },
       };
       const mapping = Object.entries(createMap).find(([k]) => target.includes(k));
       if (mapping) {

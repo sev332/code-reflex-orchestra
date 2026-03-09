@@ -71,7 +71,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     category: 'creative',
     steps: [
       { appId: 'illustrator', capabilityId: 'ill.export', params: { format: 'svg' } },
-      { appId: 'code-builder', capabilityId: 'ide.create', params: { fromSvg: true }, dependsOn: ['step_0'] },
+      { appId: 'ide', capabilityId: 'ide.create', params: { fromSvg: true }, dependsOn: ['step_0'] },
     ],
   },
   {
@@ -81,8 +81,8 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     trigger: ['visualize api response', 'create dashboard from api', 'show api data in dashboard'],
     category: 'data',
     steps: [
-      { appId: 'api-studio', capabilityId: 'api.execute', params: { current: true } },
-      { appId: 'dashboard-builder', capabilityId: 'dash.create', params: { fromApi: true }, dependsOn: ['step_0'] },
+      { appId: 'apistudio', capabilityId: 'api.execute', params: { current: true } },
+      { appId: 'dashboard', capabilityId: 'dash.create', params: { fromApi: true }, dependsOn: ['step_0'] },
     ],
   },
   {
@@ -92,7 +92,7 @@ export const WORKFLOW_TEMPLATES: WorkflowTemplate[] = [
     trigger: ['export query to spreadsheet', 'save results to excel', 'create spreadsheet from database'],
     category: 'data',
     steps: [
-      { appId: 'database-explorer', capabilityId: 'db.query', params: { current: true } },
+      { appId: 'database', capabilityId: 'db.query', params: { current: true } },
       { appId: 'spreadsheet', capabilityId: 'ss.import', params: { fromDb: true }, dependsOn: ['step_0'] },
     ],
   },
