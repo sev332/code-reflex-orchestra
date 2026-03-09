@@ -310,7 +310,7 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
   return (
     <>
       {/* Side icon rail */}
-      <div className="fixed left-0 top-12 bottom-0 w-12 bg-background/80 backdrop-blur-xl border-r border-border/50 z-40 flex flex-col items-center py-3 gap-1">
+      <div className="fixed left-0 top-11 w-12 border-r border-border/50 z-40 flex flex-col items-center py-3 gap-1" style={{ bottom: 36, background: 'hsl(var(--background) / var(--ui-transparency, 0.5))', backdropFilter: 'blur(24px) saturate(180%)' }}>
         {config.sideIcons.map((item) => {
           const Icon = item.icon;
           const isActive = activeIcon === item.id && isOpen;
