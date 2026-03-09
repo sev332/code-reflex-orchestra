@@ -157,6 +157,8 @@ export function PersistentRightDrawer({
               <VaultPanel />
             ) : activeTab === 'context' ? (
               <AIContextPanel />
+            ) : activeTab === 'workflows' ? (
+              <WorkflowsPanel />
             ) : (
               <EnhancedRightDrawerPanel
                 activeDrawer={transparencyDrawerType as any}
