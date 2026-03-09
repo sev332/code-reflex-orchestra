@@ -94,6 +94,24 @@ export function CalendarPage() {
   const [showMiniCal, setShowMiniCal] = useState(true);
   const today = new Date(2026, 2, 8);
 
+  // ─── AI Integration ──────────────────────────
+  const { notifyChange } = useAIAppIntegration({
+    appId: 'calendar',
+    getContext: () => ({
+      appId: 'calendar', appName: 'Calendar',
+      summary: `${view} view. ${events.length} events.`,
+      activeView: view, itemCount: events.length,
+      metadata: { view, currentDate: currentDate.toISOString() },
+    }),
+    onAction: async (action) => {
+      if (action.capabilityId === 'cal.list') {
+        return { success: true, data: events.map(e => `${e.title} — ${e.start.toLocaleString()}`).join('\n') };
+      }
+      return { success: false, error: `Unknown: ${action.capabilityId}` };
+    },
+  });
+  useEffect(() => { notifyChange(); }, [events.length, view, currentDate]);
+
   const navigate = (dir: number) => {
     const d = new Date(currentDate);
     if (view === 'month') d.setMonth(d.getMonth() + dir);
