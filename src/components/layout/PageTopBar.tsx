@@ -77,9 +77,12 @@ export function PageTopBar({
 
   return (
     <div className={cn(
-      'fixed top-0 left-0 right-0 h-11 bg-background/60 backdrop-blur-xl border-b border-border/30 z-50 flex items-center px-3 gap-1.5',
+      'fixed top-0 left-0 right-0 h-11 border-b border-border/30 z-50 flex items-center px-3 gap-1.5',
       className
-    )}>
+    )} style={{
+      background: `hsl(var(--background) / var(--ui-transparency, 0.5))`,
+      backdropFilter: 'blur(24px) saturate(180%)',
+    }}>
       {/* Logo */}
       <div className="flex items-center gap-1.5 shrink-0">
         <LucidLogo size={26} />
