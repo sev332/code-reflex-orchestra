@@ -82,10 +82,10 @@ export function IllustratorApp() {
     appId: 'illustrator',
     getContext: () => ({
       appId: 'illustrator', appName: 'Illustrator',
-      summary: `${state.objects.length} objects on canvas. Tool: ${state.activeTool}. ${state.selectedIds.length} selected.`,
-      activeView: state.activeTool, itemCount: state.objects.length,
-      selectedItems: state.selectedIds,
-      metadata: { tool: state.activeTool, zoom: state.zoom, layerCount: state.objects.length },
+      summary: `${state.scene.objects.length} objects on canvas. Tool: ${state.tool.active}. ${state.selection.ids.length} selected.`,
+      activeView: state.tool.active, itemCount: state.scene.objects.length,
+      selectedItems: state.selection.ids,
+      metadata: { tool: state.tool.active, zoom: state.viewport.zoom, objectCount: state.scene.objects.length },
     }),
   });
   const canvasRef = useRef<HTMLCanvasElement>(null);
