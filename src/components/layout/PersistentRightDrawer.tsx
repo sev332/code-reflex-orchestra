@@ -16,11 +16,13 @@ import {
   Network,
   Palette,
   KeyRound,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AdvancedPersistentChat } from '@/components/AIChat/AdvancedPersistentChat';
 import { EnhancedRightDrawerPanel } from './EnhancedRightDrawerPanel';
 import { VaultPanel } from './VaultPanel';
+import { AIContextPanel } from './AIContextPanel';
 
 export type RightTab = 'chat' | 'thinking' | 'discord' | 'agents' | 'memory' | 'context' | 'reasoning' | 'analytics' | 'processing' | 'network' | 'vault';
 
@@ -150,6 +152,8 @@ export function PersistentRightDrawer({
               <AdvancedPersistentChat />
             ) : activeTab === 'vault' ? (
               <VaultPanel />
+            ) : activeTab === 'context' ? (
+              <AIContextPanel />
             ) : (
               <EnhancedRightDrawerPanel
                 activeDrawer={transparencyDrawerType as any}

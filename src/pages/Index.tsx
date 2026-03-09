@@ -17,6 +17,7 @@ import { BottomDock } from "@/components/layout/BottomDock";
 import { CommandPalette } from "@/components/layout/CommandPalette";
 import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
+import { AIIntegrationProvider } from "@/contexts/AIIntegrationContext";
 
 // Lazy load all heavy pages
 const OrchestrationWorkspace = lazy(() => import("@/components/Orchestration/OrchestrationWorkspace").then(m => ({ default: m.OrchestrationWorkspace })));
@@ -113,6 +114,7 @@ const Index = () => {
 
   return (
     <WisdomNETProvider>
+      <AIIntegrationProvider activePage={activePage} onPageChange={setActivePage}>
       <TooltipProvider>
         <div className="min-h-screen relative overflow-hidden">
           <Helmet>
@@ -199,6 +201,7 @@ const Index = () => {
           )}
         </div>
       </TooltipProvider>
+      </AIIntegrationProvider>
     </WisdomNETProvider>
   );
 };
