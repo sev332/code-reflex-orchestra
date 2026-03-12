@@ -183,6 +183,9 @@ const Index = () => {
             onToggle={() => setRightDrawerOpen(v => !v)}
             activePage={activePage}
             onPageChange={setActivePage}
+            activeSystemDrawer={activeRightSystemDrawer}
+            onSystemDrawerChange={setActiveRightSystemDrawer}
+            onLayoutWidthChange={setRightDrawerOccupiedWidth}
             isStreaming={isStreaming}
             orchestrationPlan={orchestrationPlan}
             thinkingSteps={thinkingSteps}
@@ -191,7 +194,6 @@ const Index = () => {
             discordThreads={discordThreads}
             currentMode={currentMode}
             onOpenFullscreen={handleOpenFullscreen}
-            onOpenBackgroundSettings={() => setShowBackgroundSettings(true)}
           />
 
           <main
