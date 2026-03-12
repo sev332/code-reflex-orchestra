@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { LucidLogo } from '@/components/ui/LucidLogo';
 import { cn } from '@/lib/utils';
+import { RIGHT_SYSTEM_DRAWER_ITEMS, type RightSystemDrawerTab } from './right-drawer-system';
 
 export type PageId =
   | 'chat' | 'orchestration' | 'documents' | 'ide' | 'image' | 'audio' | 'video' | 'map'
