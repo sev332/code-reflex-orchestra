@@ -18,6 +18,7 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { AIIntegrationProvider } from "@/contexts/AIIntegrationContext";
+import type { RightSystemDrawerTab } from "@/components/layout/right-drawer-system";
 
 // Lazy load all heavy pages
 const OrchestrationWorkspace = lazy(() => import("@/components/Orchestration/OrchestrationWorkspace").then(m => ({ default: m.OrchestrationWorkspace })));
