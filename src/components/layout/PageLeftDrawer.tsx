@@ -262,13 +262,13 @@ interface PageLeftDrawerProps {
 }
 
 export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: PageLeftDrawerProps) {
-  const config = pageConfigs[activePage] || defaultConfig;
+  const config = pageConfigs[activePage] || defaultPageDrawerConfig;
   const [activeIcon, setActiveIcon] = useState<string | null>(config.sideIcons[0]?.id || null);
   const [drawerWidth, setDrawerWidth] = useState(260);
   const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
-    const newConfig = pageConfigs[activePage] || defaultConfig;
+    const newConfig = pageConfigs[activePage] || defaultPageDrawerConfig;
     setActiveIcon(newConfig.sideIcons[0]?.id || null);
   }, [activePage]);
 
