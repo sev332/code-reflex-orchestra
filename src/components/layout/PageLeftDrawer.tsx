@@ -42,14 +42,14 @@ import {
   GenericSettingsPanel, GenericSearchPanel,
 } from './drawer-panels';
 
-interface SideIcon {
+export interface SideIcon {
   id: string;
   icon: React.ComponentType<any>;
   label: string;
   shortcut?: string;
 }
 
-interface PageDrawerConfig {
+export interface PageDrawerConfig {
   sideIcons: SideIcon[];
 }
 
