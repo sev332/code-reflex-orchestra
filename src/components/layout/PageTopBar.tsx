@@ -62,6 +62,8 @@ interface PageTopBarProps {
   unreadNotifications?: number;
   pinnedApps?: PageId[];
   onOpenLauncher?: () => void;
+  activeSystemDrawer?: RightSystemDrawerTab;
+  onSystemDrawerChange?: (drawer: RightSystemDrawerTab) => void;
   className?: string;
 }
 
