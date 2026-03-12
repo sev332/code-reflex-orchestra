@@ -53,7 +53,7 @@ export interface PageDrawerConfig {
   sideIcons: SideIcon[];
 }
 
-const pageConfigs: Record<PageId, PageDrawerConfig> = {
+export const pageConfigs: Record<PageId, PageDrawerConfig> = {
   chat: {
     sideIcons: [
       { id: 'chat', icon: MessageSquare, label: 'Chat', shortcut: '⌘1' },
