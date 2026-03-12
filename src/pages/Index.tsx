@@ -210,7 +210,7 @@ const Index = () => {
           <OSBottomBar
             activePage={activePage}
             leftWidth={leftWidth}
-            rightWidth={rightWidth}
+            rightWidth={rightDrawerOccupiedWidth}
             isStreaming={isStreaming}
             agents={streamingAgents}
             discordMessages={discordMessages}
