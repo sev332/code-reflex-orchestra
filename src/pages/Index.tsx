@@ -50,7 +50,9 @@ const DEFAULT_PINNED: PageId[] = ['chat', 'orchestration', 'documents', 'spreads
 const Index = () => {
   const [activePage, setActivePage] = useState<PageId>('chat');
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(true);
-  const [rightDrawerOpen, setRightDrawerOpen] = useState(true);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [rightDrawerOccupiedWidth, setRightDrawerOccupiedWidth] = useState(48);
+  const [activeRightSystemDrawer, setActiveRightSystemDrawer] = useState<RightSystemDrawerTab>(null);
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
