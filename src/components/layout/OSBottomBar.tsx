@@ -124,7 +124,7 @@ export function OSBottomBar({ activePage, leftWidth, rightWidth, isStreaming, ag
 
       {/* Main bottom bar — full width */}
       <div
-        className="fixed bottom-0 left-0 right-0 z-30 h-9 flex items-center border-t border-border/30"
+        className="fixed bottom-0 left-0 right-0 z-[55] h-9 flex items-center border-t border-border/30"
         style={{
           background: `hsl(var(--background) / var(--ui-transparency, 0.5))`,
           backdropFilter: 'blur(24px) saturate(180%)',
