@@ -70,6 +70,7 @@ interface PageTopBarProps {
 export function PageTopBar({
   activePage, onPageChange, systemStatus = 'online', activeAgents = 0,
   onOpenNotifications, onOpenCommandPalette, unreadNotifications = 0,
+  activeSystemDrawer = null, onSystemDrawerChange,
   className,
 }: PageTopBarProps) {
   const statusColors = {
