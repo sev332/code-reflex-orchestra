@@ -129,7 +129,39 @@ export function PageTopBar({
             </div>
           </React.Fragment>
         ))}
-      </nav>
+
+          {onSystemDrawerChange && (
+            <>
+              <div className="w-px h-4 bg-border/40 shrink-0 mx-2" />
+              <div className="flex items-center gap-0.5 pr-2">
+                {RIGHT_SYSTEM_DRAWER_ITEMS.map((drawer) => {
+                  if (drawer.id === 'chat' && activePage === 'chat') return null;
+                  const Icon = drawer.icon;
+                  const isActive = activeSystemDrawer === drawer.id;
+
+                  return (
+                    <Tooltip key={drawer.id} delayDuration={250}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={() => onSystemDrawerChange(isActive ? null : drawer.id)}
+                          className={cn(
+                            'w-7 h-7 flex items-center justify-center rounded-md transition-all duration-150 shrink-0',
+                            isActive
+                              ? 'bg-primary/15 text-primary shadow-sm shadow-primary/10 ring-1 ring-primary/25'
+                              : 'text-muted-foreground hover:text-foreground hover:bg-accent/20',
+                          )}
+                        >
+                          <Icon className="w-3.5 h-3.5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs">{drawer.label}</TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </nav>
 
       <div className="w-px h-5 bg-border/40 shrink-0 mx-1" />
 
