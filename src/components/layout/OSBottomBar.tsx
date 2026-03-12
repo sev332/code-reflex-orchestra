@@ -98,7 +98,7 @@ export function OSBottomBar({ activePage, leftWidth, rightWidth, isStreaming, ag
       {/* Expanded panel */}
       {isExpanded && (
         <div
-          className="fixed z-29 border-t border-border/30 transition-all duration-300"
+          className="fixed z-50 border-t border-border/30 transition-all duration-300"
           style={{ 
             left: 0, 
             right: 0, 
