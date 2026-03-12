@@ -143,6 +143,13 @@ const Index = () => {
             onOpenCommandPalette={() => setShowCommandPalette(true)}
             onOpenNotifications={() => setShowNotifications(prev => !prev)}
             unreadNotifications={3}
+            activeSystemDrawer={activeRightSystemDrawer}
+            onSystemDrawerChange={(drawer) => {
+              setActiveRightSystemDrawer(drawer);
+              if (drawer && !rightDrawerOpen) {
+                setRightDrawerOpen(true);
+              }
+            }}
           />
 
           <CommandPalette
