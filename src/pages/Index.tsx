@@ -89,7 +89,6 @@ const Index = () => {
   const handleTogglePin = useCallback((id: PageId) => {}, []);
 
   const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
-  const rightWidth = rightDrawerOpen ? 48 + 380 : 48;
 
   const renderMainContent = () => {
     switch (activePage) {
