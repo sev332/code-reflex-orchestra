@@ -42,18 +42,18 @@ import {
   GenericSettingsPanel, GenericSearchPanel,
 } from './drawer-panels';
 
-interface SideIcon {
+export interface SideIcon {
   id: string;
   icon: React.ComponentType<any>;
   label: string;
   shortcut?: string;
 }
 
-interface PageDrawerConfig {
+export interface PageDrawerConfig {
   sideIcons: SideIcon[];
 }
 
-const pageConfigs: Record<PageId, PageDrawerConfig> = {
+export const pageConfigs: Record<PageId, PageDrawerConfig> = {
   chat: {
     sideIcons: [
       { id: 'chat', icon: MessageSquare, label: 'Chat', shortcut: '⌘1' },
@@ -247,7 +247,7 @@ const pageConfigs: Record<PageId, PageDrawerConfig> = {
   },
 };
 
-const defaultConfig: PageDrawerConfig = {
+export const defaultPageDrawerConfig: PageDrawerConfig = {
   sideIcons: [
     { id: 'browse', icon: Search, label: 'Browse' },
     { id: 'settings', icon: Settings, label: 'Settings' },
@@ -262,13 +262,13 @@ interface PageLeftDrawerProps {
 }
 
 export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: PageLeftDrawerProps) {
-  const config = pageConfigs[activePage] || defaultConfig;
+  const config = pageConfigs[activePage] || defaultPageDrawerConfig;
   const [activeIcon, setActiveIcon] = useState<string | null>(config.sideIcons[0]?.id || null);
   const [drawerWidth, setDrawerWidth] = useState(260);
   const [isResizing, setIsResizing] = useState(false);
 
   useEffect(() => {
-    const newConfig = pageConfigs[activePage] || defaultConfig;
+    const newConfig = pageConfigs[activePage] || defaultPageDrawerConfig;
     setActiveIcon(newConfig.sideIcons[0]?.id || null);
   }, [activePage]);
 
@@ -366,7 +366,7 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
 // PANEL ROUTER — maps (page, tab) → real component
 // ============================================================
 
-function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
+export function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   // Chat
   if (page === 'chat') {
     if (tab === 'chat' || tab === 'history') return <ChatHistoryPanel />;

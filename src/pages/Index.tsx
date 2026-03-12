@@ -18,6 +18,7 @@ import { CommandPalette } from "@/components/layout/CommandPalette";
 import { NotificationCenter } from "@/components/layout/NotificationCenter";
 import { useAIMOSStreaming } from "@/hooks/useAIMOSStreaming";
 import { AIIntegrationProvider } from "@/contexts/AIIntegrationContext";
+import type { RightSystemDrawerTab } from "@/components/layout/right-drawer-system";
 
 // Lazy load all heavy pages
 const OrchestrationWorkspace = lazy(() => import("@/components/Orchestration/OrchestrationWorkspace").then(m => ({ default: m.OrchestrationWorkspace })));
@@ -49,7 +50,9 @@ const DEFAULT_PINNED: PageId[] = ['chat', 'orchestration', 'documents', 'spreads
 const Index = () => {
   const [activePage, setActivePage] = useState<PageId>('chat');
   const [leftDrawerOpen, setLeftDrawerOpen] = useState(true);
-  const [rightDrawerOpen, setRightDrawerOpen] = useState(true);
+  const [rightDrawerOpen, setRightDrawerOpen] = useState(false);
+  const [rightDrawerOccupiedWidth, setRightDrawerOccupiedWidth] = useState(48);
+  const [activeRightSystemDrawer, setActiveRightSystemDrawer] = useState<RightSystemDrawerTab>(null);
   const [showFullDiscord, setShowFullDiscord] = useState(false);
   const [showBackgroundSettings, setShowBackgroundSettings] = useState(false);
   const [showLauncher, setShowLauncher] = useState(false);
@@ -86,7 +89,6 @@ const Index = () => {
   const handleTogglePin = useCallback((id: PageId) => {}, []);
 
   const leftWidth = leftDrawerOpen ? 48 + 260 : 48;
-  const rightWidth = rightDrawerOpen ? 48 + 380 : 48;
 
   const renderMainContent = () => {
     switch (activePage) {
@@ -141,6 +143,13 @@ const Index = () => {
             onOpenCommandPalette={() => setShowCommandPalette(true)}
             onOpenNotifications={() => setShowNotifications(prev => !prev)}
             unreadNotifications={3}
+            activeSystemDrawer={activeRightSystemDrawer}
+            onSystemDrawerChange={(drawer) => {
+              setActiveRightSystemDrawer(drawer);
+              if (drawer && !rightDrawerOpen) {
+                setRightDrawerOpen(true);
+              }
+            }}
           />
 
           <CommandPalette
@@ -174,6 +183,9 @@ const Index = () => {
             onToggle={() => setRightDrawerOpen(v => !v)}
             activePage={activePage}
             onPageChange={setActivePage}
+            activeSystemDrawer={activeRightSystemDrawer}
+            onSystemDrawerChange={setActiveRightSystemDrawer}
+            onLayoutWidthChange={setRightDrawerOccupiedWidth}
             isStreaming={isStreaming}
             orchestrationPlan={orchestrationPlan}
             thinkingSteps={thinkingSteps}
@@ -182,14 +194,13 @@ const Index = () => {
             discordThreads={discordThreads}
             currentMode={currentMode}
             onOpenFullscreen={handleOpenFullscreen}
-            onOpenBackgroundSettings={() => setShowBackgroundSettings(true)}
           />
 
           <main
             className="transition-all duration-300 pt-11 relative z-10 overflow-y-auto overflow-x-hidden"
-            style={{ 
-              marginLeft: leftWidth, 
-              marginRight: rightWidth,
+              style={{ 
+               marginLeft: leftWidth, 
+               marginRight: rightDrawerOccupiedWidth,
               height: 'calc(100vh - 2.75rem - 2.25rem)',
             }}
           >
@@ -199,7 +210,7 @@ const Index = () => {
           <OSBottomBar
             activePage={activePage}
             leftWidth={leftWidth}
-            rightWidth={rightWidth}
+            rightWidth={rightDrawerOccupiedWidth}
             isStreaming={isStreaming}
             agents={streamingAgents}
             discordMessages={discordMessages}
