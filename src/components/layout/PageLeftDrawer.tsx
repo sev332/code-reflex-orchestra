@@ -366,7 +366,7 @@ export function PageLeftDrawer({ activePage, isOpen, onToggle, onNavigate }: Pag
 // PANEL ROUTER — maps (page, tab) → real component
 // ============================================================
 
-function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
+export function DrawerPanelRouter({ page, tab }: { page: PageId; tab: string }) {
   // Chat
   if (page === 'chat') {
     if (tab === 'chat' || tab === 'history') return <ChatHistoryPanel />;
