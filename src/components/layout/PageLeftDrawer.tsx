@@ -247,7 +247,7 @@ export const pageConfigs: Record<PageId, PageDrawerConfig> = {
   },
 };
 
-const defaultConfig: PageDrawerConfig = {
+export const defaultPageDrawerConfig: PageDrawerConfig = {
   sideIcons: [
     { id: 'browse', icon: Search, label: 'Browse' },
     { id: 'settings', icon: Settings, label: 'Settings' },
