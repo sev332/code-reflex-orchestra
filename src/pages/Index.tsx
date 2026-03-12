@@ -198,9 +198,9 @@ const Index = () => {
 
           <main
             className="transition-all duration-300 pt-11 relative z-10 overflow-y-auto overflow-x-hidden"
-            style={{ 
-              marginLeft: leftWidth, 
-              marginRight: rightWidth,
+              style={{ 
+               marginLeft: leftWidth, 
+               marginRight: rightDrawerOccupiedWidth,
               height: 'calc(100vh - 2.75rem - 2.25rem)',
             }}
           >
